@@ -1,5 +1,5 @@
-import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
+import React from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { GoServiceIndicator } from "@/components/go-service-indicator";
@@ -26,7 +26,9 @@ describe("GoServiceIndicator", () => {
 
     render(<GoServiceIndicator />);
 
-    expect(await screen.findByText(/Connected — API responding/i)).toBeVisible();
+    expect(
+      await screen.findByText(/Connected — API responding/i)
+    ).toBeVisible();
     expect(screen.getByText(/Healthy/i)).toBeVisible();
     expect(fetchMock).toHaveBeenCalledWith("/go-api/health", {
       cache: "no-store",
@@ -58,7 +60,9 @@ describe("GoServiceIndicator", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /retry now/i }));
 
-    expect(await screen.findByText(/Connected — API responding/i)).toBeVisible();
+    expect(
+      await screen.findByText(/Connected — API responding/i)
+    ).toBeVisible();
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });

@@ -1,0 +1,460 @@
+openapi: 3.0.3
+info:
+  title: Assetra Go Financial Service
+  version: 1.0.0
+  description: >-
+    CRUD + cash-flow endpoints served by the standalone Go backend.
+servers:
+  - url: http://localhost:8080
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /assets:
+    get:
+      summary: List assets
+      responses:
+        '200':
+          description: Collection of assets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Asset'
+    post:
+      summary: Create asset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetCreate'
+      responses:
+        '201':
+          description: Created asset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+  /assets/{id}:
+    parameters:
+      - $ref: '#/components/parameters/EntityId'
+    get:
+      summary: Fetch asset
+      responses:
+        '200':
+          description: Asset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Update asset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Asset'
+      responses:
+        '200':
+          description: Updated asset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Asset'
+    delete:
+      summary: Delete asset
+      responses:
+        '204':
+          description: Removed
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /liabilities:
+    get:
+      summary: List liabilities
+      responses:
+        '200':
+          description: Collection of liabilities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Liability'
+    post:
+      summary: Create liability
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LiabilityCreate'
+      responses:
+        '201':
+          description: Created liability
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Liability'
+  /liabilities/{id}:
+    parameters:
+      - $ref: '#/components/parameters/EntityId'
+    get:
+      summary: Fetch liability
+      responses:
+        '200':
+          description: Liability
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Liability'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Update liability
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Liability'
+      responses:
+        '200':
+          description: Updated liability
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Liability'
+    delete:
+      summary: Delete liability
+      responses:
+        '204':
+          description: Removed
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /cashflow:
+    get:
+      summary: Cash-flow snapshot
+      responses:
+        '200':
+          description: Incomes, expenses, and monthly summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CashFlowSnapshot'
+  /cashflow/incomes:
+    get:
+      summary: List incomes
+      responses:
+        '200':
+          description: Collection of incomes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Income'
+    post:
+      summary: Create income
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncomeCreate'
+      responses:
+        '201':
+          description: Created income
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Income'
+  /cashflow/incomes/{id}:
+    parameters:
+      - $ref: '#/components/parameters/EntityId'
+    get:
+      summary: Fetch income
+      responses:
+        '200':
+          description: Income
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Income'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Update income
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Income'
+      responses:
+        '200':
+          description: Updated income
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Income'
+    delete:
+      summary: Delete income
+      responses:
+        '204':
+          description: Removed
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /cashflow/expenses:
+    get:
+      summary: List expenses
+      responses:
+        '200':
+          description: Collection of expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Expense'
+    post:
+      summary: Create expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpenseCreate'
+      responses:
+        '201':
+          description: Created expense
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+  /cashflow/expenses/{id}:
+    parameters:
+      - $ref: '#/components/parameters/EntityId'
+    get:
+      summary: Fetch expense
+      responses:
+        '200':
+          description: Expense
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Update expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Expense'
+      responses:
+        '200':
+          description: Updated expense
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Expense'
+    delete:
+      summary: Delete expense
+      responses:
+        '204':
+          description: Removed
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  parameters:
+    EntityId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+  responses:
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    Frequency:
+      type: string
+      enum: [weekly, biweekly, monthly, quarterly, yearly]
+    Asset:
+      type: object
+      required: [id, name, category, currentValue, annualGrowthRate, updatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        currentValue:
+          type: number
+        annualGrowthRate:
+          type: number
+        notes:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+    AssetCreate:
+      allOf:
+        - $ref: '#/components/schemas/Asset'
+      required: [name, category, currentValue]
+      properties:
+        id:
+          type: string
+          nullable: true
+        updatedAt:
+          readOnly: true
+    Liability:
+      type: object
+      required: [id, name, category, currentBalance, interestRateApr, minimumPayment, updatedAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        category:
+          type: string
+        currentBalance:
+          type: number
+        interestRateApr:
+          type: number
+        minimumPayment:
+          type: number
+        notes:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+    LiabilityCreate:
+      allOf:
+        - $ref: '#/components/schemas/Liability'
+      required: [name, category, currentBalance]
+      properties:
+        id:
+          type: string
+          nullable: true
+        updatedAt:
+          readOnly: true
+    Income:
+      type: object
+      required: [id, source, amount, frequency, startDate, category, updatedAt]
+      properties:
+        id:
+          type: string
+        source:
+          type: string
+        amount:
+          type: number
+        frequency:
+          $ref: '#/components/schemas/Frequency'
+        startDate:
+          type: string
+          format: date-time
+        category:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+    IncomeCreate:
+      allOf:
+        - $ref: '#/components/schemas/Income'
+      required: [source, amount, frequency, startDate, category]
+      properties:
+        id:
+          type: string
+          nullable: true
+        updatedAt:
+          readOnly: true
+    Expense:
+      type: object
+      required: [id, payee, amount, frequency, category, updatedAt]
+      properties:
+        id:
+          type: string
+        payee:
+          type: string
+        amount:
+          type: number
+        frequency:
+          $ref: '#/components/schemas/Frequency'
+        category:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        updatedAt:
+          type: string
+          format: date-time
+    ExpenseCreate:
+      allOf:
+        - $ref: '#/components/schemas/Expense'
+      required: [payee, amount, frequency, category]
+      properties:
+        id:
+          type: string
+          nullable: true
+        updatedAt:
+          readOnly: true
+    CashFlowSummary:
+      type: object
+      required: [monthlyIncome, monthlyExpenses, netMonthly]
+      properties:
+        monthlyIncome:
+          type: number
+        monthlyExpenses:
+          type: number
+        netMonthly:
+          type: number
+    CashFlowSnapshot:
+      type: object
+      required: [incomes, expenses, summary]
+      properties:
+        incomes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Income'
+        expenses:
+          type: array
+          items:
+            $ref: '#/components/schemas/Expense'
+        summary:
+          $ref: '#/components/schemas/CashFlowSummary'
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string

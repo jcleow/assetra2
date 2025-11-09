@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+"use strict";
 const { spawn } = require("node:child_process");
 
 const pnpmCommand = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
@@ -26,7 +27,7 @@ function startCommand(command) {
   child.on("exit", (code, signal) => {
     log(
       command.name,
-      `exited with ${signal ? `signal ${signal}` : `code ${code ?? 0}`}`,
+      `exited with ${signal ? `signal ${signal}` : `code ${code ?? 0}`}`
     );
     if (!shuttingDown) {
       shuttingDown = true;

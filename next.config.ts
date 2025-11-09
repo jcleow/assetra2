@@ -3,7 +3,8 @@ import type { NextConfig } from "next";
 const GO_PROXY_PREFIX = "/go-api";
 const GO_SERVICE_URL = process.env.GO_SERVICE_URL ?? "http://127.0.0.1:8080";
 const GO_SERVICE_HEALTH =
-  process.env.GO_SERVICE_HEALTH && process.env.GO_SERVICE_HEALTH.trim().length > 0
+  process.env.GO_SERVICE_HEALTH &&
+  process.env.GO_SERVICE_HEALTH.trim().length > 0
     ? process.env.GO_SERVICE_HEALTH
     : "/health";
 
@@ -24,7 +25,7 @@ try {
   goServiceDestination = `${parsedUrl.origin}${pathname}`;
 } catch (error) {
   throw new Error(
-    `Invalid GO_SERVICE_URL provided: ${(error as Error).message}. Update .env or shell environment.`,
+    `Invalid GO_SERVICE_URL provided: ${(error as Error).message}. Update .env or shell environment.`
   );
 }
 

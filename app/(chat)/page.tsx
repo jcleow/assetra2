@@ -37,9 +37,9 @@ export default async function Page() {
             />
           </div>
         </div>
-        <div className="hidden min-h-[320px] flex-1 rounded-3xl border border-dashed border-white/10 bg-muted/10 p-6 text-sm text-muted-foreground lg:flex">
+        <div className="hidden min-h-[320px] flex-1 rounded-3xl border border-white/10 border-dashed bg-muted/10 p-6 text-muted-foreground text-sm lg:flex">
           <div className="m-auto space-y-2 text-center">
-            <p className="text-base font-semibold text-foreground">
+            <p className="font-semibold text-base text-foreground">
               Workspace Canvas
             </p>
             <p>Reserve this area for future dashboards, charts, or tools.</p>

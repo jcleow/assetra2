@@ -4,8 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 const proxyPrefix =
   process.env.NEXT_PUBLIC_GO_PROXY_PREFIX?.replace(/\/$/, "") ?? "/go-api";
-const healthPath =
-  process.env.NEXT_PUBLIC_GO_SERVICE_HEALTH ?? "/health";
+const healthPath = process.env.NEXT_PUBLIC_GO_SERVICE_HEALTH ?? "/health";
 const HEALTH_ENDPOINT = `${proxyPrefix}${
   healthPath.startsWith("/") ? healthPath : `/${healthPath}`
 }`;
@@ -41,7 +40,7 @@ export function GoServiceIndicator() {
     } catch (error) {
       setStatus("unhealthy");
       setDetails(
-        error instanceof Error ? error.message : "Unable to reach Go service",
+        error instanceof Error ? error.message : "Unable to reach Go service"
       );
     }
   }, []);
@@ -87,7 +86,7 @@ export function GoServiceIndicator() {
   }, [checkHealth]);
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 max-w-sm rounded-lg border border-border bg-background/95 px-4 py-3 text-sm shadow-lg backdrop-blur">
+    <div className="fixed right-4 bottom-4 z-50 max-w-sm rounded-lg border border-border bg-background/95 px-4 py-3 text-sm shadow-lg backdrop-blur">
       <div className="flex items-start gap-3">
         <span
           aria-hidden
@@ -96,21 +95,21 @@ export function GoServiceIndicator() {
         <div className="flex-1 space-y-1">
           <div className="flex items-center gap-2">
             <p className="font-medium">Go service</p>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-muted-foreground text-xs">
               {statusCopy.label}
             </span>
           </div>
-          <p className="text-xs text-muted-foreground">{details}</p>
-          <p className="text-xs text-muted-foreground">{statusCopy.hint}</p>
+          <p className="text-muted-foreground text-xs">{details}</p>
+          <p className="text-muted-foreground text-xs">{statusCopy.hint}</p>
           {lastCheckedAt ? (
-            <p className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
+            <p className="text-[0.65rem] text-muted-foreground uppercase tracking-wide">
               Last check: {lastCheckedAt.toLocaleTimeString()}
             </p>
           ) : null}
           <button
-            type="button"
+            className="inline-flex items-center rounded-md border border-border px-2 py-1 font-medium text-foreground text-xs hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             onClick={retry}
-            className="inline-flex items-center rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            type="button"
           >
             Retry now
           </button>

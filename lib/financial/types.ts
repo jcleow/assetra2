@@ -14,7 +14,7 @@ const isoDateTime = z
   .string()
   .refine(
     (value) => !Number.isNaN(Date.parse(value)),
-    "Expected an ISO-8601 timestamp",
+    "Expected an ISO-8601 timestamp"
   );
 
 const optionalNotes = z.string().trim().optional().nullable();
@@ -77,6 +77,14 @@ export const monthlyCashFlowSchema = z.object({
 
 export type MonthlyCashFlow = z.infer<typeof monthlyCashFlowSchema>;
 
+export const cashFlowSnapshotSchema = z.object({
+  incomes: z.array(incomeSchema),
+  expenses: z.array(expenseSchema),
+  summary: monthlyCashFlowSchema,
+});
+
+export type CashFlowSnapshot = z.infer<typeof cashFlowSnapshotSchema>;
+
 export const netWorthPointSchema = z.object({
   date: isoDateTime,
   assetsTotal: z.number(),
@@ -101,21 +109,22 @@ const toMonthlyAmount = (amount: number, frequency: Frequency) =>
 
 export function computeMonthlyCashFlow(
   incomes: Income[],
-  expenses: Expense[],
+  expenses: Expense[]
 ): MonthlyCashFlow {
   const monthlyIncome = roundToCents(
     incomes.reduce(
-      (total, income) => total + toMonthlyAmount(income.amount, income.frequency),
-      0,
-    ),
+      (total, income) =>
+        total + toMonthlyAmount(income.amount, income.frequency),
+      0
+    )
   );
 
   const monthlyExpenses = roundToCents(
     expenses.reduce(
       (total, expense) =>
         total + toMonthlyAmount(expense.amount, expense.frequency),
-      0,
-    ),
+      0
+    )
   );
 
   return {
