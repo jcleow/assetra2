@@ -1,0 +1,72 @@
+{
+  "info": {
+    "name": "Assetra Go Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Sample requests for the Go financial planner API"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "List assets",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/assets",
+          "host": ["{{baseUrl}}"],
+          "path": ["assets"]
+        }
+      }
+    },
+    {
+      "name": "Create asset",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Brokerage\",\n  \"category\": \"investments\",\n  \"currentValue\": 10000,\n  \"annualGrowthRate\": 0.05\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/assets",
+          "host": ["{{baseUrl}}"],
+          "path": ["assets"]
+        }
+      }
+    },
+    {
+      "name": "Cashflow snapshot",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/cashflow",
+          "host": ["{{baseUrl}}"],
+          "path": ["cashflow"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ]
+}

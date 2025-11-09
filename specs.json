@@ -1,9 +1,9 @@
 {
-    "epic": {
-        "title": "Chat-Controlled Net Worth Dashboard (MVP)",
-        "userStory": "As a user, I want to view how my net worth until retirement changes when my assets and liabilities change on the graph. I want to manipulate these values by chatting with the AI, and the AI should automatically make changes on the UI that instantly update the graph."
-    },
-    "tickets": [
+  "epic": {
+    "title": "Chat-Controlled Net Worth Dashboard (MVP)",
+    "userStory": "As a user, I want to view how my net worth until retirement changes when my assets and liabilities change on the graph. I want to manipulate these values by chatting with the AI, and the AI should automatically make changes on the UI that instantly update the graph."
+  },
+  "tickets": [
         {
             "title": "Go Service Skeleton & Tooling (Backend)",
             "description": "Initialize the standalone Golang service that powers financial planner data, including project scaffolding, configuration, and developer tooling.",
@@ -258,7 +258,8 @@
                 "api",
                 "react"
             ],
-            "id": "T3-FE"
+            "id": "T3-FE",
+            "status": "done"
         },
         {
             "title": "Testing for Financial CRUD Client & Hooks (Frontend)",
@@ -304,7 +305,8 @@
                 "backend",
                 "docs"
             ],
-            "id": "T4-BE"
+            "id": "T4-BE",
+            "status": "done"
         },
         {
             "title": "Testing for Go Integration Surface & Docs (Backend)",

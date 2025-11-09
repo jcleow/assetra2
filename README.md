@@ -117,6 +117,13 @@ GOOS=darwin GOARCH=amd64 go build ./cmd/server       # macOS
 GOOS=linux GOARCH=amd64 go build ./cmd/server        # Linux
 ```
 
+### API docs & tooling
+
+- **OpenAPI + Postman:** See [`docs/go-service.openapi.yaml`](docs/go-service.openapi.yaml) and [`docs/go-service.postman_collection.json`](docs/go-service.postman_collection.json) for an always-updated contract plus importable examples.
+- **Integration guide:** [`docs/go-service-guide.md`](docs/go-service-guide.md) covers environment variables, sample `curl` calls, Docker + devcontainer workflows, and versioning expectations.
+- **Docker:** Build and run the Go backend via `docker build -f Dockerfile.go-service -t assetra-go . && docker run --rm -p 8080:8080 assetra-go`.
+- **Dev Container:** Opening the repo in VS Code Dev Containers (or Codespaces) uses `.devcontainer/devcontainer.json` to provision Go 1.22 + Node 20 + pnpm automatically.
+
 ### Frontend integration & proxying
 
 - Set the following variables in `.env.local` (sample values live in `.env.example`):
