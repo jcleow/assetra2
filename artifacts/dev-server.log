@@ -1,0 +1,12 @@
+   ▲ Next.js 15.3.0-canary.31 (Turbopack)
+   - Local:        http://127.0.0.1:3000
+   - Network:      http://127.0.0.1:3000
+   - Environments: .env.local
+   - Experiments (use with caution):
+     ✓ ppr
+
+ ✓ Starting...
+ ✓ Compiled in 392ms
+ ✓ Ready in 1019ms
+   Reload env: .env.local
+   Reload env: .env.local

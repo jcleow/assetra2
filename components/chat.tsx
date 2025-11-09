@@ -24,7 +24,7 @@ import type { Vote } from "@/lib/db/schema";
 import { ChatSDKError } from "@/lib/errors";
 import type { Attachment, ChatMessage } from "@/lib/types";
 import type { AppUsage } from "@/lib/usage";
-import { fetcher, fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
+import { cn, fetcher, fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
 import { Artifact } from "./artifact";
 import { useDataStream } from "./data-stream-provider";
 import { Messages } from "./messages";
@@ -41,6 +41,7 @@ export function Chat({
   isReadonly,
   autoResume,
   initialLastContext,
+  className,
 }: {
   id: string;
   initialMessages: ChatMessage[];
@@ -49,6 +50,7 @@ export function Chat({
   isReadonly: boolean;
   autoResume: boolean;
   initialLastContext?: AppUsage;
+  className?: string;
 }) {
   const { visibilityType } = useChatVisibility({
     chatId: id,
@@ -156,7 +158,12 @@ export function Chat({
 
   return (
     <>
-      <div className="overscroll-behavior-contain flex h-dvh min-w-0 touch-pan-y flex-col bg-background">
+      <div
+        className={cn(
+          "overscroll-behavior-contain flex h-dvh min-h-0 min-w-0 touch-pan-y flex-col bg-background",
+          className
+        )}
+      >
         <ChatHeader
           chatId={id}
           isReadonly={isReadonly}
