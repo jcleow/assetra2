@@ -78,4 +78,82 @@ pnpm dev
 ```
 
 Your app template should now be running on [localhost:3000](http://localhost:3000).
+
+## Go service (financial planner backend)
+
+The standalone Go service powers financial planning data for the dashboard. It lives under `cmd/` and `internal/`.
+
+### Configuration
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `SERVER_HOST` | `0.0.0.0` | Host interface to bind. |
+| `SERVER_PORT` | `8080` | Port for HTTP traffic. |
+| `APP_ENV` | `development` | Used to toggle logging detail. |
+| `LOG_LEVEL` | `info` | One of `debug`, `info`, `warn`, `error`. |
+| `SHUTDOWN_TIMEOUT` | `10s` | Grace period for graceful shutdown. |
+| `READ_HEADER_TIMEOUT` | `5s` | Protects the server from slowloris attacks. |
+
+### Common commands
+
+```bash
+# Start the API locally
+go run ./cmd/server
+
+# From the repo root, helper targets are also available:
+make run      # start the server
+make lint     # golangci-lint run ./...
+make fmt      # gofmt on tracked Go files
+make test     # go test ./...
+```
+
+> `golangci-lint` must be installed locally (e.g., `brew install golangci-lint`). See the [official docs](https://golangci-lint.run/welcome/install/) for other platforms.
+
+The `/health` endpoint returns a JSON payload with HTTP 200 when the service is healthy:
+
+```bash
+curl http://localhost:8080/health
+```
+
+To verify the binary builds on both macOS and Linux:
+
+```bash
+GOOS=darwin GOARCH=amd64 go build ./cmd/server       # macOS
+GOOS=linux GOARCH=amd64 go build ./cmd/server        # Linux
+```
+
+### Frontend integration & proxying
+
+- Set the following variables in `.env.local` (sample values live in `.env.example`):
+
+  | Variable | Description |
+  | --- | --- |
+  | `GO_SERVICE_URL` | Base URL that Next.js rewrites to (defaults to `http://127.0.0.1:8080`). |
+  | `GO_SERVICE_HEALTH` | Health-check path exposed by the Go API (defaults to `/health`). |
+
+- The Next.js dev server proxies `/go-api/*` to the Go service, so the frontend can call `fetch("/go-api/health")` without CORS.
+- Run both stacks together with one command: `pnpm dev:full`. This script spawns `pnpm dev` and `pnpm go:dev` in parallel and tears both down when either exits.
+- If you prefer to start them manually, use:
+
+  ```bash
+  pnpm go:dev   # go run ./cmd/server
+  pnpm dev      # next dev --turbo
+  ```
+
+- During development, a floating "Go service" indicator appears in the UI. It pings `/go-api${GO_SERVICE_HEALTH}` every 10 seconds and turns red (with retry guidance) when the proxyed API is unreachable. This immediately surfaces downtime or misconfigured environment variables.
+- Need a quick sanity check before running Playwright? `pnpm dev:check` launches `pnpm dev:full`, ensures `/ping` and `/go-api/health` respond for a short window, and tears everything back down.
+
+#### Troubleshooting
+
+- Indicator shows “Unreachable”: ensure the Go binary is running locally (`pnpm go:dev`), the port matches `GO_SERVICE_URL`, and rerun `pnpm dev` after changing env vars.
+- Verify the proxy manually with `curl http://localhost:3000/go-api/health`. You should see the same JSON payload as hitting the Go server directly.
+- When the Go server URL changes, restart `pnpm dev` so Next.js reloads `GO_SERVICE_URL` and updates its rewrites.
+
+## Testing
+
+| Command | Description |
+| --- | --- |
+| `pnpm test:unit` | Runs Vitest + Testing Library suites (e.g., the Go service indicator healthy/unhealthy states). |
+| `pnpm test:e2e` | Runs Playwright. Automatically launches `pnpm dev:full`, so both Next.js and the Go API must bind locally. |
+| `pnpm test` | Executes unit tests first, then Playwright for full regression coverage. |
 # assetra2

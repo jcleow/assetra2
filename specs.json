@@ -5,20 +5,19 @@
     },
     "tickets": [
         {
-            "id": "T1",
-            "title": "Go Service Skeleton & Tooling",
-            "description": "Initialize a standalone Golang service that will power the financial planner backend, including project scaffolding, configuration, and developer tooling.",
+            "title": "Go Service Skeleton & Tooling (Backend)",
+            "description": "Initialize the standalone Golang service that powers financial planner data, including project scaffolding, configuration, and developer tooling.",
             "technicalDetails": [
-                "Initialize go.mod, choose a lightweight HTTP framework (or net/http), and define a clean project layout (cmd/, internal/, pkg/)",
-                "Add configuration loading (env + defaults) and wire up structured logging",
-                "Expose a basic health-check route and server bootstrap with graceful shutdown",
-                "Set up linting/formatting (golangci-lint) and go test workflows via Makefile or scripts",
-                "Document startup commands in README and ensure the service builds locally"
+                "Initialize go.mod, choose a lightweight HTTP framework (net/http, Echo, etc.), and define a project layout (cmd/, internal/, pkg/).",
+                "Add configuration loading (env + defaults) plus structured logging wired through the server bootstrap.",
+                "Expose a /health endpoint and implement graceful shutdown hooks.",
+                "Set up linting/formatting (golangci-lint, gofmt) and go test ./... workflows via Makefile or package scripts.",
+                "Document bootstrap commands in README and verify the binary builds on macOS + Linux."
             ],
             "acceptanceCriteria": [
-                "`go run ./cmd/server` starts the service and responds on /health",
-                "Linting and unit test commands succeed",
-                "Project layout and configs are documented for other engineers"
+                "`go run ./cmd/server` starts the service and /health returns 200.",
+                "Linting and unit test commands succeed locally and in CI.",
+                "Repo layout and configuration instructions are documented for other engineers."
             ],
             "storyPoints": 5,
             "difficulty": "medium",
@@ -26,20 +25,21 @@
                 "backend",
                 "go",
                 "tooling"
-            ]
+            ],
+            "id": "T1-BE",
+            "status": "done"
         },
         {
-            "id": "T1-TEST",
-            "title": "Testing for Go Service Skeleton & Tooling",
-            "description": "Implement automated tests that fully validate Go Service Skeleton & Tooling (T1) before moving on to subsequent work.",
+            "title": "Testing for Go Service Skeleton & Tooling (Backend)",
+            "description": "Implement automated tests that validate the backend skeleton for T1 before advancing.",
             "technicalDetails": [
                 "Add Go unit tests for configuration loading and logging initialization using table-driven cases.",
-                "Use httptest to start the bootstrap server and assert /health responds 200 with expected JSON.",
+                "Use httptest to start the bootstrap server and assert /health responds 200 with expected payload.",
                 "Integrate golangci-lint plus go test ./... in CI to guard the skeleton from regressions."
             ],
             "acceptanceCriteria": [
                 "go test ./... and golangci-lint succeed locally and in CI pipelines.",
-                "Health-check test fails if the route stops returning 200 or expected body.",
+                "Health-check tests fail if the route stops returning 200 or the expected JSON.",
                 "README documents how to run the new tests."
             ],
             "storyPoints": 3,
@@ -47,22 +47,70 @@
             "tags": [
                 "testing",
                 "go"
-            ]
+            ],
+            "id": "T1-BE-TEST",
+            "status": "done"
         },
         {
-            "id": "T2",
-            "title": "Go Data Models & In-Memory Repository",
-            "description": "Define the financial domain contracts in Go and provide an in-memory repository layer that future tickets can plug into.",
+            "title": "Go Service Integration Hooks (Frontend)",
+            "description": "Update the Next.js app to run seamlessly alongside the Go backend with shared environment variables, proxies, and developer UX.",
             "technicalDetails": [
-                "Create Asset, Liability, and MonthlyCashFlow structs that align with the shared domain in T6",
-                "Design repository interfaces for create/read/update/delete on each entity plus list operations",
-                "Provide an in-memory implementation (maps + mutex) that satisfies the interfaces",
-                "Add unit tests covering happy paths and basic error scenarios"
+                "Add GO_SERVICE_URL/GO_SERVICE_HEALTH env entries plus validation in next.config.ts.",
+                "Configure Next.js rewrites or middleware so /go-api/* requests proxy to the Go service without CORS pain.",
+                "Create a `pnpm dev:full` (or similar) script that launches both Next.js and the Go server via concurrently/nx.",
+                "Add a dev-only status indicator component that pings the Go health endpoint and surfaces downtime.",
+                "Document the workflow in README including troubleshooting steps for common proxy issues."
             ],
             "acceptanceCriteria": [
-                "Domain structs mirror the JSON contract used by the frontend",
-                "In-memory repository passes unit tests for CRUD operations",
-                "Future storage backends can implement the same interfaces without refactors"
+                "Running one command starts both servers and frontend calls automatically resolve through the proxy.",
+                "Disabling the Go server flips the status indicator and surfaces actionable guidance.",
+                "Changing GO_SERVICE_URL only requires restarting Next.js, no code edits."
+            ],
+            "storyPoints": 3,
+            "difficulty": "medium",
+            "tags": [
+                "frontend",
+                "devex"
+            ],
+            "id": "T1-FE",
+            "status": "done"
+        },
+        {
+            "title": "Testing for Go Service Integration Hooks (Frontend)",
+            "description": "Add automated coverage for the frontend tooling introduced in T1-Frontend.",
+            "technicalDetails": [
+                "Write Playwright (or Cypress) smoke tests that ensure the proxy path `/go-api/health` responds via Next.js during dev.",
+                "Add Jest/Vitest tests for the status-indicator component, faking healthy/unhealthy responses.",
+                "Create an integration script that launches `pnpm dev:full` in CI and verifies both processes stay alive for a sanity window."
+            ],
+            "acceptanceCriteria": [
+                "Proxy smoke tests fail if rewrites break.",
+                "Status-indicator tests cover healthy and failure states.",
+                "CI script exits non-zero when either server crashes during startup."
+            ],
+            "storyPoints": 2,
+            "difficulty": "low",
+            "tags": [
+                "testing",
+                "frontend",
+                "devex"
+            ],
+            "id": "T1-FE-TEST",
+            "status": "done"
+        },
+        {
+            "title": "Go Data Models & In-Memory Repository (Backend)",
+            "description": "Define financial domain structs in Go and implement an in-memory repository that future storage layers can replace, while keeping income and expenses as separate inputs.",
+            "technicalDetails": [
+                "Create Asset, Liability, Income, and Expense structs with JSON tags that match frontend expectations, plus helpers to derive monthly cash-flow summaries.",
+                "Design repository interfaces for CRUD + list operations and wire them with context-aware methods across assets, liabilities, incomes, and expenses.",
+                "Implement thread-safe in-memory stores (maps + mutex) for each entity type.",
+                "Provide seed helpers to populate demo data for local testing, including varied income and expense entries."
+            ],
+            "acceptanceCriteria": [
+                "Structs (assets, liabilities, incomes, expenses) round-trip cleanly to/from JSON payloads.",
+                "Repository methods support create/read/update/delete/list with concurrency safety for every entity.",
+                "Future storage backends can adhere to the same interfaces without refactors, including the separate income/expense shapes."
             ],
             "storyPoints": 3,
             "difficulty": "medium",
@@ -70,45 +118,90 @@
                 "backend",
                 "go",
                 "model"
-            ]
+            ],
+            "id": "T2-BE"
         },
         {
-            "id": "T2-TEST",
-            "title": "Testing for Go Data Models & In-Memory Repository",
-            "description": "Implement automated tests that fully validate Go Data Models & In-Memory Repository (T2) before moving on to subsequent work.",
+            "title": "Testing for Go Data Models & Repository (Backend)",
+            "description": "Add dedicated Go tests for the repository layer from T2-Backend.",
             "technicalDetails": [
-                "Write table-driven Go tests for repository CRUD operations (create/list/update/delete).",
-                "Simulate concurrent writers/readers to ensure mutex protection and data consistency.",
-                "Run go test -race to detect data races in the in-memory store."
+                "Write table-driven tests covering CRUD happy paths and failure modes (missing IDs, validation errors).",
+                "Use go test -race to ensure mutex protections hold under concurrent access.",
+                "Assert JSON marshalling/unmarshalling matches the documented schema."
             ],
             "acceptanceCriteria": [
-                "All repository methods have unit tests covering success and error paths.",
+                "All repository methods have tests for success and error paths.",
                 "Race detector passes without warnings.",
-                "Tests document expected error messages for invalid IDs."
+                "Contract tests fail if struct fields change unexpectedly."
             ],
             "storyPoints": 2,
             "difficulty": "low",
             "tags": [
                 "testing",
                 "go"
-            ]
+            ],
+            "id": "T2-BE-TEST"
         },
         {
-            "id": "T3",
-            "title": "Go CRUD HTTP Endpoints & Validation",
-            "description": "Wire the repository into HTTP handlers that expose CRUD endpoints for assets, liabilities, and monthly cash-flow settings.",
+            "title": "TypeScript Domain Contracts & SDK (Frontend)",
+            "description": "Mirror the Go financial domain in TypeScript so the frontend can share types, validation, and data fixtures, including separate income and expense inputs.",
             "technicalDetails": [
-                "Implement REST routes: /assets, /liabilities, /cashflow with POST/GET/PATCH/DELETE as appropriate",
-                "Validate request payloads (required fields, numeric ranges) and return structured errors",
-                "Serialize responses as JSON with proper status codes (201, 200, 204, 400, 404, 500)",
-                "Add CORS middleware so the Next.js frontend can call the service during development",
-                "Cover handlers with HTTP-level tests using httptest"
+                "Create `lib/financial/types.ts` with Asset/Liability/Income/Expense/NetWorthPoint interfaces and helpers to compute monthly cash-flow totals from those collections.",
+                "Add Zod schemas that validate responses from the Go service.",
+                "Implement a lightweight fetch client (or use OpenAPI codegen) that returns typed data and normalizes errors.",
+                "Provide sample fixtures for Storybook/tests to ensure deterministic UI states with distinct income and expense entries."
             ],
             "acceptanceCriteria": [
-                "CRUD endpoints exercise the in-memory repository end-to-end",
-                "Invalid payloads result in descriptive 4xx responses",
-                "CORS preflight succeeds from localhost",
-                "Test suite demonstrates create\u2192update\u2192delete flows"
+                "Zod schemas validate real responses from the Go service, including separate income and expense payloads.",
+                "TypeScript compilation fails if backend contracts drift.",
+                "Fixtures cover at least three scenarios: balanced, debt-heavy, and cash-heavy portfolios, each with explicit income and expense mixes."
+            ],
+            "storyPoints": 3,
+            "difficulty": "medium",
+            "tags": [
+                "frontend",
+                "typescript",
+                "data"
+            ],
+            "id": "T2-FE"
+        },
+        {
+            "title": "Testing for TypeScript Domain Contracts & SDK (Frontend)",
+            "description": "Ensure the new TypeScript contracts and client from T2-Frontend are guarded by automated tests.",
+            "technicalDetails": [
+                "Write Vitest/Jest tests that assert schema validation errors for malformed payloads.",
+                "Mock fetch responses to ensure the client normalizes errors and resolves typed data.",
+                "Add type-level tests (tsd or expectTypeOf) verifying key properties remain required/optional as intended."
+            ],
+            "acceptanceCriteria": [
+                "Schema tests fail when backend contracts change.",
+                "Client tests cover success + failure HTTP responses.",
+                "Type-level tests prevent accidental widening/narrowing of core interfaces."
+            ],
+            "storyPoints": 2,
+            "difficulty": "low",
+            "tags": [
+                "testing",
+                "frontend",
+                "typescript"
+            ],
+            "id": "T2-FE-TEST"
+        },
+        {
+            "title": "Go CRUD HTTP Endpoints & Validation (Backend)",
+            "description": "Expose REST endpoints for assets, liabilities, and cash-flow data on the Go service with full validation.",
+            "technicalDetails": [
+                "Implement /assets, /liabilities, /cashflow routes with POST/GET/PATCH/DELETE.",
+                "Validate payloads (required fields, numeric bounds) and return structured errors.",
+                "Serialize responses as JSON with correct status codes (201/200/204/400/404/500).",
+                "Add CORS middleware so the Next.js frontend can call the service.",
+                "Log requests and surface correlation IDs for debugging."
+            ],
+            "acceptanceCriteria": [
+                "Each route exercises the repository end-to-end.",
+                "Invalid payloads yield descriptive 4xx responses.",
+                "CORS preflight succeeds from localhost.",
+                "Logs include request IDs for tracing."
             ],
             "storyPoints": 5,
             "difficulty": "medium",
@@ -116,20 +209,20 @@
                 "backend",
                 "go",
                 "api"
-            ]
+            ],
+            "id": "T3-BE"
         },
         {
-            "id": "T3-TEST",
-            "title": "Testing for Go CRUD HTTP Endpoints & Validation",
-            "description": "Implement automated tests that fully validate Go CRUD HTTP Endpoints & Validation (T3) before moving on to subsequent work.",
+            "title": "Testing for Go CRUD HTTP Endpoints (Backend)",
+            "description": "Automate coverage for the HTTP handlers introduced in T3-Backend.",
             "technicalDetails": [
-                "Use httptest or supertest to cover POST/GET/PATCH/DELETE flows end-to-end against the in-memory repo.",
-                "Assert validation failures yield 400 responses with descriptive payloads.",
-                "Add tests that confirm CORS preflight responses include the expected headers."
+                "Use httptest to hit each route covering success, validation, and not-found paths.",
+                "Assert CORS headers exist on preflight + standard responses.",
+                "Add contract snapshots to ensure JSON payloads remain stable."
             ],
             "acceptanceCriteria": [
-                "CRUD handler tests cover success, validation, and not-found scenarios.",
-                "CORS tests fail if headers regress.",
+                "Handler tests fail if status codes or payloads regress.",
+                "CORS assertions guard against accidental config changes.",
                 "Coverage report shows handler files exercised."
             ],
             "storyPoints": 3,
@@ -138,69 +231,203 @@
                 "testing",
                 "go",
                 "api"
-            ]
+            ],
+            "id": "T3-BE-TEST"
         },
         {
-            "id": "T4",
-            "title": "Go Integration Surface & Docs",
-            "description": "Package the Go service with docs, configuration, and integration assets so the Next.js app can consume it confidently.",
+            "title": "Financial CRUD Client & Hooks (Frontend)",
+            "description": "Build a typed client plus React hooks that consume the Go CRUD endpoints for assets, liabilities, and cash-flow data.",
             "technicalDetails": [
-                "Produce OpenAPI (or detailed README) describing each endpoint, payload, and status code",
-                "Add sample curl/Postman collections that exercise CRUD flows",
-                "Expose environment variables (e.g., GO_SERVICE_URL) and document how the frontend configures them",
-                "Add a small integration test or smoke script that spins up the server and runs a CRUD scenario",
-                "Optional: provide Dockerfile or devcontainer for easier onboarding"
+                "Implement `lib/financial/client.ts` with functions for create/update/delete/list assets, liabilities, and cashflow.",
+                "Wrap the client in SWR/React Query hooks that manage loading/error state.",
+                "Surface toast notifications on failure and optimistic UI updates on success.",
+                "Handle 401/404/500 responses gracefully with retry guidance."
             ],
             "acceptanceCriteria": [
-                "Documentation clearly explains how to consume the service",
-                "Sample requests succeed against a running instance",
-                "Integration test/smoke script passes in CI",
-                "Frontend engineers know which env vars to set"
+                "Hooks expose status flags (isLoading, error) and typed data.",
+                "Optimistic updates rollback on server errors.",
+                "Error states show actionable messaging to the user."
             ],
-            "storyPoints": 2,
-            "difficulty": "low",
+            "storyPoints": 4,
+            "difficulty": "medium",
+            "tags": [
+                "frontend",
+                "api",
+                "react"
+            ],
+            "id": "T3-FE"
+        },
+        {
+            "title": "Testing for Financial CRUD Client & Hooks (Frontend)",
+            "description": "Add automated tests for the frontend CRUD client built in T3-Frontend.",
+            "technicalDetails": [
+                "Use MSW to mock the Go service and assert hook behavior for success/error cases.",
+                "Verify optimistic updates and rollback logic via React Testing Library.",
+                "Add snapshot/DOM tests confirming error toasts render with correct content."
+            ],
+            "acceptanceCriteria": [
+                "Tests fail if hooks stop updating state correctly.",
+                "Error-handling paths are covered for each HTTP status.",
+                "Screenshots/snapshots detect unintended UI regressions."
+            ],
+            "storyPoints": 3,
+            "difficulty": "medium",
+            "tags": [
+                "testing",
+                "frontend",
+                "react"
+            ],
+            "id": "T3-FE-TEST"
+        },
+        {
+            "title": "Go Integration Surface & Docs (Backend)",
+            "description": "Document the Go service API and deliver reusable assets for other teams and environments.",
+            "technicalDetails": [
+                "Produce OpenAPI (or detailed README) describing endpoints, payloads, and status codes.",
+                "Publish sample curl/Postman collections for CRUD flows.",
+                "Define env vars (GO_SERVICE_URL, credentials) and describe deployment knobs.",
+                "Add a Dockerfile/devcontainer for onboarding.",
+                "Provide versioning guidance for future breaking changes."
+            ],
+            "acceptanceCriteria": [
+                "Docs cover every public route with request/response examples.",
+                "Sample requests succeed against a running dev instance.",
+                "Environment configuration steps are copy/paste friendly.",
+                "Dockerfile builds and runs the service locally."
+            ],
+            "storyPoints": 3,
+            "difficulty": "medium",
             "tags": [
                 "backend",
-                "go",
                 "docs"
-            ]
+            ],
+            "id": "T4-BE"
         },
         {
-            "id": "T4-TEST",
-            "title": "Testing for Go Integration Surface & Docs",
-            "description": "Implement automated tests that fully validate Go Integration Surface & Docs (T4) before moving on to subsequent work.",
+            "title": "Testing for Go Integration Surface & Docs (Backend)",
+            "description": "Keep the backend documentation assets from T4-Backend validated.",
             "technicalDetails": [
-                "Create a smoke test script that bootstraps the server, hits documented endpoints, and validates sample responses.",
-                "Add markdown link checker or OpenAPI validation to ensure docs stay consistent.",
-                "Automate the sample curl/Postman collection via new CI job."
+                "Add a CI job that runs an OpenAPI/README link validator.",
+                "Automate the Postman collection or curl scripts to ensure they stay in sync.",
+                "Write a smoke test that boots the Docker image and exercises /health + one CRUD path."
             ],
             "acceptanceCriteria": [
-                "Smoke script fails when documented endpoint contracts change unexpectedly.",
-                "Documentation validation job runs in CI.",
-                "Developers can run provided scripts locally to reproduce the checks."
+                "CI fails if docs have broken links or outdated schemas.",
+                "Automated smoke scripts catch contract changes.",
+                "Docker smoke test proves onboarding instructions actually work."
             ],
             "storyPoints": 2,
             "difficulty": "low",
             "tags": [
                 "testing",
                 "docs"
-            ]
+            ],
+            "id": "T4-BE-TEST"
         },
         {
-            "id": "T5",
-            "title": "Financial Planning Frontend Module",
-            "description": "Create a standalone frontend module that manages financial planning state, graph UI, and persistence helpers so chat intents can plug into a single surface.",
+            "title": "Frontend Integration Playbook & Tooling",
+            "description": "Give frontend engineers a clear playbook for consuming the Go service, including examples, env guidance, and DX helpers.",
             "technicalDetails": [
-                "Locate module under features/financial-planning (or similar) with clear exports",
-                "Provide a dedicated Zustand store exposing hooks like useFinancialPlan and useNetWorthTimeline",
-                "Wrap the chosen chart lib (from T8) behind a NetWorthGraph component with loading/empty states",
-                "Include confirmation/summary formatter utilities and local persistence helpers"
+                "Extend README/frontend docs with setup instructions, architecture diagrams, and troubleshooting tips.",
+                "Provide code samples showing how to call each endpoint via the new client hooks.",
+                "Add lint rules or codemods that warn when raw fetch calls bypass the shared client.",
+                "Publish a VSCode snippet collection or devcontainer tying together Next.js + Go services."
             ],
             "acceptanceCriteria": [
-                "Module exports are tree-shakeable and documented",
-                "Dummy page/story demonstrates graph + state updates without backend coupling",
-                "Unit tests cover state transitions and formatter helpers",
-                "Chat layer can import module pieces without circular dependencies"
+                "A new engineer can follow the docs to run the stack within 10 minutes.",
+                "Examples cover CRUD, runModel, and intent workflows.",
+                "Lint/codemod protections prevent accidental misuse of the APIs."
+            ],
+            "storyPoints": 3,
+            "difficulty": "medium",
+            "tags": [
+                "frontend",
+                "docs",
+                "devex"
+            ],
+            "id": "T4-FE"
+        },
+        {
+            "title": "Testing for Frontend Integration Playbook & Tooling",
+            "description": "Validate the new frontend documentation and tooling from T4-Frontend.",
+            "technicalDetails": [
+                "Add markdown lint + spell-check to the frontend docs folder.",
+                "Automate example snippets (e.g., via unit tests) so signature drift is caught.",
+                "Create a smoke script that clones the repo, installs deps, and runs the documented dev command to ensure instructions stay accurate."
+            ],
+            "acceptanceCriteria": [
+                "Linting fails if docs fall out of compliance.",
+                "Example snippets compile as part of CI.",
+                "Smoke script alerts maintainers when onboarding steps break."
+            ],
+            "storyPoints": 2,
+            "difficulty": "low",
+            "tags": [
+                "testing",
+                "docs",
+                "frontend"
+            ],
+            "id": "T4-FE-TEST"
+        },
+        {
+            "title": "Financial Plan Aggregation API (Backend)",
+            "description": "Expose a Next.js API route that consolidates data from the Go service (assets, liabilities, cashflow) into a single payload for the frontend module.",
+            "technicalDetails": [
+                "Create `/api/financial-plan` that calls the Go CRUD endpoints and merges results with default templates.",
+                "Add caching/invalidation so multiple UI consumers reuse the same data.",
+                "Validate the aggregated payload against shared TypeScript schemas before responding.",
+                "Provide feature flags to return mock data when the Go service is unavailable."
+            ],
+            "acceptanceCriteria": [
+                "Route returns consolidated assets/liabilities/cashflow in one round trip.",
+                "Errors from the Go service surface as structured 5xx/4xx responses with remediation guidance.",
+                "Mock-mode flag allows frontend work without the Go backend running."
+            ],
+            "storyPoints": 5,
+            "difficulty": "medium",
+            "tags": [
+                "backend",
+                "node",
+                "api"
+            ],
+            "id": "T5-BE"
+        },
+        {
+            "title": "Testing for Financial Plan Aggregation API (Backend)",
+            "description": "Add coverage for the aggregator built in T5-Backend.",
+            "technicalDetails": [
+                "Mock Go service responses (success + failures) to ensure the aggregator handles each case.",
+                "Verify caching headers/behavior using integration tests in Next.js.",
+                "Test the mock-data flag to confirm the route downgrades gracefully when the backend is offline."
+            ],
+            "acceptanceCriteria": [
+                "Tests fail if aggregation logic drops or duplicates records.",
+                "Caching assertions guard against accidental regressions.",
+                "Mock-mode behavior remains stable across releases."
+            ],
+            "storyPoints": 3,
+            "difficulty": "medium",
+            "tags": [
+                "testing",
+                "node",
+                "api"
+            ],
+            "id": "T5-BE-TEST"
+        },
+        {
+            "title": "Financial Planning Frontend Module (Frontend)",
+            "description": "Create a standalone module that manages financial planning state, graph UI, and persistence helpers so chat intents plug into a single surface.",
+            "technicalDetails": [
+                "Locate module under `features/financial-planning` with barrel exports.",
+                "Provide a dedicated Zustand store with hooks like `useFinancialPlan` and `useNetWorthTimeline`.",
+                "Wrap the chosen chart lib behind a `NetWorthGraph` component with loading/empty states.",
+                "Include confirmation/summary formatter utilities and local persistence helpers."
+            ],
+            "acceptanceCriteria": [
+                "Module exports are tree-shakeable and documented.",
+                "A demo page shows graph + state updates without backend coupling.",
+                "Unit tests cover state transitions and formatter helpers.",
+                "Chat layer can import module pieces without circular dependencies."
             ],
             "storyPoints": 8,
             "difficulty": "high",
@@ -208,21 +435,21 @@
                 "frontend",
                 "architecture",
                 "state"
-            ]
+            ],
+            "id": "T5-FE"
         },
         {
-            "id": "T5-TEST",
             "title": "Testing for Financial Planning Frontend Module",
-            "description": "Implement automated tests that fully validate Financial Planning Frontend Module (T5) before moving on to subsequent work.",
+            "description": "Guard the new frontend module from T5-Frontend with automated tests.",
             "technicalDetails": [
-                "Add Jest/Vitest unit tests for the Zustand store: selectors, actions, and default state.",
-                "Use React Testing Library to mount NetWorthGraph with mock data and assert loading/empty states.",
-                "Introduce Storybook interaction or Chromatic snapshots to guard visual regressions."
+                "Add Jest/Vitest unit tests for the Zustand store actions/selectors.",
+                "Use React Testing Library to validate NetWorthGraph empty/loading/data states.",
+                "Capture Storybook/Chromatic snapshots for critical scenarios."
             ],
             "acceptanceCriteria": [
                 "Store tests fail if action/state contracts change unexpectedly.",
-                "Graph tests confirm renders for empty and populated timelines.",
-                "Visual regression job reports baseline for the module."
+                "Graph tests confirm correct rendering for representative datasets.",
+                "Visual regression suite reports baseline drifts."
             ],
             "storyPoints": 3,
             "difficulty": "medium",
@@ -230,22 +457,22 @@
                 "testing",
                 "frontend",
                 "state"
-            ]
+            ],
+            "id": "T5-FE-TEST"
         },
         {
-            "id": "T6",
-            "title": "Define Financial Data Model and Computation Engine",
-            "description": "Implement a lightweight financial projection engine and data types for assets, liabilities, and yearly net worth growth. Include a computeNetWorth() function to generate projections until retirement.",
+            "title": "Financial Projection Engine (Backend)",
+            "description": "Implement the computeNetWorth() engine that projects assets/liabilities with monthly cash-flow until retirement.",
             "technicalDetails": [
-                "Define interfaces: Asset, Liability, NetWorthPoint, MonthlyCashFlow (income vs. expense)",
-                "Implement computeNetWorth(assets, liabilities, monthlyCashFlow, yearsUntilRetirement)",
-                "Calculate compound growth for each asset/liability and incorporate net monthly income (income - expenses) into yearly projections",
-                "Load default financial assumptions (growth rates, retirement horizon, etc.) from a JSON config"
+                "Define interfaces for Asset, Liability, NetWorthPoint, MonthlyCashFlow (income vs. expense).",
+                "Implement `computeNetWorth(assets, liabilities, monthlyCashFlow, yearsUntilRetirement)` with compound growth + amortization.",
+                "Load default financial assumptions (growth rates, inflation, retirement horizon) from JSON config.",
+                "Ensure the function can run on the server (Node/Edge) without DOM dependencies."
             ],
             "acceptanceCriteria": [
-                "Function tested with mock data",
-                "Returns consistent projections per year that reflect monthly cash-flow contributions",
-                "Unit tests validate results"
+                "Function returns deterministic yearly projections for provided fixtures.",
+                "Handles empty assets/liabilities gracefully.",
+                "Unit tests validate multiple growth scenarios and cash-flow deltas."
             ],
             "storyPoints": 5,
             "difficulty": "medium",
@@ -253,44 +480,88 @@
                 "backend",
                 "model",
                 "typescript"
-            ]
+            ],
+            "id": "T6-BE"
         },
         {
-            "id": "T6-TEST",
-            "title": "Testing for Define Financial Data Model and Computation Engine",
-            "description": "Implement automated tests that fully validate Define Financial Data Model and Computation Engine (T6) before moving on to subsequent work.",
+            "title": "Testing for Financial Projection Engine (Backend)",
+            "description": "Add coverage for the compute engine from T6-Backend.",
             "technicalDetails": [
-                "Write unit tests for computeNetWorth covering positive, negative, and zero monthly cash-flow scenarios.",
-                "Load fixture assumptions from JSON to keep projections deterministic.",
-                "Add boundary tests for very short and very long retirement horizons."
+                "Write unit tests for positive/negative cash-flow cases using fixture JSON.",
+                "Add boundary tests for varying retirement horizons and zero-growth assets.",
+                "Measure floating-point drift and assert acceptable tolerances."
             ],
             "acceptanceCriteria": [
                 "Test suite demonstrates accurate projections for multiple scenarios.",
                 "Edge-case tests prevent regressions when inputs are empty.",
-                "Coverage includes branches for liabilities exceeding assets."
+                "Coverage includes branches where liabilities exceed assets."
             ],
             "storyPoints": 2,
             "difficulty": "low",
             "tags": [
                 "testing",
                 "typescript"
-            ]
+            ],
+            "id": "T6-BE-TEST"
         },
         {
-            "id": "T7",
-            "title": "Implement API Endpoint /api/runModel",
-            "description": "Create backend endpoint to compute and return net worth projections based on current assets and liabilities.",
+            "title": "Computation Adapters & State Wiring (Frontend)",
+            "description": "Consume computeNetWorth() output on the client, wiring it into Zustand state and graph selectors.",
             "technicalDetails": [
-                "POST /api/runModel",
-                "Input: { assets: Asset[], liabilities: Liability[], monthlyIncome: number, monthlyExpenses: number, retirementYear: number }",
-                "Output: { netWorthTimeline: NetWorthPoint[] }",
-                "Mock computation allowed for MVP"
+                "Create adapters that convert `NetWorthPoint[]` into chart-friendly structures.",
+                "Expose selectors/hooks (`useNetWorthProjection`) that memoize projections per asset/liability change.",
+                "Handle loading/error states when projections are recomputed.",
+                "Ensure the adapters can swap between local computation and backend-provided timelines."
             ],
             "acceptanceCriteria": [
-                "Returns valid projection data for frontend graph",
-                "Responds quickly under typical loads (no hard SLA yet)",
-                "Handles missing/invalid values gracefully",
-                "Includes unit tests covering happy-path and validation failures"
+                "Selectors recompute projections only when dependencies change.",
+                "Graph receives properly formatted datasets even before backend responses arrive.",
+                "Fallback to cached projections when computeNetWorth encounters errors."
+            ],
+            "storyPoints": 4,
+            "difficulty": "medium",
+            "tags": [
+                "frontend",
+                "state",
+                "performance"
+            ],
+            "id": "T6-FE"
+        },
+        {
+            "title": "Testing for Computation Adapters & State Wiring (Frontend)",
+            "description": "Automate tests for the frontend adapters introduced in T6-Frontend.",
+            "technicalDetails": [
+                "Use Vitest to assert selectors only recompute when relevant slices change (with jest.spyOn).",
+                "Mock computeNetWorth results to validate formatting and fallback behavior.",
+                "Add performance regression tests (React Profiler snapshots) to track render counts."
+            ],
+            "acceptanceCriteria": [
+                "Tests fail when selectors recompute unnecessarily.",
+                "Formatting tests cover empty, partial, and full datasets.",
+                "Profiler baselines catch future performance regressions."
+            ],
+            "storyPoints": 2,
+            "difficulty": "low",
+            "tags": [
+                "testing",
+                "frontend",
+                "state"
+            ],
+            "id": "T6-FE-TEST"
+        },
+        {
+            "title": "Next.js /api/runModel Endpoint (Backend)",
+            "description": "Create the backend endpoint that invokes the projection engine and returns net-worth timelines.",
+            "technicalDetails": [
+                "Implement POST `/api/runModel` accepting assets, liabilities, monthly income/expenses, and retirementYear.",
+                "Validate payloads and normalize missing values.",
+                "Call computeNetWorth and return `{ netWorthTimeline: NetWorthPoint[] }`.",
+                "Log timing/usage metrics for observability."
+            ],
+            "acceptanceCriteria": [
+                "Endpoint returns valid projection data for the frontend graph.",
+                "Responds quickly under typical loads (no hard SLA yet).",
+                "Handles missing/invalid values gracefully with 4xx errors."
             ],
             "storyPoints": 3,
             "difficulty": "low",
@@ -298,44 +569,133 @@
                 "backend",
                 "api",
                 "node"
-            ]
+            ],
+            "id": "T7-BE"
         },
         {
-            "id": "T7-TEST",
-            "title": "Testing for Implement API Endpoint /api/runModel",
-            "description": "Implement automated tests that fully validate Implement API Endpoint /api/runModel (T7) before moving on to subsequent work.",
+            "title": "Testing for /api/runModel Endpoint (Backend)",
+            "description": "Ensure the runModel endpoint is thoroughly tested before shipping.",
             "technicalDetails": [
-                "Use Next.js route testing utilities or supertest to POST payloads into /api/runModel and assert responses.",
-                "Mock computeNetWorth to verify error handling for invalid inputs.",
-                "Add contract tests ensuring monthly income/expense fields are forwarded correctly."
+                "Use Next.js route test helpers or supertest to POST payloads and assert responses.",
+                "Mock computeNetWorth to test validation failures and error propagation.",
+                "Add contract tests verifying monthly income/expense values reach the engine intact."
             ],
             "acceptanceCriteria": [
-                "/api/runModel tests cover success plus validation failures.",
-                "Mocks assert the handler invokes computeNetWorth with expected data.",
-                "Tests are required to pass before deploying the endpoint."
+                "Tests cover success, validation, and internal-error paths.",
+                "Mocks assert computeNetWorth is invoked with expected data.",
+                "CI blocks merges when the endpoint tests fail."
             ],
             "storyPoints": 2,
             "difficulty": "low",
             "tags": [
                 "testing",
-                "node"
-            ]
+                "node",
+                "api"
+            ],
+            "id": "T7-BE-TEST"
         },
         {
-            "id": "T8",
-            "title": "Build Net Worth Graph Component",
-            "description": "Render a time-series graph showing net worth over time. Graph should update dynamically when projection data changes.",
+            "title": "Client Integration with /api/runModel (Frontend)",
+            "description": "Wire the frontend dispatcher to call /api/runModel and manage optimistic UI updates.",
             "technicalDetails": [
-                "Use Recharts as the initial charting library (swap-friendly)",
-                "Input: NetWorthPoint[]",
-                "Add smooth transitions and tooltips",
-                "Responsive layout for desktop/mobile"
+                "Create a typed client function for POST /api/runModel with retry/backoff.",
+                "Update the Zustand store to store pending/projection states.",
+                "Display loading indicators or skeletons while projections recompute.",
+                "Surface toast or inline errors when the endpoint rejects."
             ],
             "acceptanceCriteria": [
-                "Graph renders correctly on load",
-                "Updates smoothly on data change",
-                "Responsive and mobile-safe",
-                "Story/visual-regression or unit tests verify rendering and interaction states"
+                "Chat/UX flows trigger the endpoint after every financial change.",
+                "UI reflects loading and error states without freezing.",
+                "Failed requests keep the previous projection intact with user messaging."
+            ],
+            "storyPoints": 4,
+            "difficulty": "medium",
+            "tags": [
+                "frontend",
+                "api",
+                "state"
+            ],
+            "id": "T7-FE"
+        },
+        {
+            "title": "Testing for Client Integration with /api/runModel (Frontend)",
+            "description": "Add tests covering the frontend integration built in T7-Frontend.",
+            "technicalDetails": [
+                "Mock /api/runModel with MSW to simulate success, 4xx, and 5xx responses.",
+                "Assert Zustand store state transitions using unit tests.",
+                "Use React Testing Library to verify loading/error UI states."
+            ],
+            "acceptanceCriteria": [
+                "Tests fail if the client stops calling /api/runModel with correct payloads.",
+                "Store state snapshots cover pending, success, and failure paths.",
+                "UI tests confirm loading indicators show/hide appropriately."
+            ],
+            "storyPoints": 3,
+            "difficulty": "medium",
+            "tags": [
+                "testing",
+                "frontend",
+                "api"
+            ],
+            "id": "T7-FE-TEST"
+        },
+        {
+            "title": "Net-Worth Timeline Formatter Service (Backend)",
+            "description": "Provide a backend utility that normalizes raw projection data into chart-ready buckets (currency formatting, sorting, gap-filling).",
+            "technicalDetails": [
+                "Implement a formatter that sorts NetWorthPoint entries, fills missing years, and enforces currency precision.",
+                "Expose the formatter via the aggregation API so all clients share the same logic.",
+                "Support toggling between annual/monthly views based on query params.",
+                "Handle locale-aware currency symbols before data reaches the frontend."
+            ],
+            "acceptanceCriteria": [
+                "Formatter outputs chronological, gap-free timelines.",
+                "Switching to monthly view densifies the dataset correctly.",
+                "Currency formatting matches locale settings supplied in the request."
+            ],
+            "storyPoints": 4,
+            "difficulty": "medium",
+            "tags": [
+                "backend",
+                "data",
+                "formatting"
+            ],
+            "id": "T8-BE"
+        },
+        {
+            "title": "Testing for Net-Worth Timeline Formatter (Backend)",
+            "description": "Cover the formatter introduced in T8-Backend.",
+            "technicalDetails": [
+                "Write unit tests for chronological sorting, gap-filling, and currency rounding.",
+                "Add regression tests for monthly vs annual view conversions.",
+                "Validate locale overrides using fixture inputs."
+            ],
+            "acceptanceCriteria": [
+                "Tests catch misordered timelines or missing points.",
+                "Currency rounding errors trigger failures.",
+                "Monthly/annual toggle tests guard against regressions."
+            ],
+            "storyPoints": 2,
+            "difficulty": "low",
+            "tags": [
+                "testing",
+                "data"
+            ],
+            "id": "T8-BE-TEST"
+        },
+        {
+            "title": "Net Worth Graph Component (Frontend)",
+            "description": "Render a time-series graph showing net worth over time with smooth updates.",
+            "technicalDetails": [
+                "Use Recharts as the initial charting library (swap-friendly).",
+                "Accept `NetWorthPoint[]` input plus loading/empty states.",
+                "Add transitions/tooltips and ensure responsiveness for desktop/mobile.",
+                "Support toggling between annual and monthly views."
+            ],
+            "acceptanceCriteria": [
+                "Graph renders correctly on load.",
+                "Updates smoothly on data change.",
+                "Responsive and mobile-safe with accessible tooltips."
             ],
             "storyPoints": 3,
             "difficulty": "low",
@@ -343,21 +703,21 @@
                 "frontend",
                 "visualization",
                 "react"
-            ]
+            ],
+            "id": "T8-FE"
         },
         {
-            "id": "T8-TEST",
-            "title": "Testing for Build Net Worth Graph Component",
-            "description": "Implement automated tests that fully validate Build Net Worth Graph Component (T8) before moving on to subsequent work.",
+            "title": "Testing for Net Worth Graph Component (Frontend)",
+            "description": "Automate coverage for the graph from T8-Frontend.",
             "technicalDetails": [
-                "Create component tests with React Testing Library that feed sample NetWorthPoint arrays and assert axis labels and tooltips.",
-                "Add visual-regression or screenshot tests (Chromatic/Storybook) for light/dark themes.",
-                "Verify responsiveness via jest-dom by simulating container size changes."
+                "Use React Testing Library to feed mock datasets and assert axis/tooltip output.",
+                "Add screenshot/visual regression tests for light/dark themes.",
+                "Test responsiveness via container-resize simulations."
             ],
             "acceptanceCriteria": [
-                "Graph tests fail if props are not rendered correctly.",
-                "Visual baselines exist for core breakpoints.",
-                "Tooltip logic is asserted through tests."
+                "Graph tests fail if props stop rendering.",
+                "Visual baselines exist for key breakpoints.",
+                "Tooltip behavior is verified across data points."
             ],
             "storyPoints": 2,
             "difficulty": "low",
@@ -365,28 +725,22 @@
                 "testing",
                 "frontend",
                 "visualization"
-            ]
+            ],
+            "id": "T8-FE-TEST"
         },
         {
-            "id": "T9",
-            "title": "Backend Intent Parser for Financial Commands",
-            "description": "Parse chat messages into structured financial actions. Translate user text into standardized JSON commands.",
+            "title": "Backend Intent Parser for Financial Commands (Backend)",
+            "description": "Parse chat text into structured financial actions server-side.",
             "technicalDetails": [
-                "POST /api/intent endpoint",
-                "Input: { message: string }",
-                "Output: { action: string, params: object }",
-                "Regex parser for verbs: add, increase, reduce, remove (support chained instructions)",
-                "Identify targets: asset, liability, net worth"
-            ],
-            "examples": [
-                "Input: 'Add $10,000 to my stocks' \u2192 Output: {action:'updateAsset',params:{name:'stocks',delta:10000}}",
-                "Input: 'Reduce mortgage by $20,000' \u2192 Output: {action:'updateLiability',params:{name:'mortgage',delta:-20000}}"
+                "Expose POST /api/intent accepting `{ message: string }`.",
+                "Support verbs add/increase/reduce/remove (case-insensitive) and chained instructions.",
+                "Return normalized actions plus params (entity, delta, currency).",
+                "Log structured intents for debugging/auditing."
             ],
             "acceptanceCriteria": [
-                "Supports at least add, reduce, remove verbs",
-                "Handles upper/lowercase",
-                "Logs structured intent for debugging",
-                "Parser unit tests cover verbs, chaining, and error cases"
+                "Parser supports add/reduce/remove verbs with chaining.",
+                "Handles uppercase/lowercase and minor typos (configurable).",
+                "Logs structured intent payloads."
             ],
             "storyPoints": 5,
             "difficulty": "medium",
@@ -394,19 +748,19 @@
                 "backend",
                 "nlp",
                 "intent"
-            ]
+            ],
+            "id": "T9-BE"
         },
         {
-            "id": "T9-TEST",
-            "title": "Testing for Backend Intent Parser for Financial Commands",
-            "description": "Implement automated tests that fully validate Backend Intent Parser for Financial Commands (T9) before moving on to subsequent work.",
+            "title": "Testing for Backend Intent Parser",
+            "description": "Cover the parser from T9-Backend with automated tests.",
             "technicalDetails": [
-                "Author parser unit tests with fixtures for add/reduce/remove verbs, uppercase, and chained commands.",
-                "Include negative tests for unsupported verbs and malformed currency strings.",
-                "Add lightweight fuzz/corpus tests to guard regex changes."
+                "Author fixtures covering verbs, chained instructions, and invalid phrases.",
+                "Add negative tests for unsupported commands or malformed amounts.",
+                "Include fuzz/corpus tests to guard regex/tokenizer changes."
             ],
             "acceptanceCriteria": [
-                "All documented examples are codified as tests.",
+                "All documented examples exist as tests.",
                 "Parser rejects unsupported commands with clear errors.",
                 "Coverage captures branching for chained intents."
             ],
@@ -415,23 +769,112 @@
             "tags": [
                 "testing",
                 "nlp"
-            ]
+            ],
+            "id": "T9-BE-TEST"
         },
         {
-            "id": "T10",
-            "title": "Frontend Action Dispatcher",
-            "description": "Handle parsed intent responses by updating frontend state and triggering recomputation of projections.",
+            "title": "Intent UX & Diagnostics (Frontend)",
+            "description": "Visualize and manage parser outputs on the frontend so users understand applied actions.",
             "technicalDetails": [
-                "Implement handleChatAction(intentJSON)",
-                "Actions: updateAsset, updateLiability, updateMonthlyIncome, updateMonthlyExpenses, etc.",
-                "Trigger /api/runModel after each update",
-                "Integrate with the shared Zustand financial state store"
+                "Display the structured intent summary in the chat transcript (entity, delta, status).",
+                "Provide a diagnostics panel showing raw parser output for debugging.",
+                "Allow users to confirm/cancel parsed actions before dispatching.",
+                "Log client-side errors if parser payloads look malformed."
             ],
             "acceptanceCriteria": [
-                "Chat command 'Add $5,000 to stocks' updates UI and graph",
-                "Changes reflect immediately without reload",
-                "Handles invalid or duplicate entities gracefully",
-                "Unit/integration tests simulate intent payloads and verify state + API calls"
+                "Users can review parsed actions before they mutate state.",
+                "Diagnostics panel helps QA compare text vs structured output.",
+                "Malformed parser payloads surface actionable UI errors."
+            ],
+            "storyPoints": 4,
+            "difficulty": "medium",
+            "tags": [
+                "frontend",
+                "chat",
+                "intent"
+            ],
+            "id": "T9-FE"
+        },
+        {
+            "title": "Testing for Intent UX & Diagnostics (Frontend)",
+            "description": "Automate coverage for the frontend intent experience from T9-Frontend.",
+            "technicalDetails": [
+                "Simulate parser payloads via Storybook stories/tests and assert UI summaries.",
+                "Write RTL tests ensuring confirm/cancel flows call the right callbacks.",
+                "Add visual regression tests for the diagnostics panel."
+            ],
+            "acceptanceCriteria": [
+                "Tests fail if intents stop rendering correctly.",
+                "Confirm/cancel flows are fully covered.",
+                "Diagnostics panel snapshots catch layout regressions."
+            ],
+            "storyPoints": 3,
+            "difficulty": "medium",
+            "tags": [
+                "testing",
+                "frontend",
+                "chat"
+            ],
+            "id": "T9-FE-TEST"
+        },
+        {
+            "title": "Action Persistence & Audit Trail (Backend)",
+            "description": "Persist every financial action coming from chat/intent so backend state and audits stay in sync.",
+            "technicalDetails": [
+                "Add a Go endpoint (or Next.js server action) that records `ActionEvent { intentId, entity, delta, userId, timestamp }`.",
+                "Persist events in Postgres/SQLite (or extend existing DB).",
+                "Expose a read API for recent actions so the frontend can reconcile state.",
+                "Ensure idempotency via intentId to avoid duplicate writes."
+            ],
+            "acceptanceCriteria": [
+                "Each dispatched action is recorded exactly once.",
+                "Read API returns events ordered by timestamp.",
+                "Audit trail survives server restarts."
+            ],
+            "storyPoints": 5,
+            "difficulty": "medium",
+            "tags": [
+                "backend",
+                "persistence",
+                "audit"
+            ],
+            "id": "T10-BE"
+        },
+        {
+            "title": "Testing for Action Persistence & Audit (Backend)",
+            "description": "Add tests for the audit service from T10-Backend.",
+            "technicalDetails": [
+                "Unit-test idempotency logic using duplicate intent IDs.",
+                "Integration tests run against a test DB to verify inserts/queries.",
+                "Simulate DB failures to confirm error handling path returns 5xx."
+            ],
+            "acceptanceCriteria": [
+                "Tests guarantee no duplicate audit entries.",
+                "Query tests verify ordering and filtering.",
+                "Failure-path tests ensure proper HTTP responses/logging."
+            ],
+            "storyPoints": 3,
+            "difficulty": "medium",
+            "tags": [
+                "testing",
+                "backend",
+                "db"
+            ],
+            "id": "T10-BE-TEST"
+        },
+        {
+            "title": "Frontend Action Dispatcher (Frontend)",
+            "description": "Handle parsed intent responses by updating frontend state and triggering recomputation of projections.",
+            "technicalDetails": [
+                "Implement `handleChatAction(intentJSON)` with actions updateAsset/updateLiability/updateMonthlyIncome/updateMonthlyExpenses.",
+                "Trigger /api/runModel after each update and sync Zustand state.",
+                "Handle invalid or duplicate entities gracefully.",
+                "Emit events to the audit endpoint when actions succeed."
+            ],
+            "acceptanceCriteria": [
+                "Chat command 'Add $5,000 to stocks' updates UI and graph.",
+                "Changes reflect immediately without reload.",
+                "Handles invalid/duplicate entities gracefully with user feedback."
             ],
             "storyPoints": 5,
             "difficulty": "medium",
@@ -439,21 +882,21 @@
                 "frontend",
                 "state",
                 "integration"
-            ]
+            ],
+            "id": "T10-FE"
         },
         {
-            "id": "T10-TEST",
             "title": "Testing for Frontend Action Dispatcher",
-            "description": "Implement automated tests that fully validate Frontend Action Dispatcher (T10) before moving on to subsequent work.",
+            "description": "Automate coverage for the dispatcher built in T10-Frontend.",
             "technicalDetails": [
-                "Mock the /api/runModel endpoint with MSW and verify handleChatAction sends correct payloads.",
-                "Test Zustand integration to ensure state mutates as expected per intent.",
-                "Add regression tests for duplicate or invalid entity handling."
+                "Mock intent payloads and assert Zustand state mutations.",
+                "Use MSW to confirm /api/runModel and audit endpoints are invoked with correct payloads.",
+                "Test invalid/duplicate entity flows to ensure user messaging fires."
             ],
             "acceptanceCriteria": [
-                "Dispatcher tests cover success and error responses.",
-                "State snapshots confirm assets/liabilities update correctly.",
-                "Test suite guards against duplicate entity regressions."
+                "Dispatcher tests fail if API calls change or state updates regress.",
+                "Error scenarios are fully covered.",
+                "Audit emission is verified via mocks."
             ],
             "storyPoints": 3,
             "difficulty": "medium",
@@ -461,22 +904,66 @@
                 "testing",
                 "frontend",
                 "state"
-            ]
+            ],
+            "id": "T10-FE-TEST"
         },
         {
-            "id": "T11",
-            "title": "Sync Graph with Financial State",
-            "description": "Ensure the graph automatically re-renders whenever assets or liabilities are changed through chat or UI.",
+            "title": "State Change Event Stream (Backend)",
+            "description": "Provide SSE/websocket endpoints that push asset/liability updates to clients so graphs stay synchronized.",
             "technicalDetails": [
-                "Reactively recompute projections on state change",
-                "Use Zustand selectors to avoid redundant renders",
-                "Animate updates for smooth transitions"
+                "Implement `/api/events` emitting state changes whenever assets/liabilities update in the Go service.",
+                "Include debouncing/backpressure to avoid floods.",
+                "Authenticate streams via session tokens.",
+                "Persist cursor/last-event IDs so clients can resume after reconnects."
             ],
             "acceptanceCriteria": [
-                "Manual or chat-driven updates trigger graph refresh",
-                "Graph transitions are smooth and accurate",
-                "No duplicate renders or race conditions",
-                "Component tests confirm selectors prevent redundant renders"
+                "Frontend can subscribe and receive updates within 1s of backend changes.",
+                "Reconnections resume without losing events.",
+                "Unauthorized clients are rejected."
+            ],
+            "storyPoints": 5,
+            "difficulty": "medium",
+            "tags": [
+                "backend",
+                "realtime"
+            ],
+            "id": "T11-BE"
+        },
+        {
+            "title": "Testing for State Change Event Stream (Backend)",
+            "description": "Test the realtime endpoints from T11-Backend.",
+            "technicalDetails": [
+                "Simulate SSE/websocket clients in Go tests to assert message ordering.",
+                "Add load tests verifying debouncing/backpressure logic.",
+                "Test reconnection/resume flows with stored cursor IDs."
+            ],
+            "acceptanceCriteria": [
+                "Tests guarantee ordering and delivery semantics.",
+                "Backpressure tests fail when limits regress.",
+                "Resume tests ensure clients can recover from disconnects."
+            ],
+            "storyPoints": 3,
+            "difficulty": "medium",
+            "tags": [
+                "testing",
+                "backend",
+                "realtime"
+            ],
+            "id": "T11-BE-TEST"
+        },
+        {
+            "title": "Sync Graph with Financial State (Frontend)",
+            "description": "Ensure the graph re-renders whenever assets or liabilities change via chat or UI.",
+            "technicalDetails": [
+                "Reactively recompute projections on state change.",
+                "Use Zustand selectors to avoid redundant renders.",
+                "Animate updates for smooth transitions.",
+                "Subscribe to backend event stream for real-time updates."
+            ],
+            "acceptanceCriteria": [
+                "Manual or chat-driven updates trigger graph refresh.",
+                "Graph transitions are smooth and accurate.",
+                "No duplicate renders or race conditions."
             ],
             "storyPoints": 3,
             "difficulty": "low",
@@ -484,21 +971,21 @@
                 "frontend",
                 "reactivity",
                 "state"
-            ]
+            ],
+            "id": "T11-FE"
         },
         {
-            "id": "T11-TEST",
-            "title": "Testing for Sync Graph with Financial State",
-            "description": "Implement automated tests that fully validate Sync Graph with Financial State (T11) before moving on to subsequent work.",
+            "title": "Testing for Sync Graph with Financial State (Frontend)",
+            "description": "Test the frontend synchronization logic from T11-Frontend.",
             "technicalDetails": [
-                "Instrument React Testing Library tests to measure render counts when store updates and ensure selectors prevent extra renders.",
-                "Simulate manual UI and chat-driven updates to verify graph refresh pipeline.",
-                "Add performance snapshot tests (using React Profiler) to catch future regressions."
+                "Instrument RTL tests to measure render counts when Zustand state updates.",
+                "Mock the SSE stream to ensure UI responds to backend pushes.",
+                "Add performance thresholds (e.g., React Profiler) to prevent regressions."
             ],
             "acceptanceCriteria": [
-                "Tests fail if graph renders more times than expected for a single state change.",
-                "Manual/chat simulations both trigger net-worth recompute in tests.",
-                "Profiler output captured for baseline reference."
+                "Tests fail if graph renders more times than expected per update.",
+                "SSE mocks prove UI refreshes on backend events.",
+                "Profiler baselines stored for future comparison."
             ],
             "storyPoints": 2,
             "difficulty": "low",
@@ -506,22 +993,65 @@
                 "testing",
                 "frontend",
                 "reactivity"
-            ]
+            ],
+            "id": "T11-FE-TEST"
         },
         {
-            "id": "T12",
-            "title": "Confirmation Feedback to Chat",
-            "description": "After executing a financial change, return a summary message to the chat confirming the action and its result.",
+            "title": "Net-Worth Delta Service (Backend)",
+            "description": "Compute delta vs previous projections so confirmations show accurate gains/losses.",
             "technicalDetails": [
-                "Calculate delta vs. previous net worth",
-                "Format message: '\u2705 Updated Stocks by +$5,000. New projection: $1.25M (+$30k)'",
-                "Send message back via chat callback or event bus"
+                "Store last computed net-worth timeline per user in the Go service.",
+                "Implement a delta calculator returning absolute and percentage changes.",
+                "Expose endpoint `/api/networth-delta` consumed after runModel completes.",
+                "Handle rounding/currency formatting server-side."
             ],
             "acceptanceCriteria": [
-                "User receives confirmation of every update",
-                "Includes updated net worth and change delta",
-                "Handles multiple updates sequentially",
-                "Unit tests verify formatter output across positive/negative deltas"
+                "Delta API returns baseline and delta for every request.",
+                "Handles sequential updates quickly without stale reads.",
+                "Gracefully falls back when no prior projection exists."
+            ],
+            "storyPoints": 4,
+            "difficulty": "medium",
+            "tags": [
+                "backend",
+                "math"
+            ],
+            "id": "T12-BE"
+        },
+        {
+            "title": "Testing for Net-Worth Delta Service (Backend)",
+            "description": "Automate tests for the delta service from T12-Backend.",
+            "technicalDetails": [
+                "Write unit tests comparing previous vs new projections for positive/negative/zero deltas.",
+                "Test absence of baseline to ensure fallback messaging.",
+                "Validate currency rounding with multiple locales."
+            ],
+            "acceptanceCriteria": [
+                "Tests pin expected delta outputs for representative fixtures.",
+                "No-baseline scenarios return default responses.",
+                "Locale/rounding tests guard against formatting regressions."
+            ],
+            "storyPoints": 2,
+            "difficulty": "low",
+            "tags": [
+                "testing",
+                "backend"
+            ],
+            "id": "T12-BE-TEST"
+        },
+        {
+            "title": "Confirmation Feedback to Chat (Frontend)",
+            "description": "After executing a change, show a summary message confirming the action and delta.",
+            "technicalDetails": [
+                "Calculate delta vs previous net worth and format friendly messages (\u2705 Updated Stocks...).",
+                "Send confirmation back via chat callback/event bus.",
+                "Queue multiple confirmations sequentially.",
+                "Include links/buttons to undo when possible."
+            ],
+            "acceptanceCriteria": [
+                "User receives confirmation of every update.",
+                "Message includes updated net worth and change delta.",
+                "Handles multiple updates sequentially."
             ],
             "storyPoints": 2,
             "difficulty": "low",
@@ -529,21 +1059,21 @@
                 "frontend",
                 "chat",
                 "feedback"
-            ]
+            ],
+            "id": "T12-FE"
         },
         {
-            "id": "T12-TEST",
-            "title": "Testing for Confirmation Feedback to Chat",
-            "description": "Implement automated tests that fully validate Confirmation Feedback to Chat (T12) before moving on to subsequent work.",
+            "title": "Testing for Confirmation Feedback to Chat (Frontend)",
+            "description": "Cover the confirmation flow from T12-Frontend with automated tests.",
             "technicalDetails": [
-                "Unit-test the confirmation formatter for positive, negative, and zero deltas with currency formatting.",
-                "Add snapshot tests for chat confirmation components.",
-                "Verify sequential updates enqueue unique confirmation messages."
+                "Unit-test the formatter for positive/negative/zero deltas.",
+                "Add snapshot tests for the chat confirmation component.",
+                "Simulate sequential updates to ensure queue ordering."
             ],
             "acceptanceCriteria": [
-                "Formatter tests pin expected strings for multiple deltas.",
-                "Snapshots catch unintended copy changes.",
-                "Sequential update test proves queue ordering."
+                "Formatter tests pin expected copy.",
+                "Snapshots detect unintended UI changes.",
+                "Sequential update tests ensure ordering is maintained."
             ],
             "storyPoints": 1,
             "difficulty": "low",
@@ -551,22 +1081,67 @@
                 "testing",
                 "frontend",
                 "chat"
-            ]
+            ],
+            "id": "T12-FE-TEST"
         },
         {
-            "id": "T13",
-            "title": "Persist Financial State Locally",
-            "description": "Store user's assets, liabilities, monthly cash-flow, and last computed net worth timeline locally to survive page reloads.",
+            "title": "Remote Financial State Persistence (Backend)",
+            "description": "Persist users' assets, liabilities, and projections in the Go backend so state survives across devices.",
             "technicalDetails": [
-                "Use localStorage or IndexedDB",
-                "Persist assets, liabilities, monthly cashflow, and projections",
-                "Provide reset option to clear data"
+                "Extend the Go repository to store per-user snapshots with timestamps.",
+                "Provide CRUD APIs for fetching/saving the latest snapshot.",
+                "Implement retention + archival policies (e.g., keep last N snapshots).",
+                "Lock down access control so users only read/write their data."
             ],
             "acceptanceCriteria": [
-                "State reloads correctly after refresh",
-                "No loss of data on page reload",
-                "Reset clears all stored data",
-                "Persistence tests confirm serialization/deserialization integrity"
+                "Snapshots survive server restarts and can be restored on login.",
+                "Retention policy prevents unbounded storage growth.",
+                "ACL checks block cross-user access."
+            ],
+            "storyPoints": 4,
+            "difficulty": "medium",
+            "tags": [
+                "backend",
+                "storage",
+                "security"
+            ],
+            "id": "T13-BE"
+        },
+        {
+            "title": "Testing for Remote Financial State Persistence (Backend)",
+            "description": "Test the persistence layer from T13-Backend.",
+            "technicalDetails": [
+                "Integration tests cover snapshot create/read/update/delete operations.",
+                "Simulate concurrent saves to ensure last-write-wins semantics.",
+                "Add security tests verifying users cannot access other users' snapshots."
+            ],
+            "acceptanceCriteria": [
+                "Persistence tests fail if data is lost or mis-ordered.",
+                "Concurrency tests verify deterministic outcomes.",
+                "Security tests guard against privilege escalation."
+            ],
+            "storyPoints": 3,
+            "difficulty": "medium",
+            "tags": [
+                "testing",
+                "backend",
+                "security"
+            ],
+            "id": "T13-BE-TEST"
+        },
+        {
+            "title": "Persist Financial State Locally (Frontend)",
+            "description": "Store assets, liabilities, monthly cash-flow, and recent projections locally to survive page reloads.",
+            "technicalDetails": [
+                "Use localStorage or IndexedDB with namespaced keys.",
+                "Persist assets/liabilities/cashflow/projections and hydrate Zustand store on load.",
+                "Provide a reset option clearing all stored data.",
+                "Encrypt or obfuscate sensitive values in browsers if needed."
+            ],
+            "acceptanceCriteria": [
+                "State reloads correctly after refresh.",
+                "No loss of data on page reload.",
+                "Reset clears all stored data."
             ],
             "storyPoints": 2,
             "difficulty": "low",
@@ -574,21 +1149,21 @@
                 "frontend",
                 "storage",
                 "persistence"
-            ]
+            ],
+            "id": "T13-FE"
         },
         {
-            "id": "T13-TEST",
-            "title": "Testing for Persist Financial State Locally",
-            "description": "Implement automated tests that fully validate Persist Financial State Locally (T13) before moving on to subsequent work.",
+            "title": "Testing for Persist Financial State Locally (Frontend)",
+            "description": "Automate coverage for the local persistence built in T13-Frontend.",
             "technicalDetails": [
-                "Mock localStorage/IndexedDB in unit tests to ensure serialization/deserialization integrity.",
-                "Test reset behavior to confirm all keys get cleared.",
-                "Add hydration test verifying persisted state rehydrates into the Zustand store."
+                "Mock localStorage/IndexedDB in unit tests to assert serialization/deserialization.",
+                "Test reset logic to guarantee keys are cleared.",
+                "Verify hydration populates Zustand store correctly for assets/liabilities/cashflow/projections."
             ],
             "acceptanceCriteria": [
-                "Persistence tests fail if schema changes break stored data.",
-                "Reset test ensures empty store after invocation.",
-                "Hydration test covers assets, liabilities, cashflow, and projections."
+                "Tests fail if schema changes break stored data.",
+                "Reset tests ensure clean state.",
+                "Hydration tests cover all persisted entities."
             ],
             "storyPoints": 1,
             "difficulty": "low",
@@ -596,47 +1171,98 @@
                 "testing",
                 "frontend",
                 "storage"
-            ]
-        },
-        {
-            "id": "T14",
-            "title": "Integration Testing and QA",
-            "description": "Validate the full end-to-end interaction: chat \u2192 intent \u2192 state update \u2192 graph recompute \u2192 chat confirmation.",
-            "acceptanceCriteria": [
-                "All flows verified locally via automated end-to-end suites",
-                "Graph and chat remain synchronized throughout scripted scenarios",
-                "Handles asset and liability updates correctly",
-                "No console or network errors, and tests are required to pass before progressing"
             ],
-            "storyPoints": 3,
-            "difficulty": "medium",
-            "tags": [
-                "testing",
-                "qa",
-                "integration"
-            ]
+            "id": "T13-FE-TEST"
         },
         {
-            "id": "T14-TEST",
-            "title": "Testing for Integration Testing and QA",
-            "description": "Implement automated tests that fully validate Integration Testing and QA (T14) before moving on to subsequent work.",
+            "title": "Backend Integration & QA Harness",
+            "description": "Build automation that validates chat \u2192 intent \u2192 action \u2192 persistence flows at the backend layer.",
             "technicalDetails": [
-                "Expand Playwright (or Cypress) suites to script chat \u2192 intent \u2192 state \u2192 graph flows end-to-end.",
-                "Record videos/screenshots for regression triage.",
-                "Add checks for console and network errors during runs."
+                "Create Go integration tests (or a separate harness) that simulate API calls across intent, CRUD, runModel, and delta services.",
+                "Seed realistic data and assert DB side-effects + emitted events.",
+                "Capture logs/metrics for each run to aid debugging.",
+                "Wire the harness into CI with optional nightly stress runs."
             ],
             "acceptanceCriteria": [
-                "End-to-end suite fails if any step in the flow regresses.",
-                "Artifacts (videos/logs) are captured for debugging.",
-                "CI gate requires green e2e run before release."
+                "Integration suite fails if any backend flow regresses.",
+                "Artifacts (logs/metrics) are uploaded for debugging.",
+                "CI requires green backend integration before release."
             ],
-            "storyPoints": 3,
+            "storyPoints": 4,
             "difficulty": "medium",
             "tags": [
+                "backend",
                 "testing",
-                "qa",
                 "integration"
-            ]
+            ],
+            "id": "T14-BE"
+        },
+        {
+            "title": "Testing for Backend Integration Harness",
+            "description": "Meta-tests ensuring the backend harness itself stays reliable.",
+            "technicalDetails": [
+                "Add health checks verifying the harness spins up/down dependencies cleanly.",
+                "Record historical runtimes and alert when they spike.",
+                "Inject known failures (fault-injection) to confirm the harness reports them clearly."
+            ],
+            "acceptanceCriteria": [
+                "Harness health checks fail when dependencies are misconfigured.",
+                "Runtime regression alerts trigger at configurable thresholds.",
+                "Fault-injection runs prove the harness surfaces actionable errors."
+            ],
+            "storyPoints": 2,
+            "difficulty": "low",
+            "tags": [
+                "testing",
+                "backend",
+                "infrastructure"
+            ],
+            "id": "T14-BE-TEST"
+        },
+        {
+            "title": "Frontend Integration & QA (E2E)",
+            "description": "Run end-to-end tests covering chat \u2192 intent \u2192 state update \u2192 graph recompute \u2192 confirmation on the frontend.",
+            "technicalDetails": [
+                "Expand Playwright/Cypress suites scripting canonical user journeys.",
+                "Record videos/screenshots/logs for each run.",
+                "Assert no console or network errors during flows.",
+                "Parameterize tests to run against mock + real backends."
+            ],
+            "acceptanceCriteria": [
+                "End-to-end suite fails if any step regresses.",
+                "Artifacts are captured for each CI run.",
+                "CI gate requires green E2E before release."
+            ],
+            "storyPoints": 4,
+            "difficulty": "medium",
+            "tags": [
+                "frontend",
+                "testing",
+                "qa"
+            ],
+            "id": "T14-FE"
+        },
+        {
+            "title": "Testing for Frontend Integration & QA (E2E)",
+            "description": "Maintain the reliability of the frontend E2E harness from T14-Frontend.",
+            "technicalDetails": [
+                "Create watchdog scripts that rerun flaky specs automatically and report flake rates.",
+                "Track test duration trends to detect slowdowns.",
+                "Add tooling to triage screenshots/videos automatically (e.g., diffing)."
+            ],
+            "acceptanceCriteria": [
+                "Flake monitoring produces actionable alerts.",
+                "Duration regressions are flagged in CI summaries.",
+                "Artifact diffing helps pinpoint UI changes quickly."
+            ],
+            "storyPoints": 2,
+            "difficulty": "low",
+            "tags": [
+                "testing",
+                "frontend",
+                "qa"
+            ],
+            "id": "T14-FE-TEST"
         }
     ]
 }

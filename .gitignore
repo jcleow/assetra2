@@ -16,6 +16,12 @@ build
 # misc
 .DS_Store
 *.pem
+.gocache
+.gomodcache
+.golangci-cache
+.cache
+.home
+tsconfig.tsbuildinfo
 
 # debug
 npm-debug.log*
