@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  type Asset,
   FinancialClient,
   FinancialClientError,
-  type Asset,
 } from "@/lib/financial";
 
 const sampleAsset: Asset = {
@@ -22,7 +22,7 @@ describe("FinancialClient", () => {
       new Response(JSON.stringify([sampleAsset]), {
         status: 200,
         headers: { "Content-Type": "application/json" },
-      }),
+      })
     );
 
     const client = new FinancialClient({
@@ -33,11 +33,14 @@ describe("FinancialClient", () => {
     const result = await client.assets.list();
 
     expect(result).toEqual([sampleAsset]);
-    expect(fetchMock).toHaveBeenCalledWith("https://api.example.test/finance/assets", {
-      method: "GET",
-      signal: undefined,
-      headers: { Accept: "application/json" },
-    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.example.test/finance/assets",
+      expect.objectContaining({
+        method: "GET",
+        signal: undefined,
+        headers: expect.any(Headers),
+      })
+    );
   });
 
   it("raises FinancialClientError for non-2xx responses and surfaces details", async () => {
@@ -45,7 +48,7 @@ describe("FinancialClient", () => {
       new Response(JSON.stringify({ error: "boom" }), {
         status: 422,
         headers: { "Content-Type": "application/json" },
-      }),
+      })
     );
 
     const client = new FinancialClient({

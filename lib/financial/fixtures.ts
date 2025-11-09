@@ -1,11 +1,5 @@
+import type { Asset, Expense, Income, Liability, NetWorthPoint } from "./types";
 import { computeMonthlyCashFlow } from "./types";
-import type {
-  Asset,
-  Expense,
-  Income,
-  Liability,
-  NetWorthPoint,
-} from "./types";
 
 const UPDATED_AT = "2024-01-01T00:00:00.000Z";
 
@@ -46,7 +40,7 @@ const baseLiabilities: Liability[] = [
     category: "mortgage",
     currentBalance: 412_750,
     interestRateApr: 0.0475,
-    minimumPayment: 2_580,
+    minimumPayment: 2580,
     notes: null,
     updatedAt: UPDATED_AT,
   },
@@ -64,7 +58,7 @@ const baseLiabilities: Liability[] = [
     id: "liability-card",
     name: "Rewards Card",
     category: "credit_card",
-    currentBalance: 3_200,
+    currentBalance: 3200,
     interestRateApr: 0.199,
     minimumPayment: 115,
     notes: "Paid off monthly",
@@ -77,7 +71,7 @@ const baseIncomes: Income[] = [
     id: "income-salary",
     source: "Product Manager Salary",
     category: "salary",
-    amount: 9_800,
+    amount: 9800,
     frequency: "monthly",
     startDate: "2021-06-01T00:00:00.000Z",
     notes: null,
@@ -87,7 +81,7 @@ const baseIncomes: Income[] = [
     id: "income-partner",
     source: "Partner Salary",
     category: "salary",
-    amount: 8_250,
+    amount: 8250,
     frequency: "monthly",
     startDate: "2022-02-01T00:00:00.000Z",
     notes: null,
@@ -120,7 +114,7 @@ const baseExpenses: Expense[] = [
     id: "expense-housing",
     payee: "Mortgage",
     category: "housing",
-    amount: 2_580,
+    amount: 2580,
     frequency: "monthly",
     notes: null,
     updatedAt: UPDATED_AT,
@@ -129,7 +123,7 @@ const baseExpenses: Expense[] = [
     id: "expense-childcare",
     payee: "Childcare",
     category: "family",
-    amount: 1_250,
+    amount: 1250,
     frequency: "monthly",
     notes: null,
     updatedAt: UPDATED_AT,
@@ -208,7 +202,7 @@ export const demoFinancialData: DemoFinancialData = Object.freeze({
 
 export const demoMonthlyCashFlow = computeMonthlyCashFlow(
   baseIncomes,
-  baseExpenses,
+  baseExpenses
 );
 
 export const cloneDemoFinancialData = (): DemoFinancialData => ({

@@ -1,33 +1,47 @@
 import { z } from "zod";
 
 import {
-  assetSchema,
   type Asset,
   type AssetCreatePayload,
   type AssetUpdatePayload,
-  expenseSchema,
+  assetSchema,
+  type CashFlowSnapshot,
+  cashFlowSnapshotSchema,
   type Expense,
   type ExpenseCreatePayload,
   type ExpenseUpdatePayload,
-  incomeSchema,
+  expenseSchema,
   type Income,
   type IncomeCreatePayload,
   type IncomeUpdatePayload,
-  liabilitySchema,
+  incomeSchema,
   type Liability,
   type LiabilityCreatePayload,
   type LiabilityUpdatePayload,
+  liabilitySchema,
 } from "./types";
 
 export type FetchLike = (
   input: RequestInfo | URL,
-  init?: RequestInit,
+  init?: RequestInit
 ) => Promise<Response>;
 
 export interface FinancialClientOptions {
   baseUrl?: string;
   defaultHeaders?: Record<string, string>;
   fetchFn?: FetchLike;
+}
+
+export interface ResourceClient<
+  TEntity extends { id: string },
+  TCreate extends Partial<TEntity> & { id?: string },
+  TUpdate extends Partial<TEntity> & { id: string },
+> {
+  list(signal?: AbortSignal): Promise<TEntity[]>;
+  get(id: string, signal?: AbortSignal): Promise<TEntity>;
+  create(payload: TCreate, signal?: AbortSignal): Promise<TEntity>;
+  update(payload: TUpdate, signal?: AbortSignal): Promise<TEntity>;
+  delete(id: string, signal?: AbortSignal): Promise<void>;
 }
 
 const DEFAULT_BASE_URL =
@@ -59,10 +73,11 @@ export class FinancialClient {
     };
   }
 
-  assets = this.createResourceClient<Asset, AssetCreatePayload, AssetUpdatePayload>(
-    "assets",
-    assetSchema,
-  );
+  assets = this.createResourceClient<
+    Asset,
+    AssetCreatePayload,
+    AssetUpdatePayload
+  >("assets", assetSchema);
   liabilities = this.createResourceClient<
     Liability,
     LiabilityCreatePayload,
@@ -72,52 +87,61 @@ export class FinancialClient {
     Income,
     IncomeCreatePayload,
     IncomeUpdatePayload
-  >("incomes", incomeSchema);
+  >("cashflow/incomes", incomeSchema);
   expenses = this.createResourceClient<
     Expense,
     ExpenseCreatePayload,
     ExpenseUpdatePayload
-  >("expenses", expenseSchema);
+  >("cashflow/expenses", expenseSchema);
+
+  cashflowSummary(signal?: AbortSignal) {
+    return this.request<CashFlowSnapshot>("/cashflow", cashFlowSnapshotSchema, {
+      method: "GET",
+      signal,
+    });
+  }
 
   private createResourceClient<
     TEntity extends { id: string },
-    TCreate extends { id?: string },
-    TUpdate extends { id: string },
-  >(resource: string, schema: z.ZodType<TEntity>) {
+    TCreate extends Partial<TEntity> & { id?: string },
+    TUpdate extends Partial<TEntity> & { id: string },
+  >(resourcePath: string, schema: z.ZodType<TEntity>) {
     const collectionSchema = z.array(schema);
+    const normalizedPath = resourcePath.startsWith("/")
+      ? resourcePath
+      : `/${resourcePath}`;
+    const buildPath = (id?: string) =>
+      id ? `${normalizedPath}/${encodeURIComponent(id)}` : normalizedPath;
 
     return {
       list: (signal?: AbortSignal) =>
-        this.request<TEntity[]>(`/${resource}`, collectionSchema, {
+        this.request<TEntity[]>(buildPath(), collectionSchema, {
           method: "GET",
           signal,
         }),
       get: (id: string, signal?: AbortSignal) =>
-        this.request<TEntity>(`/${resource}/${encodeURIComponent(id)}`, schema, {
+        this.request<TEntity>(buildPath(id), schema, {
           method: "GET",
           signal,
         }),
       create: (payload: TCreate, signal?: AbortSignal) =>
-        this.request<TEntity>(`/${resource}`, schema, {
+        this.request<TEntity>(buildPath(), schema, {
           method: "POST",
           body: JSON.stringify(payload),
           signal,
         }),
       update: (payload: TUpdate, signal?: AbortSignal) =>
-        this.request<TEntity>(
-          `/${resource}/${encodeURIComponent(payload.id)}`,
-          schema,
-          {
-            method: "PUT",
-            body: JSON.stringify(payload),
-            signal,
-          },
-        ),
-      delete: (id: string, signal?: AbortSignal) =>
-        this.send(`/${resource}/${encodeURIComponent(id)}`, {
-          method: "DELETE",
+        this.request<TEntity>(buildPath(payload.id), schema, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
           signal,
         }),
+      delete: async (id: string, signal?: AbortSignal) => {
+        await this.send(buildPath(id), {
+          method: "DELETE",
+          signal,
+        });
+      },
     };
   }
 
@@ -135,7 +159,7 @@ export class FinancialClient {
   private async request<T>(
     path: string,
     schema: z.ZodType<T>,
-    init: RequestInit,
+    init: RequestInit
   ): Promise<T> {
     const response = await this.send(path, init);
     const text = await response.text();
@@ -146,19 +170,17 @@ export class FinancialClient {
   private async send(path: string, init: RequestInit): Promise<Response> {
     const url = this.resolveUrl(path);
     const hasBody = init.body !== undefined;
-    const headers = {
-      ...this.defaultHeaders,
-      ...(init.headers ?? {}),
-    };
-
-    if (hasBody && !("Content-Type" in headers)) {
-      headers["Content-Type"] = "application/json";
+    const headers = new Headers(this.defaultHeaders);
+    if (init.headers) {
+      const extra = new Headers(init.headers);
+      extra.forEach((value, key) => headers.set(key, value));
     }
 
-    const response = await this.fetchFn(url, {
-      ...init,
-      headers,
-    });
+    if (hasBody && !headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
+    }
+
+    const response = await this.fetchFn(url, { ...init, headers });
 
     if (!response.ok) {
       let details: unknown;
@@ -170,7 +192,7 @@ export class FinancialClient {
       throw new FinancialClientError(
         `Request to ${url} failed with status ${response.status}`,
         response.status,
-        details,
+        details
       );
     }
 

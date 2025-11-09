@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+"use strict";
 const { spawn } = require("node:child_process");
 const { setTimeout: delay } = require("node:timers/promises");
 
@@ -12,7 +13,7 @@ const healthEndpoint = `http://localhost:${nextPort}${proxyPrefix}${
 
 async function waitForEndpoint(url, label, timeoutMs = 90_000) {
   const start = Date.now();
-  const interval = 2_000;
+  const interval = 2000;
 
   while (Date.now() - start < timeoutMs) {
     try {
@@ -55,7 +56,11 @@ async function main() {
   const exitPromise = new Promise((resolve, reject) => {
     child.once("exit", (code, signal) => {
       if (!shuttingDown) {
-        reject(new Error(`dev:full exited early (code: ${code}, signal: ${signal ?? "none"})`));
+        reject(
+          new Error(
+            `dev:full exited early (code: ${code}, signal: ${signal ?? "none"})`
+          )
+        );
         return;
       }
       resolve({ code, signal });
@@ -63,19 +68,26 @@ async function main() {
   });
 
   try {
-    await waitForEndpoint(`http://localhost:${nextPort}/ping`, "Next.js dev server");
+    await waitForEndpoint(
+      `http://localhost:${nextPort}/ping`,
+      "Next.js dev server"
+    );
     await assertProxyHealthy();
 
     console.log("[dev:check] both servers healthy, observing for 5s …");
-    await delay(5_000);
+    await delay(5000);
 
     shuttingDown = true;
     child.kill("SIGINT");
     await exitPromise;
-    console.log("[dev:check] success — both services booted and stayed healthy.");
+    console.log(
+      "[dev:check] success — both services booted and stayed healthy."
+    );
     process.exit(0);
   } catch (error) {
-    console.error(`[dev:check] ${error instanceof Error ? error.message : error}`);
+    console.error(
+      `[dev:check] ${error instanceof Error ? error.message : error}`
+    );
     shuttingDown = true;
     child.kill("SIGINT");
     try {
