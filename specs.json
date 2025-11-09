@@ -119,7 +119,8 @@
                 "go",
                 "model"
             ],
-            "id": "T2-BE"
+            "id": "T2-BE",
+            "status": "done"
         },
         {
             "title": "Testing for Go Data Models & Repository (Backend)",
@@ -140,7 +141,8 @@
                 "testing",
                 "go"
             ],
-            "id": "T2-BE-TEST"
+            "id": "T2-BE-TEST",
+            "status": "done"
         },
         {
             "title": "TypeScript Domain Contracts & SDK (Frontend)",

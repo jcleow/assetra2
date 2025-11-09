@@ -8,9 +8,12 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/jcleow/assetra2/internal/config"
+	"github.com/jcleow/assetra2/internal/finance"
 	"github.com/jcleow/assetra2/internal/logging"
+	"github.com/jcleow/assetra2/internal/repository/memory"
 	"github.com/jcleow/assetra2/internal/server"
 )
 
@@ -22,7 +25,11 @@ func main() {
 	}
 
 	logger := logging.NewLogger(cfg.LogLevel)
-	srv := server.New(cfg, logger)
+
+	seed := finance.DefaultSeedData(time.Now().UTC())
+	repo := memory.NewRepository(seed)
+
+	srv := server.New(cfg, logger, repo)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()

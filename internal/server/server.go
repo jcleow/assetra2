@@ -6,16 +6,18 @@ import (
 	"net/http"
 
 	"github.com/jcleow/assetra2/internal/config"
+	"github.com/jcleow/assetra2/internal/repository"
 )
 
 // Server wraps the HTTP server and supporting dependencies.
 type Server struct {
 	logger     *slog.Logger
 	httpServer *http.Server
+	repo       repository.Repository
 }
 
 // New configures the HTTP server with routes and sensible defaults.
-func New(cfg config.Config, logger *slog.Logger) *Server {
+func New(cfg config.Config, logger *slog.Logger, repo repository.Repository) *Server {
 	mux := newRouter(logger)
 
 	httpServer := &http.Server{
@@ -27,6 +29,7 @@ func New(cfg config.Config, logger *slog.Logger) *Server {
 	return &Server{
 		logger:     logger,
 		httpServer: httpServer,
+		repo:       repo,
 	}
 }
 

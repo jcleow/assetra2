@@ -105,6 +105,7 @@ make run      # start the server
 make lint     # golangci-lint run ./...
 make fmt      # gofmt on tracked Go files
 make test     # go test ./...
+GOCACHE="$(pwd)/.gocache" GOMODCACHE="$(pwd)/.gomodcache" go test -race ./internal/finance ./internal/repository/memory
 ```
 
 > `golangci-lint` must be installed locally (e.g., `brew install golangci-lint`). See the [official docs](https://golangci-lint.run/welcome/install/) for other platforms.
@@ -148,6 +149,11 @@ GOOS=linux GOARCH=amd64 go build ./cmd/server        # Linux
 - Indicator shows “Unreachable”: ensure the Go binary is running locally (`pnpm go:dev`), the port matches `GO_SERVICE_URL`, and rerun `pnpm dev` after changing env vars.
 - Verify the proxy manually with `curl http://localhost:3000/go-api/health`. You should see the same JSON payload as hitting the Go server directly.
 - When the Go server URL changes, restart `pnpm dev` so Next.js reloads `GO_SERVICE_URL` and updates its rewrites.
+
+### Financial domain primitives
+
+- Core structs (`Asset`, `Liability`, `Income`, `Expense`) and helpers live under `internal/finance`. Use `finance.MonthlyCashFlow` to convert recurring incomes/expenses into net monthly numbers.
+- Thread-safe, in-memory repositories are available via `internal/repository/memory`. The server seeds them with `finance.DefaultSeedData(time.Now().UTC())`, making it easy to swap storage backends later without touching handlers.
 
 ## Testing
 
