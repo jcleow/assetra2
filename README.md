@@ -55,12 +55,6 @@ If you don't want to rely on the Vercel AI Gateway locally, set one of the follo
 
 When neither key is provided the app falls back to the AI Gateway and expects either the auto-injected OIDC token (on Vercel) or `AI_GATEWAY_API_KEY`. You can optionally override the concrete model IDs via `CHAT_MODEL_ID`, `REASONING_MODEL_ID`, `TITLE_MODEL_ID`, and `ARTIFACT_MODEL_ID`.
 
-## Deploy Your Own
-
-You can deploy your own version of the Next.js AI Chatbot to Vercel with one click:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/templates/next.js/nextjs-ai-chatbot)
-
 ## Running locally
 
 You will need to use the environment variables [defined in `.env.example`](.env.example) to run Next.js AI Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
