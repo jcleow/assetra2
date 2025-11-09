@@ -188,6 +188,7 @@
                 "typescript"
             ],
             "id": "T2-FE-TEST"
+			"status": "done",
         },
         {
             "title": "Go CRUD HTTP Endpoints & Validation (Backend)",

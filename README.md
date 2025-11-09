@@ -149,6 +149,27 @@ GOOS=linux GOARCH=amd64 go build ./cmd/server        # Linux
 - Core structs (`Asset`, `Liability`, `Income`, `Expense`) and helpers live under `internal/finance`. Use `finance.MonthlyCashFlow` to convert recurring incomes/expenses into net monthly numbers.
 - Thread-safe, in-memory repositories are available via `internal/repository/memory`. The server seeds them with `finance.DefaultSeedData(time.Now().UTC())`, making it easy to swap storage backends later without touching handlers.
 
+### REST API routes
+
+All responses include an `X-Request-ID` header for tracing, and CORS is enabled for `GET/POST/PATCH/DELETE/OPTIONS` so the Next.js app can call the Go service through the `/go-api/*` proxy.
+
+| Route | Methods | Description |
+| --- | --- | --- |
+| `/health` | `GET` | Basic readiness probe. |
+| `/assets`, `/assets/{id}` | `GET`, `POST`, `PATCH`, `DELETE` | CRUD for asset records (name, category, value, growth rate, notes). |
+| `/liabilities`, `/liabilities/{id}` | `GET`, `POST`, `PATCH`, `DELETE` | CRUD for liabilities including balances, APR, and minimum payments. |
+| `/cashflow` | `GET` | Returns `{ incomes: Income[], expenses: Expense[], summary: MonthlyCashFlow }`. |
+| `/cashflow/incomes`, `/cashflow/incomes/{id}` | `GET`, `POST`, `PATCH`, `DELETE` | CRUD for recurring income streams (source, amount, frequency, start date). |
+| `/cashflow/expenses`, `/cashflow/expenses/{id}` | `GET`, `POST`, `PATCH`, `DELETE` | CRUD for recurring expenses. |
+
+Example request:
+
+```bash
+curl -X POST http://localhost:8080/assets \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Brokerage","category":"investments","currentValue":25000,"annualGrowthRate":0.06}'
+```
+
 ## Testing
 
 | Command | Description |

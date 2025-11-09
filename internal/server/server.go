@@ -13,12 +13,11 @@ import (
 type Server struct {
 	logger     *slog.Logger
 	httpServer *http.Server
-	repo       repository.Repository
 }
 
 // New configures the HTTP server with routes and sensible defaults.
 func New(cfg config.Config, logger *slog.Logger, repo repository.Repository) *Server {
-	mux := newRouter(logger)
+	mux := newRouter(logger, repo)
 
 	httpServer := &http.Server{
 		Addr:              cfg.Addr(),
@@ -29,7 +28,6 @@ func New(cfg config.Config, logger *slog.Logger, repo repository.Repository) *Se
 	return &Server{
 		logger:     logger,
 		httpServer: httpServer,
-		repo:       repo,
 	}
 }
 
