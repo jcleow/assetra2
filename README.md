@@ -46,6 +46,15 @@ This template uses the [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) t
 
 With the [AI SDK](https://ai-sdk.dev/docs/introduction), you can also switch to direct LLM providers like [OpenAI](https://openai.com), [Anthropic](https://anthropic.com), [Cohere](https://cohere.com/), and [many more](https://ai-sdk.dev/providers/ai-sdk-providers) with just a few lines of code.
 
+### Using providers directly
+
+If you don't want to rely on the Vercel AI Gateway locally, set one of the following environment variables in `.env.local`:
+
+- `GOOGLE_GENERATIVE_AI_API_KEY` to stream directly from Google Gemini models (`gemini-1.5-flash`, `gemini-1.5-pro`, etc.).
+- `XAI_API_KEY` to talk to Grok directly.
+
+When neither key is provided the app falls back to the AI Gateway and expects either the auto-injected OIDC token (on Vercel) or `AI_GATEWAY_API_KEY`. You can optionally override the concrete model IDs via `CHAT_MODEL_ID`, `REASONING_MODEL_ID`, `TITLE_MODEL_ID`, and `ARTIFACT_MODEL_ID`.
+
 ## Deploy Your Own
 
 You can deploy your own version of the Next.js AI Chatbot to Vercel with one click:
@@ -69,3 +78,4 @@ pnpm dev
 ```
 
 Your app template should now be running on [localhost:3000](http://localhost:3000).
+# assetra2
