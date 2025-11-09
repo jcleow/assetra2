@@ -1,25 +1,83 @@
 {
-  "name": "assetra2",
+  "name": "Assetra2 - Next.js + Go Financial Planning App",
   "image": "mcr.microsoft.com/devcontainers/go:1.22",
   "features": {
     "ghcr.io/devcontainers/features/node:1": {
       "version": "20"
     },
-    "ghcr.io/devcontainers/features/git:1": {}
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
   },
-  "postCreateCommand": "corepack enable && pnpm install",
   "customizations": {
     "vscode": {
-      "settings": {
-        "go.toolsManagement.autoUpdate": true,
-        "editor.formatOnSave": true
-      },
       "extensions": [
         "golang.go",
-        "ms-azuretools.vscode-docker",
-        "esbenp.prettier-vscode"
-      ]
+        "bradlc.vscode-tailwindcss",
+        "ms-vscode.vscode-typescript-next",
+        "biomejs.biome",
+        "ms-playwright.playwright",
+        "ms-vscode.test-adapter-converter",
+        "ms-vscode.js-debug",
+        "ms-vscode.vscode-json"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "typescript.preferences.useAliasesForRenames": false,
+        "typescript.suggest.autoImports": true,
+        "go.toolsManagement.autoUpdate": true,
+        "go.useLanguageServer": true,
+        "go.lintTool": "golangci-lint",
+        "go.formatTool": "goimports",
+        "editor.defaultFormatter": "biomejs.biome",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "quickfix.biome": "explicit",
+          "source.organizeImports.biome": "explicit"
+        },
+        "[typescript]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[typescriptreact]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[javascript]": {
+          "editor.defaultFormatter": "biomejs.biome"
+        },
+        "[go]": {
+          "editor.defaultFormatter": "golang.go"
+        },
+        "files.associations": {
+          "*.env.*": "dotenv"
+        }
+      }
     }
+  },
+  "forwardPorts": [3000, 8080],
+  "portsAttributes": {
+    "3000": {
+      "label": "Next.js Frontend",
+      "onAutoForward": "openBrowser"
+    },
+    "8080": {
+      "label": "Go Financial Service"
+    }
+  },
+  "postCreateCommand": "corepack enable && pnpm install && go mod download",
+  "postStartCommand": {
+    "install-deps": "pnpm install",
+    "setup-go": "go mod tidy"
+  },
+  "mounts": [
+    "source=${localWorkspaceFolder}/.env.local,target=${containerWorkspaceFolder}/.env.local,type=bind,consistency=cached"
+  ],
+  "remoteEnv": {
+    "GO_SERVICE_URL": "http://localhost:8080",
+    "NODE_ENV": "development"
+  },
+  "containerEnv": {
+    "PNPM_HOME": "/usr/local/share/pnpm",
+    "PATH": "/usr/local/share/pnpm:${PATH}"
   },
   "remoteUser": "vscode"
 }

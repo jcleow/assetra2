@@ -1,0 +1,273 @@
+{
+  "Use Assets Hook": {
+    "prefix": "use-assets",
+    "body": [
+      "const {",
+      "  data: assets,",
+      "  isLoading,",
+      "  error,",
+      "  createItem,",
+      "  updateItem,",
+      "  deleteItem",
+      "} = useAssets();",
+      "",
+      "if (isLoading) return <div>Loading assets...</div>;",
+      "if (error) return <div>Error: {error.message}</div>;"
+    ],
+    "description": "Basic useAssets hook setup with loading and error states"
+  },
+  "Use Liabilities Hook": {
+    "prefix": "use-liabilities",
+    "body": [
+      "const {",
+      "  data: liabilities,",
+      "  isLoading,",
+      "  error,",
+      "  createItem,",
+      "  updateItem,",
+      "  deleteItem",
+      "} = useLiabilities();",
+      "",
+      "if (isLoading) return <div>Loading liabilities...</div>;",
+      "if (error) return <div>Error: {error.message}</div>;"
+    ],
+    "description": "Basic useLiabilities hook setup with loading and error states"
+  },
+  "Use Incomes Hook": {
+    "prefix": "use-incomes",
+    "body": [
+      "const {",
+      "  data: incomes,",
+      "  isLoading,",
+      "  error,",
+      "  createItem,",
+      "  updateItem,",
+      "  deleteItem",
+      "} = useIncomes();",
+      "",
+      "if (isLoading) return <div>Loading incomes...</div>;",
+      "if (error) return <div>Error: {error.message}</div>;"
+    ],
+    "description": "Basic useIncomes hook setup with loading and error states"
+  },
+  "Use Expenses Hook": {
+    "prefix": "use-expenses",
+    "body": [
+      "const {",
+      "  data: expenses,",
+      "  isLoading,",
+      "  error,",
+      "  createItem,",
+      "  updateItem,",
+      "  deleteItem",
+      "} = useExpenses();",
+      "",
+      "if (isLoading) return <div>Loading expenses...</div>;",
+      "if (error) return <div>Error: {error.message}</div>;"
+    ],
+    "description": "Basic useExpenses hook setup with loading and error states"
+  },
+  "Use Cash Flow Snapshot": {
+    "prefix": "use-cashflow",
+    "body": [
+      "const { data: cashflow, isLoading } = useCashFlowSnapshot();",
+      "",
+      "if (isLoading) return <div>Loading cash flow...</div>;",
+      "",
+      "return (",
+      "  <div>",
+      "    <h2>Monthly Cash Flow</h2>",
+      "    <div>Income: ${cashflow?.summary.monthlyIncome.toLocaleString()}</div>",
+      "    <div>Expenses: ${cashflow?.summary.monthlyExpenses.toLocaleString()}</div>",
+      "    <div>Net: ${cashflow?.summary.netMonthly.toLocaleString()}</div>",
+      "  </div>",
+      ");"
+    ],
+    "description": "Cash flow snapshot hook with summary display"
+  },
+  "Create Asset": {
+    "prefix": "create-asset",
+    "body": [
+      "const handleCreate = async () => {",
+      "  try {",
+      "    const newAsset = await createItem({",
+      "      name: '${1:Asset Name}',",
+      "      category: '${2|brokerage,real-estate,cash,retirement,other|}',",
+      "      currentValue: ${3:0},",
+      "      annualGrowthRate: ${4:0.07},",
+      "      notes: '${5:Optional notes}'",
+      "    });",
+      "    console.log('Created:', newAsset);",
+      "  } catch (error) {",
+      "    // Error toast automatically shown",
+      "  }",
+      "};"
+    ],
+    "description": "Create a new asset with optimistic updates"
+  },
+  "Create Liability": {
+    "prefix": "create-liability",
+    "body": [
+      "const handleCreate = async () => {",
+      "  try {",
+      "    const newLiability = await createItem({",
+      "      name: '${1:Liability Name}',",
+      "      category: '${2|mortgage,credit-card,loan,other|}',",
+      "      currentBalance: ${3:0},",
+      "      interestRateApr: ${4:0.18},",
+      "      minimumPayment: ${5:100},",
+      "      notes: '${6:Optional notes}'",
+      "    });",
+      "    console.log('Created:', newLiability);",
+      "  } catch (error) {",
+      "    // Error toast automatically shown",
+      "  }",
+      "};"
+    ],
+    "description": "Create a new liability with optimistic updates"
+  },
+  "Create Income": {
+    "prefix": "create-income",
+    "body": [
+      "const handleCreate = async () => {",
+      "  try {",
+      "    const newIncome = await createItem({",
+      "      source: '${1:Income Source}',",
+      "      amount: ${2:0},",
+      "      frequency: '${3|monthly,weekly,bi-weekly,annual|}',",
+      "      startDate: new Date().toISOString(),",
+      "      category: '${4|employment,business,investment,other|}'",
+      "    });",
+      "    console.log('Created:', newIncome);",
+      "  } catch (error) {",
+      "    // Error toast automatically shown",
+      "  }",
+      "};"
+    ],
+    "description": "Create a new income with optimistic updates"
+  },
+  "Create Expense": {
+    "prefix": "create-expense",
+    "body": [
+      "const handleCreate = async () => {",
+      "  try {",
+      "    const newExpense = await createItem({",
+      "      payee: '${1:Payee Name}',",
+      "      amount: ${2:0},",
+      "      frequency: '${3|monthly,weekly,bi-weekly,annual|}',",
+      "      category: '${4|housing,transportation,food,utilities,healthcare,entertainment,other|}'",
+      "    });",
+      "    console.log('Created:', newExpense);",
+      "  } catch (error) {",
+      "    // Error toast automatically shown",
+      "  }",
+      "};"
+    ],
+    "description": "Create a new expense with optimistic updates"
+  },
+  "Update Item": {
+    "prefix": "update-item",
+    "body": [
+      "const handleUpdate = async (${1:id}: string) => {",
+      "  try {",
+      "    await updateItem({",
+      "      id: ${1:id},",
+      "      ${2:property}: ${3:newValue}",
+      "    });",
+      "  } catch (error) {",
+      "    // Automatic rollback on failure",
+      "  }",
+      "};"
+    ],
+    "description": "Update an item with optimistic updates and rollback"
+  },
+  "Delete Item": {
+    "prefix": "delete-item",
+    "body": [
+      "const handleDelete = async (${1:id}: string) => {",
+      "  try {",
+      "    await deleteItem(${1:id});",
+      "  } catch (error) {",
+      "    // Automatic rollback on failure",
+      "  }",
+      "};"
+    ],
+    "description": "Delete an item with optimistic updates and rollback"
+  },
+  "Financial Component Template": {
+    "prefix": "financial-component",
+    "body": [
+      "import { ${1|useAssets,useLiabilities,useIncomes,useExpenses|} } from '@/hooks/use-financial-data';",
+      "",
+      "export function ${2:ComponentName}() {",
+      "  const {",
+      "    data,",
+      "    isLoading,",
+      "    error,",
+      "    createItem,",
+      "    updateItem,",
+      "    deleteItem",
+      "  } = ${1|useAssets,useLiabilities,useIncomes,useExpenses|}();",
+      "",
+      "  if (isLoading) return <div>Loading...</div>;",
+      "  if (error) return <div>Error: {error.message}</div>;",
+      "",
+      "  return (",
+      "    <div>",
+      "      {data?.map(item => (",
+      "        <div key={item.id}>",
+      "          <h3>{item.name}</h3>",
+      "          <button onClick={() => deleteItem(item.id)}>",
+      "            Delete",
+      "          </button>",
+      "        </div>",
+      "      ))}",
+      "    </div>",
+      "  );",
+      "}"
+    ],
+    "description": "Complete financial component template with CRUD operations"
+  },
+  "Import Financial Types": {
+    "prefix": "import-financial-types",
+    "body": [
+      "import type {",
+      "  ${1|Asset,Liability,Income,Expense,CashFlowSnapshot|},",
+      "  ${2|AssetCreatePayload,LiabilityCreatePayload,IncomeCreatePayload,ExpenseCreatePayload|}",
+      "} from '@/lib/financial';"
+    ],
+    "description": "Import financial types for TypeScript"
+  },
+  "Form with Financial Hook": {
+    "prefix": "financial-form",
+    "body": [
+      "import { zodResolver } from '@hookform/resolvers/zod';",
+      "import { useForm } from 'react-hook-form';",
+      "import { ${1|assetCreateSchema,liabilityCreateSchema,incomeCreateSchema,expenseCreateSchema|} } from '@/lib/financial/types';",
+      "import { ${2|useAssets,useLiabilities,useIncomes,useExpenses|} } from '@/hooks/use-financial-data';",
+      "",
+      "export function ${3:FormComponent}() {",
+      "  const { createItem } = ${2|useAssets,useLiabilities,useIncomes,useExpenses|}();",
+      "  const form = useForm({",
+      "    resolver: zodResolver(${1|assetCreateSchema,liabilityCreateSchema,incomeCreateSchema,expenseCreateSchema|})",
+      "  });",
+      "",
+      "  const onSubmit = async (data: ${4|AssetCreatePayload,LiabilityCreatePayload,IncomeCreatePayload,ExpenseCreatePayload|}) => {",
+      "    try {",
+      "      await createItem(data);",
+      "      form.reset();",
+      "    } catch (error) {",
+      "      // Error handling already done by hook",
+      "    }",
+      "  };",
+      "",
+      "  return (",
+      "    <form onSubmit={form.handleSubmit(onSubmit)}>",
+      "      {/* Form fields */}",
+      "    </form>",
+      "  );",
+      "}"
+    ],
+    "description": "Form component with react-hook-form and financial validation"
+  }
+}

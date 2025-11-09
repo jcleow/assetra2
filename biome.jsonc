@@ -45,6 +45,10 @@
       "a11y": {
         /* Needs more work to fix */
         "noSvgWithoutTitle": "off"
+      },
+      "nursery": {
+        /* Too many false positives */
+        "noUnnecessaryConditions": "off"
       }
     }
   }
