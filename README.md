@@ -55,12 +55,6 @@ If you don't want to rely on the Vercel AI Gateway locally, set one of the follo
 
 When neither key is provided the app falls back to the AI Gateway and expects either the auto-injected OIDC token (on Vercel) or `AI_GATEWAY_API_KEY`. You can optionally override the concrete model IDs via `CHAT_MODEL_ID`, `REASONING_MODEL_ID`, `TITLE_MODEL_ID`, and `ARTIFACT_MODEL_ID`.
 
-## Deploy Your Own
-
-You can deploy your own version of the Next.js AI Chatbot to Vercel with one click:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/templates/next.js/nextjs-ai-chatbot)
-
 ## Running locally
 
 You will need to use the environment variables [defined in `.env.example`](.env.example) to run Next.js AI Chatbot. It's recommended you use [Vercel Environment Variables](https://vercel.com/docs/projects/environment-variables) for this, but a `.env` file is all that is necessary.
@@ -154,6 +148,27 @@ GOOS=linux GOARCH=amd64 go build ./cmd/server        # Linux
 
 - Core structs (`Asset`, `Liability`, `Income`, `Expense`) and helpers live under `internal/finance`. Use `finance.MonthlyCashFlow` to convert recurring incomes/expenses into net monthly numbers.
 - Thread-safe, in-memory repositories are available via `internal/repository/memory`. The server seeds them with `finance.DefaultSeedData(time.Now().UTC())`, making it easy to swap storage backends later without touching handlers.
+
+### REST API routes
+
+All responses include an `X-Request-ID` header for tracing, and CORS is enabled for `GET/POST/PATCH/DELETE/OPTIONS` so the Next.js app can call the Go service through the `/go-api/*` proxy.
+
+| Route | Methods | Description |
+| --- | --- | --- |
+| `/health` | `GET` | Basic readiness probe. |
+| `/assets`, `/assets/{id}` | `GET`, `POST`, `PATCH`, `DELETE` | CRUD for asset records (name, category, value, growth rate, notes). |
+| `/liabilities`, `/liabilities/{id}` | `GET`, `POST`, `PATCH`, `DELETE` | CRUD for liabilities including balances, APR, and minimum payments. |
+| `/cashflow` | `GET` | Returns `{ incomes: Income[], expenses: Expense[], summary: MonthlyCashFlow }`. |
+| `/cashflow/incomes`, `/cashflow/incomes/{id}` | `GET`, `POST`, `PATCH`, `DELETE` | CRUD for recurring income streams (source, amount, frequency, start date). |
+| `/cashflow/expenses`, `/cashflow/expenses/{id}` | `GET`, `POST`, `PATCH`, `DELETE` | CRUD for recurring expenses. |
+
+Example request:
+
+```bash
+curl -X POST http://localhost:8080/assets \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Brokerage","category":"investments","currentValue":25000,"annualGrowthRate":0.06}'
+```
 
 ## Testing
 
