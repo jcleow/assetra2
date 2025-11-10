@@ -1,9 +1,15 @@
 "use client";
 
-import { toast } from "@/components/toast";
 import type { FinancialPlanPayload } from "@/app/api/financial-plan/route";
+import { toast } from "@/components/toast";
 import { useFinancialPlanningStore } from "@/features/financial-planning/store";
 import type { IntentAction } from "@/lib/intent/parser";
+import { generateUUID } from "@/lib/utils";
+
+const CHAT_CREATED_NOTE = "Added via chat intent";
+const DEFAULT_ASSET_GROWTH_RATE = 0.05;
+const DEFAULT_LIABILITY_INTEREST_RATE = 0.05;
+const DEFAULT_LIABILITY_MIN_PAYMENT_FACTOR = 0.02;
 
 export class IntentDispatchError extends Error {
   constructor(message: string) {
@@ -47,6 +53,7 @@ export async function dispatchIntentActions({
   };
 
   for (const action of actions) {
+    logIntentAction(intentId, chatId, action);
     applyAction(plan, action);
   }
 
@@ -94,8 +101,13 @@ function ensureAmount(action: IntentAction): number {
 }
 
 function adjustAsset(plan: FinancialPlanPayload, action: IntentAction) {
-  const target = matchEntity(plan.assets ?? [], action.target);
+  let target = matchEntity(plan.assets ?? [], action.target);
   if (!target) {
+    if (canCreateFromAction(action)) {
+      const created = createAssetFromIntent(action);
+      plan.assets!.push(created);
+      return;
+    }
     throw new IntentDispatchError(
       `Could not find an asset matching "${action.target ?? ""}".`
     );
@@ -114,8 +126,13 @@ function adjustAsset(plan: FinancialPlanPayload, action: IntentAction) {
 }
 
 function adjustLiability(plan: FinancialPlanPayload, action: IntentAction) {
-  const target = matchEntity(plan.liabilities ?? [], action.target);
+  let target = matchEntity(plan.liabilities ?? [], action.target);
   if (!target) {
+    if (canCreateFromAction(action)) {
+      const created = createLiabilityFromIntent(action);
+      plan.liabilities!.push(created);
+      return;
+    }
     throw new IntentDispatchError(
       `Could not find a liability matching "${action.target ?? ""}".`
     );
@@ -207,6 +224,64 @@ function matchEntity<T extends { name: string }>(
   );
 }
 
+function canCreateFromAction(action: IntentAction) {
+  return (
+    (action.verb === "add" || action.verb === "increase") &&
+    typeof action.amount === "number"
+  );
+}
+
+function deriveEntityName(
+  target: string | null | undefined,
+  fallback: string
+) {
+  if (!target) {
+    return fallback;
+  }
+  let name = target.trim();
+  const calledMatch = name.match(/(?:called|named)\s+(.+)/i);
+  if (calledMatch) {
+    name = calledMatch[1];
+  }
+  name = name.replace(/^(a|an)\s+new\s+/i, "");
+  name = name.replace(/\b(asset|liability|income|expense)\b/gi, "").trim();
+  return name.length > 0 ? name : fallback;
+}
+
+function createAssetFromIntent(action: IntentAction) {
+  const amount = ensureAmount(action);
+  const now = new Date().toISOString();
+  return {
+    id: generateUUID(),
+    name: deriveEntityName(action.target, "New Asset"),
+    category: "chat",
+    currentValue: Math.max(0, amount),
+    annualGrowthRate: DEFAULT_ASSET_GROWTH_RATE,
+    notes: CHAT_CREATED_NOTE,
+    updatedAt: now,
+  } satisfies FinancialPlanPayload["assets"][number];
+}
+
+function createLiabilityFromIntent(action: IntentAction) {
+  const amount = ensureAmount(action);
+  const now = new Date().toISOString();
+  const balance = Math.max(0, amount);
+  const minimumPayment = Math.max(
+    0,
+    Math.round(balance * DEFAULT_LIABILITY_MIN_PAYMENT_FACTOR * 100) / 100
+  );
+  return {
+    id: generateUUID(),
+    name: deriveEntityName(action.target, "New Liability"),
+    category: "chat",
+    currentBalance: balance,
+    interestRateApr: DEFAULT_LIABILITY_INTEREST_RATE,
+    minimumPayment,
+    notes: CHAT_CREATED_NOTE,
+    updatedAt: now,
+  } satisfies FinancialPlanPayload["liabilities"][number];
+}
+
 async function emitAuditEvent(
   intentId: string,
   chatId: string | undefined,
@@ -228,5 +303,21 @@ async function emitAuditEvent(
       type: "error",
       description: "Unable to record action audit trail.",
     });
+  }
+}
+
+function logIntentAction(
+  intentId: string,
+  chatId: string | undefined,
+  action: IntentAction
+) {
+  try {
+    console.info("[intent:action]", {
+      intentId,
+      chatId,
+      action,
+    });
+  } catch {
+    // ignore logging failures
   }
 }

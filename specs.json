@@ -940,6 +940,34 @@
             "status": "done"
         },
         {
+            "title": "Chat-Driven Entity Creation (Frontend)",
+            "description": "Allow the chat intent dispatcher to create or upsert assets/liabilities when the user references a new line item.",
+            "technicalDetails": [
+                "Extend the dispatcher so `add` intents without an existing match create a new entity with the parsed amount/category.",
+                "If the LLM does not supply an amount, surface a follow-up prompt or reject with a descriptive error that the chat flow can re-ask.",
+                "Persist metadata (e.g., source = `chat`) on the newly created cards so they remain auditable.",
+                "Ensure deletes still work when the user says \"remove\" without specifying an amount.",
+                "Add optimistic UI updates so the new entity appears immediately in the cards and SSE refresh keeps it in sync.",
+                "Console-log (or send to diagnostics) every IntentAction the LLM produces—id, verb, entity, target, amount—so we can review how it classified requests."
+            ],
+            "acceptanceCriteria": [
+                "Typing \"Add a new liability called Debt with $10k\" creates the card and updates the graph.",
+                "Attempting to add without an amount yields a structured follow-up request (or a graceful rejection).",
+                "Duplicate detection prevents creating multiple cards when the target already exists.",
+                "All create/update/delete paths continue to emit audits and SSE events."
+            ],
+            "storyPoints": 5,
+            "difficulty": "medium",
+            "priority": "p0-chat-net-worth",
+            "tags": [
+                "frontend",
+                "state",
+                "chat"
+            ],
+            "id": "T11-FE-UPsert",
+            "status": "todo"
+        },
+        {
             "title": "Testing for Sync Graph with Financial State (Frontend)",
             "description": "Test the frontend synchronization logic from T11-Frontend.",
             "technicalDetails": [
