@@ -28,6 +28,7 @@ type MessagesProps = {
   intentReviews: IntentReviewDisplay[];
   onConfirmIntent?: (id: string) => void;
   onCancelIntent?: (id: string) => void;
+  dispatchingIntentId?: string | null;
 };
 
 function PureMessages({
@@ -42,6 +43,7 @@ function PureMessages({
   intentReviews,
   onConfirmIntent,
   onCancelIntent,
+  dispatchingIntentId,
 }: MessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -84,6 +86,7 @@ function PureMessages({
               key={review.id}
               onCancel={onCancelIntent}
               onConfirm={onConfirmIntent}
+              isProcessing={dispatchingIntentId === review.id}
               review={review}
             />
           ))}
@@ -147,6 +150,9 @@ export const Messages = memo(PureMessages, (prevProps, nextProps) => {
     return false;
   }
   if (!equal(prevProps.intentReviews, nextProps.intentReviews)) {
+    return false;
+  }
+  if (prevProps.dispatchingIntentId !== nextProps.dispatchingIntentId) {
     return false;
   }
   if (prevProps.messages.length !== nextProps.messages.length) {

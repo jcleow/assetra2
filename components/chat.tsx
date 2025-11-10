@@ -30,6 +30,7 @@ import type { IntentReviewDisplay } from "./intent-review-card";
 import { useDataStream } from "./data-stream-provider";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
+import { dispatchIntentActions, IntentDispatchError } from "@/features/financial-planning/intent-dispatcher";
 import { getChatHistoryPaginationKey } from "./sidebar-history";
 import { toast } from "./toast";
 import type { VisibilityType } from "./visibility-selector";
@@ -159,6 +160,9 @@ export function Chat({
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [intentReviews, setIntentReviews] = useState<IntentReviewState[]>([]);
   const [isIntentRequestPending, setIsIntentRequestPending] = useState(false);
+  const [dispatchingIntentId, setDispatchingIntentId] = useState<string | null>(
+    null
+  );
   const intentReviewDisplays = useMemo<IntentReviewDisplay[]>(
     () =>
       intentReviews
@@ -270,25 +274,48 @@ export function Chat({
   );
 
   const handleIntentConfirm = useCallback(
-    (intentId: string) => {
-      let pendingReview: IntentReviewState | null = null;
-      setIntentReviews((prev) =>
-        prev.map((review) => {
-          if (review.id === intentId && review.status === "pending") {
-            pendingReview = review;
-            return { ...review, status: "confirmed" };
-          }
-          return review;
-        })
+    async (intentId: string) => {
+      const review = intentReviews.find(
+        (item) => item.id === intentId && item.status === "pending"
       );
-      if (pendingReview) {
-        dispatchMessage({
-          message: pendingReview.message,
-          attachments: pendingReview.attachments,
+      if (!review || dispatchingIntentId) {
+        return;
+      }
+
+      setDispatchingIntentId(intentId);
+      try {
+        await dispatchIntentActions({
+          intentId,
+          chatId: id,
+          actions: review.actions,
         });
+
+        setIntentReviews((prev) =>
+          prev.map((item) =>
+            item.id === intentId ? { ...item, status: "confirmed" } : item
+          )
+        );
+
+        dispatchMessage({
+          message: review.message,
+          attachments: review.attachments,
+        });
+      } catch (error) {
+        const description =
+          error instanceof IntentDispatchError || error instanceof Error
+            ? error.message
+            : "Failed to apply financial changes.";
+        toast({ type: "error", description });
+      } finally {
+        setDispatchingIntentId(null);
       }
     },
-    [dispatchMessage]
+    [
+      dispatchMessage,
+      dispatchingIntentId,
+      id,
+      intentReviews,
+    ]
   );
 
   const handleIntentCancel = useCallback(
@@ -338,6 +365,7 @@ export function Chat({
           chatId={id}
           isArtifactVisible={isArtifactVisible}
           isReadonly={isReadonly}
+          dispatchingIntentId={dispatchingIntentId}
           intentReviews={intentReviewDisplays}
           messages={messages}
           onCancelIntent={handleIntentCancel}
