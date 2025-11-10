@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Loader2,
   XCircle,
 } from "lucide-react";
 
@@ -29,12 +30,14 @@ interface IntentReviewCardProps {
   review: IntentReviewDisplay;
   onConfirm?: (id: string) => void;
   onCancel?: (id: string) => void;
+  isProcessing?: boolean;
 }
 
 export function IntentReviewCard({
   review,
   onConfirm,
   onCancel,
+  isProcessing = false,
 }: IntentReviewCardProps) {
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const isPending = review.status === "pending";
@@ -114,13 +117,22 @@ export function IntentReviewCard({
         <div className="mt-4 flex flex-wrap gap-2">
           <Button
             className="flex-1 min-w-[120px]"
+            disabled={isProcessing}
             onClick={() => onConfirm?.(review.id)}
             size="sm"
           >
-            Confirm & dispatch
+            {isProcessing ? (
+              <>
+                <Loader2 className="mr-2 size-3 animate-spin" />
+                Dispatching...
+              </>
+            ) : (
+              "Confirm & dispatch"
+            )}
           </Button>
           <Button
             className="flex-1 min-w-[120px]"
+            disabled={isProcessing}
             onClick={() => onCancel?.(review.id)}
             size="sm"
             variant="outline"

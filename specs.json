@@ -508,7 +508,8 @@
                 "model",
                 "typescript"
             ],
-            "id": "T6-BE"
+            "id": "T6-BE",
+            "status": "done"
         },
         {
             "title": "Testing for Financial Projection Engine (Backend)",
@@ -530,7 +531,8 @@
                 "testing",
                 "typescript"
             ],
-            "id": "T6-BE-TEST"
+            "id": "T6-BE-TEST",
+            "status": "done"
         },
         {
             "title": "Computation Adapters & State Wiring (Frontend)",
@@ -601,7 +603,8 @@
                 "api",
                 "node"
             ],
-            "id": "T7-BE"
+            "id": "T7-BE",
+            "status": "done"
         },
         {
             "title": "Testing for /api/runModel Endpoint (Backend)",
@@ -624,7 +627,8 @@
                 "node",
                 "api"
             ],
-            "id": "T7-BE-TEST"
+            "id": "T7-BE-TEST",
+            "status": "done"
         },
         {
             "title": "Client Integration with /api/runModel (Frontend)",
@@ -648,7 +652,8 @@
                 "api",
                 "state"
             ],
-            "id": "T7-FE"
+            "id": "T7-FE",
+            "status": "done"
         },
         {
             "title": "Testing for Client Integration with /api/runModel (Frontend)",
@@ -671,7 +676,8 @@
                 "frontend",
                 "api"
             ],
-            "id": "T7-FE-TEST"
+            "id": "T7-FE-TEST",
+            "status": "done"
         },
         {
             "title": "Backend Intent Parser for Financial Commands (Backend)",
@@ -695,7 +701,8 @@
                 "nlp",
                 "intent"
             ],
-            "id": "T9-BE"
+            "id": "T9-BE",
+            "status": "done"
         },
         {
             "title": "Testing for Backend Intent Parser",
@@ -741,7 +748,8 @@
                 "chat",
                 "intent"
             ],
-            "id": "T9-FE"
+            "id": "T9-FE",
+            "status": "done"
         },
         {
             "title": "Testing for Intent UX & Diagnostics (Frontend)",
@@ -788,7 +796,8 @@
                 "persistence",
                 "audit"
             ],
-            "id": "T10-BE"
+            "id": "T10-BE",
+            "status": "done"
         },
         {
             "title": "Testing for Action Persistence & Audit (Backend)",
@@ -811,7 +820,8 @@
                 "backend",
                 "db"
             ],
-            "id": "T10-BE-TEST"
+            "id": "T10-BE-TEST",
+            "status": "done"
         },
         {
             "title": "Frontend Action Dispatcher (Frontend)",
