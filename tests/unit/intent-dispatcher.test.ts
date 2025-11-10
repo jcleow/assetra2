@@ -141,14 +141,89 @@ describe("dispatchIntentActions", () => {
     ).rejects.toThrow(IntentDispatchError);
   });
 
-  it("rejects unknown targets", async () => {
+  it("creates a new asset when target is missing and amount provided", async () => {
+    const actions = [
+      {
+        id: "a1",
+        verb: "add" as const,
+        entity: "asset" as const,
+        target: "a new asset called savings account",
+        amount: 5_000,
+        currency: "USD",
+        raw: "Add a new asset called savings account with 5k",
+      },
+    ];
+
+    await dispatchIntentActions({
+      intentId: "intent-create-asset",
+      actions,
+    });
+
+    const updatedPlan = mockSetFinancialPlan.mock.calls[0][0];
+    expect(updatedPlan.assets).toHaveLength(2);
+    const created = updatedPlan.assets.find(
+      (asset: { name: string }) => asset.name === "savings account"
+    );
+    expect(created).toBeTruthy();
+    expect(created?.currentValue).toBe(5_000);
+    expect(updatedPlan.summary.totalAssets).toBe(15_000);
+  });
+
+  it("creates a new liability when target is missing and amount provided", async () => {
+    const actions = [
+      {
+        id: "l1",
+        verb: "add" as const,
+        entity: "liability" as const,
+        target: "a new liability called student loan",
+        amount: 12_000,
+        currency: "USD",
+        raw: "Add a new liability called student loan for 12k",
+      },
+    ];
+
+    await dispatchIntentActions({
+      intentId: "intent-create-liability",
+      actions,
+    });
+
+    const updatedPlan = mockSetFinancialPlan.mock.calls[0][0];
+    expect(updatedPlan.liabilities).toHaveLength(2);
+    const created = updatedPlan.liabilities.find(
+      (liability: { name: string }) => liability.name === "student loan"
+    );
+    expect(created).toBeTruthy();
+    expect(created?.currentBalance).toBe(12_000);
+    expect(updatedPlan.summary.totalLiabilities).toBe(212_000);
+  });
+
+  it("rejects creation when amount is missing", async () => {
+    await expect(
+      dispatchIntentActions({
+        intentId: "missing-amount",
+        actions: [
+          {
+            id: "a1",
+            verb: "add",
+            entity: "asset",
+            target: "new thing",
+            amount: null,
+            currency: "USD",
+            raw: "",
+          },
+        ],
+      })
+    ).rejects.toThrow(IntentDispatchError);
+  });
+
+  it("rejects unknown targets when verb requires existing entity", async () => {
     await expect(
       dispatchIntentActions({
         intentId: "unknown-target",
         actions: [
           {
             id: "a1",
-            verb: "add",
+            verb: "reduce",
             entity: "asset",
             target: "unknown",
             amount: 100,
