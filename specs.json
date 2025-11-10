@@ -187,8 +187,8 @@
                 "frontend",
                 "typescript"
             ],
-            "id": "T2-FE-TEST"
-			"status": "done",
+            "id": "T2-FE-TEST",
+            "status": "done"
         },
         {
             "title": "Go CRUD HTTP Endpoints & Validation (Backend)",
@@ -890,7 +890,8 @@
                 "backend",
                 "realtime"
             ],
-            "id": "T11-BE"
+            "id": "T11-BE",
+            "status": "done"
         },
         {
             "title": "Testing for State Change Event Stream (Backend)",

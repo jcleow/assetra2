@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/jcleow/assetra2/internal/config"
+	"github.com/jcleow/assetra2/internal/events"
 	"github.com/jcleow/assetra2/internal/repository"
 )
 
@@ -17,7 +18,8 @@ type Server struct {
 
 // New configures the HTTP server with routes and sensible defaults.
 func New(cfg config.Config, logger *slog.Logger, repo repository.Repository) *Server {
-	mux := newRouter(logger, repo)
+	hub := events.NewHub()
+	mux := newRouter(logger, repo, hub)
 
 	httpServer := &http.Server{
 		Addr:              cfg.Addr(),

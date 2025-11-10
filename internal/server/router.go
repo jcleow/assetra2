@@ -12,24 +12,28 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jcleow/assetra2/internal/events"
 	"github.com/jcleow/assetra2/internal/finance"
 	"github.com/jcleow/assetra2/internal/repository"
 )
 
 const (
 	headerRequestID     = "X-Request-ID"
+	headerSessionToken  = "X-Session-Token"
 	maxRequestBodyBytes = 1 << 20 // 1 MiB
 )
 
 type router struct {
 	logger *slog.Logger
 	repo   repository.Repository
+	events *events.Hub
 }
 
-func newRouter(logger *slog.Logger, repo repository.Repository) http.Handler {
+func newRouter(logger *slog.Logger, repo repository.Repository, hub *events.Hub) http.Handler {
 	rt := &router{
 		logger: logger,
 		repo:   repo,
+		events: hub,
 	}
 
 	mux := http.NewServeMux()
@@ -46,6 +50,7 @@ func newRouter(logger *slog.Logger, repo repository.Repository) http.Handler {
 	mux.HandleFunc("/cashflow/incomes/", rt.handleIncomeItem)
 	mux.HandleFunc("/cashflow/expenses", rt.handleExpensesCollection)
 	mux.HandleFunc("/cashflow/expenses/", rt.handleExpenseItem)
+	mux.HandleFunc("/events", rt.handleEventStream)
 
 	handler := requestIDMiddleware(loggingMiddleware(corsMiddleware(mux), logger))
 	return handler
@@ -53,6 +58,68 @@ func newRouter(logger *slog.Logger, repo repository.Repository) http.Handler {
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func (rt *router) handleEventStream(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		methodNotAllowed(w)
+		return
+	}
+
+	if token := extractSessionToken(r); token == "" {
+		unauthorized(w)
+		return
+	}
+	if rt.events == nil {
+		internalError(w)
+		return
+	}
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		internalError(w)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
+
+	ctx := r.Context()
+	cursor := r.URL.Query().Get("cursor")
+
+	stream, err := rt.events.Subscribe(ctx, cursor)
+	if err != nil {
+		internalError(w)
+		return
+	}
+
+	heartbeat := time.NewTicker(30 * time.Second)
+	defer heartbeat.Stop()
+
+	for {
+		select {
+		case evt, ok := <-stream:
+			if !ok {
+				return
+			}
+			payload, err := json.Marshal(evt)
+			if err != nil {
+				rt.logger.Warn("failed to marshal stream event", "error", err)
+				continue
+			}
+			fmt.Fprintf(w, "id: %s\n", evt.Cursor)
+			fmt.Fprintf(w, "event: %s.%s\n", evt.Entity, evt.Action)
+			fmt.Fprintf(w, "data: %s\n\n", payload)
+			flusher.Flush()
+		case <-heartbeat.C:
+			fmt.Fprintf(w, ": ping %d\n\n", time.Now().Unix())
+			flusher.Flush()
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 func (rt *router) handleAssetsCollection(w http.ResponseWriter, r *http.Request) {
@@ -120,6 +187,7 @@ func (rt *router) createAsset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, created)
+	rt.publishChange("asset", "create", created.ID, created)
 }
 
 func (rt *router) updateAsset(w http.ResponseWriter, r *http.Request, id string) {
@@ -141,6 +209,7 @@ func (rt *router) updateAsset(w http.ResponseWriter, r *http.Request, id string)
 		return
 	}
 	writeJSON(w, http.StatusOK, updated)
+	rt.publishChange("asset", "update", updated.ID, updated)
 }
 
 func (rt *router) deleteAsset(w http.ResponseWriter, r *http.Request, id string) {
@@ -149,6 +218,7 @@ func (rt *router) deleteAsset(w http.ResponseWriter, r *http.Request, id string)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+	rt.publishChange("asset", "delete", id, map[string]string{"id": id})
 }
 
 func (rt *router) handleLiabilitiesCollection(w http.ResponseWriter, r *http.Request) {
@@ -216,6 +286,7 @@ func (rt *router) createLiability(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, created)
+	rt.publishChange("liability", "create", created.ID, created)
 }
 
 func (rt *router) updateLiability(w http.ResponseWriter, r *http.Request, id string) {
@@ -236,6 +307,7 @@ func (rt *router) updateLiability(w http.ResponseWriter, r *http.Request, id str
 		return
 	}
 	writeJSON(w, http.StatusOK, updated)
+	rt.publishChange("liability", "update", updated.ID, updated)
 }
 
 func (rt *router) deleteLiability(w http.ResponseWriter, r *http.Request, id string) {
@@ -244,6 +316,7 @@ func (rt *router) deleteLiability(w http.ResponseWriter, r *http.Request, id str
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+	rt.publishChange("liability", "delete", id, map[string]string{"id": id})
 }
 
 func (rt *router) handleCashFlowSummary(w http.ResponseWriter, r *http.Request) {
@@ -342,6 +415,7 @@ func (rt *router) createIncome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, created)
+	rt.publishChange("income", "create", created.ID, created)
 }
 
 func (rt *router) updateIncome(w http.ResponseWriter, r *http.Request, id string) {
@@ -367,6 +441,7 @@ func (rt *router) updateIncome(w http.ResponseWriter, r *http.Request, id string
 		return
 	}
 	writeJSON(w, http.StatusOK, updated)
+	rt.publishChange("income", "update", updated.ID, updated)
 }
 
 func (rt *router) deleteIncome(w http.ResponseWriter, r *http.Request, id string) {
@@ -375,6 +450,7 @@ func (rt *router) deleteIncome(w http.ResponseWriter, r *http.Request, id string
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+	rt.publishChange("income", "delete", id, map[string]string{"id": id})
 }
 
 func (rt *router) handleExpensesCollection(w http.ResponseWriter, r *http.Request) {
@@ -443,6 +519,7 @@ func (rt *router) createExpense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusCreated, created)
+	rt.publishChange("expense", "create", created.ID, created)
 }
 
 func (rt *router) updateExpense(w http.ResponseWriter, r *http.Request, id string) {
@@ -464,6 +541,7 @@ func (rt *router) updateExpense(w http.ResponseWriter, r *http.Request, id strin
 		return
 	}
 	writeJSON(w, http.StatusOK, updated)
+	rt.publishChange("expense", "update", updated.ID, updated)
 }
 
 func (rt *router) deleteExpense(w http.ResponseWriter, r *http.Request, id string) {
@@ -472,6 +550,20 @@ func (rt *router) deleteExpense(w http.ResponseWriter, r *http.Request, id strin
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+	rt.publishChange("expense", "delete", id, map[string]string{"id": id})
+}
+
+func (rt *router) publishChange(entity, action, id string, payload any) {
+	if rt.events == nil {
+		return
+	}
+	rt.events.Publish(events.StreamEvent{
+		Type:       "finance.change",
+		Entity:     entity,
+		Action:     action,
+		ResourceID: id,
+		Data:       payload,
+	})
 }
 
 // --- payload helpers ---
@@ -639,7 +731,14 @@ func corsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Requested-With, "+headerRequestID)
+		allowedHeaders := strings.Join([]string{
+			"Content-Type",
+			"X-Requested-With",
+			headerRequestID,
+			headerSessionToken,
+			"Authorization",
+		}, ", ")
+		w.Header().Set("Access-Control-Allow-Headers", allowedHeaders)
 		w.Header().Set("Access-Control-Expose-Headers", headerRequestID)
 
 		if r.Method == http.MethodOptions {
@@ -690,6 +789,12 @@ func (w *loggingResponseWriter) WriteHeader(statusCode int) {
 	w.ResponseWriter.WriteHeader(statusCode)
 }
 
+func (w *loggingResponseWriter) Flush() {
+	if flusher, ok := w.ResponseWriter.(http.Flusher); ok {
+		flusher.Flush()
+	}
+}
+
 type requestIDKey struct{}
 
 func requestIDFromContext(ctx context.Context) string {
@@ -705,6 +810,18 @@ func newRequestID() string {
 		return fmt.Sprintf("req-%d", time.Now().UnixNano())
 	}
 	return hex.EncodeToString(b[:])
+}
+
+func extractSessionToken(r *http.Request) string {
+	if token := strings.TrimSpace(r.Header.Get(headerSessionToken)); token != "" {
+		return token
+	}
+
+	if auth := strings.TrimSpace(r.Header.Get("Authorization")); strings.HasPrefix(strings.ToLower(auth), "bearer ") {
+		return strings.TrimSpace(auth[len("bearer "):])
+	}
+
+	return strings.TrimSpace(r.URL.Query().Get("session"))
 }
 
 func decodeJSONBody(w http.ResponseWriter, r *http.Request, dst any) error {
@@ -738,6 +855,10 @@ func badRequest(w http.ResponseWriter, err error) {
 
 func internalError(w http.ResponseWriter) {
 	writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+}
+
+func unauthorized(w http.ResponseWriter) {
+	writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 }
 
 func notFound(w http.ResponseWriter) {
