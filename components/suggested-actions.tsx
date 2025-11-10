@@ -16,9 +16,9 @@ type SuggestedActionsProps = {
 function PureSuggestedActions({ chatId, sendMessage }: SuggestedActionsProps) {
   const suggestedActions = [
     "How much money do I need to retire?",
-    "Write code to demonstrate Dijkstra's algorithm",
-    "Help me write an essay about Silicon Valley",
-    "What is the weather in San Francisco?",
+    "Can I plan a career change?",
+    "How much do I need to save for my children's education?",
+    "Can I afford to buy a house?",
   ];
 
   return (
