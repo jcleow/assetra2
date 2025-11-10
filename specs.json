@@ -935,7 +935,8 @@
                 "reactivity",
                 "state"
             ],
-            "id": "T11-FE"
+            "id": "T11-FE",
+            "status": "done"
         },
         {
             "title": "Testing for Sync Graph with Financial State (Frontend)",

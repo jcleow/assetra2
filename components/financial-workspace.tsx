@@ -5,11 +5,13 @@ import {
   useFinancialPlan,
   useFinancialPlanningStore,
 } from '@/features/financial-planning';
+import { useFinancialEvents } from '@/hooks/use-financial-events';
 import { LifeEventTimelineChart } from './life-event-timeline-chart';
 
 export function FinancialWorkspace() {
   const { data, isLoading, error } = useFinancialPlan();
   const setFinancialPlan = useFinancialPlanningStore((state) => state.setFinancialPlan);
+  useFinancialEvents();
 
   // Auto-load live data (fallback to mock) on mount if nothing is in the store yet
   useEffect(() => {
