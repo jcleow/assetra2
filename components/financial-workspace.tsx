@@ -11,22 +11,36 @@ export function FinancialWorkspace() {
   const { data, isLoading, error } = useFinancialPlan();
   const setFinancialPlan = useFinancialPlanningStore((state) => state.setFinancialPlan);
 
-  // Auto-load mock data on mount if no data exists
+  // Auto-load live data (fallback to mock) on mount if nothing is in the store yet
   useEffect(() => {
-    const loadMockData = async () => {
-      try {
-        const response = await fetch('/api/financial-plan?mock=true');
-        if (response.ok) {
-          const mockData = await response.json();
-          setFinancialPlan(mockData);
-        }
-      } catch (error) {
-        console.error('Failed to load financial data:', error);
-      }
-    };
-
     if (!data && !isLoading) {
-      loadMockData();
+      const loadData = async () => {
+        try {
+          const liveResponse = await fetch('/api/financial-plan?refresh=true');
+          if (!liveResponse.ok) {
+            throw new Error(`Live data request failed (${liveResponse.status})`);
+          }
+          const liveData = await liveResponse.json();
+          setFinancialPlan(liveData);
+          return;
+        } catch (error) {
+          console.warn('Falling back to mock financial data:', error);
+        }
+
+        try {
+          const mockResponse = await fetch('/api/financial-plan?mock=true');
+          if (mockResponse.ok) {
+            const mockData = await mockResponse.json();
+            setFinancialPlan(mockData);
+          } else {
+            console.error('Mock financial data request failed', mockResponse.status);
+          }
+        } catch (mockError) {
+          console.error('Failed to load financial data:', mockError);
+        }
+      };
+
+      loadData();
     }
   }, [data, isLoading, setFinancialPlan]);
 

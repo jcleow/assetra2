@@ -133,38 +133,60 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
           const timeline: NetWorthTimelinePoint[] = [];
           const currentYear = new Date().getFullYear();
 
-          let currentAssets = financialPlan.summary.totalAssets;
-          let currentLiabilities = financialPlan.summary.totalLiabilities;
+          const assetBuckets =
+            financialPlan.assets?.map((asset) => ({
+              id: asset.id,
+              value: asset.currentValue,
+              rate:
+                typeof asset.annualGrowthRate === "number"
+                  ? asset.annualGrowthRate
+                  : null,
+            })) ?? [];
+
+          const allocatedAssetValue = assetBuckets.reduce(
+            (sum, bucket) => sum + bucket.value,
+            0
+          );
+
+          let unassignedAssets = Math.max(
+            financialPlan.summary.totalAssets - allocatedAssetValue,
+            0
+          );
+
+          const currentLiabilities = financialPlan.summary.totalLiabilities;
           let monthlyIncome = financialPlan.summary.monthlyIncome;
           let monthlyExpenses = financialPlan.summary.monthlyExpenses;
+          let savingsForGrowth = monthlyIncome - monthlyExpenses;
 
           for (let year = 0; year <= projectionSettings.projectionYears; year++) {
-            const age = projectionSettings.currentAge + year;
-            const projectedYear = currentYear + year;
-
-            // Calculate monthly savings before applying growth
-            const monthlySavings = monthlyIncome - monthlyExpenses;
-
-            // Apply growth to assets (only for years after current)
             if (year > 0) {
-              // Add monthly savings first
-              currentAssets += monthlySavings * 12;
+              const yearlySavings = savingsForGrowth * 12;
+              unassignedAssets += yearlySavings;
 
-              // Only apply investment returns if there are actual investment assets
-              // If no assets defined, treat savings as cash (minimal growth)
-              const hasInvestmentAssets =
-                financialPlan.assets && financialPlan.assets.length > 0;
-              const effectiveReturnRate = hasInvestmentAssets
-                ? projectionSettings.averageReturnRate
-                : 0.01; // 1% for cash savings
+              assetBuckets.forEach((bucket) => {
+                const rate =
+                  typeof bucket.rate === "number"
+                    ? bucket.rate
+                    : projectionSettings.averageReturnRate;
+                bucket.value *= 1 + rate;
+              });
 
-              currentAssets *= (1 + effectiveReturnRate);
+              const fallbackRate =
+                assetBuckets.length > 0
+                  ? projectionSettings.averageReturnRate
+                  : 0.01;
+              unassignedAssets *= 1 + fallbackRate;
 
-              // Apply inflation to income and expenses
-              monthlyIncome *= (1 + projectionSettings.inflationRate);
-              monthlyExpenses *= (1 + projectionSettings.inflationRate);
+              monthlyIncome *= 1 + projectionSettings.inflationRate;
+              monthlyExpenses *= 1 + projectionSettings.inflationRate;
+              savingsForGrowth = monthlyIncome - monthlyExpenses;
             }
 
+            const age = projectionSettings.currentAge + year;
+            const projectedYear = currentYear + year;
+            const currentAssets =
+              assetBuckets.reduce((sum, bucket) => sum + bucket.value, 0) +
+              unassignedAssets;
             const netWorth = currentAssets - currentLiabilities;
 
             timeline.push({
@@ -175,7 +197,7 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
               netWorth: Math.round(netWorth),
               monthlyIncome: Math.round(monthlyIncome),
               monthlyExpenses: Math.round(monthlyExpenses),
-              monthlySavings: Math.round(monthlySavings),
+              monthlySavings: Math.round(savingsForGrowth),
             });
           }
 
