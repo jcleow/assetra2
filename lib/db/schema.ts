@@ -10,6 +10,7 @@ import {
   timestamp,
   uuid,
   varchar,
+  doublePrecision,
 } from "drizzle-orm/pg-core";
 import type { AppUsage } from "../usage";
 
@@ -171,3 +172,19 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+export const actionEvent = pgTable("ActionEvent", {
+  id: uuid("id").notNull().defaultRandom().primaryKey(),
+  intentId: varchar("intentId", { length: 128 }).notNull().unique(),
+  chatId: uuid("chatId").references(() => chat.id),
+  userId: uuid("userId").references(() => user.id),
+  verb: varchar("verb", { length: 32 }).notNull(),
+  entity: varchar("entity", { length: 32 }).notNull(),
+  target: text("target"),
+  amount: doublePrecision("amount"),
+  currency: varchar("currency", { length: 16 }),
+  payload: jsonb("payload").notNull(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type ActionEvent = InferSelectModel<typeof actionEvent>;
