@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { financialClient } from '@/lib/financial/client';
+import { FinancialClient } from '@/lib/financial/client';
 import { z } from 'zod';
+
+// Create server-side client that calls Go service directly
+const serverFinancialClient = new FinancialClient({
+  baseUrl: process.env.GO_SERVICE_URL || 'http://localhost:8080',
+});
 
 const financialPlanSchema = z.object({
   assets: z.array(z.any()),
@@ -117,7 +122,7 @@ interface CacheEntry {
 }
 
 const cache = new Map<string, CacheEntry>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 30 * 1000; // 30 seconds for development
 
 function getCacheKey(request: NextRequest): string {
   const url = new URL(request.url);
@@ -132,11 +137,11 @@ function isExpired(entry: CacheEntry): boolean {
 async function aggregateFinancialData(): Promise<FinancialPlanPayload> {
   try {
     const [assets, liabilities, incomes, expenses, cashflow] = await Promise.all([
-      financialClient.assets.list(),
-      financialClient.liabilities.list(),
-      financialClient.incomes.list(),
-      financialClient.expenses.list(),
-      financialClient.cashflowSummary(),
+      serverFinancialClient.assets.list(),
+      serverFinancialClient.liabilities.list(),
+      serverFinancialClient.incomes.list(),
+      serverFinancialClient.expenses.list(),
+      serverFinancialClient.cashflowSummary(),
     ]);
 
     const totalAssets = assets.reduce((sum, asset) => sum + asset.currentValue, 0);

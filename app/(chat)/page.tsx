@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Chat } from "@/components/chat";
 import { DataStreamHandler } from "@/components/data-stream-handler";
 import { FinancialWorkspace } from "@/components/financial-workspace";
+import { FinancialDataManagement } from "@/components/financial-data-management";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { generateUUID } from "@/lib/utils";
 import { auth } from "../(auth)/auth";
@@ -44,14 +45,9 @@ export default async function Page() {
             <FinancialWorkspace />
           </div>
 
-          {/* Reserved space for other tools - 2/3 height */}
-          <div className="flex-1 rounded-3xl border border-white/10 border-dashed bg-muted/10 p-6 text-muted-foreground text-sm flex">
-            <div className="m-auto space-y-2 text-center">
-              <p className="font-semibold text-base text-foreground">
-                Additional Tools
-              </p>
-              <p>Space for other dashboards, charts, or AI tools.</p>
-            </div>
+          {/* Financial Data Management - 2/3 height */}
+          <div className="flex-1 rounded-3xl border border-gray-700 bg-gray-900 shadow-[0_30px_80px_rgba(3,3,4,0.45)] overflow-hidden">
+            <FinancialDataManagement />
           </div>
         </div>
       </div>

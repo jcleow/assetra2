@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { RefreshCw } from 'lucide-react';
 import {
   AreaChart,
   Area,
@@ -11,7 +12,7 @@ import {
   ReferenceDot,
   Tooltip,
 } from 'recharts';
-import { useNetWorthTimeline } from '@/features/financial-planning';
+import { useNetWorthTimeline, useFinancialPlanningStore } from '@/features/financial-planning';
 
 // Life event icons mapping
 const LifeEventIcon = ({ type, x, y }: { type: string; x: number; y: number }) => {
@@ -84,6 +85,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export function LifeEventTimelineChart() {
   const { timeline, projectionSettings } = useNetWorthTimeline();
+  const { refreshData, isLoading } = useFinancialPlanningStore();
 
   // Debug: Log the first few timeline points
   if (timeline.length > 0) {
@@ -111,9 +113,19 @@ export function LifeEventTimelineChart() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="mb-4 flex-shrink-0">
-        <h3 className="text-lg font-semibold text-white mb-1">Net Worth Projection</h3>
-        <p className="text-gray-400 text-sm">Next 20 Years</p>
+      <div className="mb-4 flex-shrink-0 flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-white mb-1">Net Worth Projection</h3>
+          <p className="text-gray-400 text-sm">Next 20 Years</p>
+        </div>
+        <button
+          onClick={refreshData}
+          disabled={isLoading}
+          className="p-2 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+          title="Refresh data"
+        >
+          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+        </button>
       </div>
 
       <div className="flex-1 bg-black rounded-lg p-4 min-h-0">

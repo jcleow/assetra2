@@ -52,6 +52,7 @@ interface FinancialPlanningState {
   setError: (error: string | null) => void;
   clearData: () => void;
   refreshData: () => Promise<void>;
+  invalidateFinancialData: () => void;
 }
 
 const DEFAULT_PROJECTION_SETTINGS: ProjectionSettings = {
@@ -148,8 +149,16 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
             if (year > 0) {
               // Add monthly savings first
               currentAssets += monthlySavings * 12;
-              // Then apply investment returns
-              currentAssets *= (1 + projectionSettings.averageReturnRate);
+
+              // Only apply investment returns if there are actual investment assets
+              // If no assets defined, treat savings as cash (minimal growth)
+              const hasInvestmentAssets =
+                financialPlan.assets && financialPlan.assets.length > 0;
+              const effectiveReturnRate = hasInvestmentAssets
+                ? projectionSettings.averageReturnRate
+                : 0.01; // 1% for cash savings
+
+              currentAssets *= (1 + effectiveReturnRate);
 
               // Apply inflation to income and expenses
               monthlyIncome *= (1 + projectionSettings.inflationRate);
@@ -201,7 +210,9 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
           setError(null);
 
           try {
-            const response = await fetch('/api/financial-plan');
+            // Force refresh with cache busting
+            const timestamp = Date.now();
+            const response = await fetch(`/api/financial-plan?refresh=true&t=${timestamp}`);
 
             if (!response.ok) {
               const errorData = await response.json();
@@ -216,6 +227,12 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
           } finally {
             setLoading(false);
           }
+        },
+
+        invalidateFinancialData: () => {
+          const { refreshData } = get();
+          // Force refresh by clearing cache first
+          refreshData();
         },
       }),
       {
