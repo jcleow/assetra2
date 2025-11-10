@@ -199,3 +199,6 @@ export class FinancialClient {
     return response;
   }
 }
+
+// Export a default instance
+export const financialClient = new FinancialClient();

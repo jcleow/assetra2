@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Chat } from "@/components/chat";
 import { DataStreamHandler } from "@/components/data-stream-handler";
+import { FinancialWorkspace } from "@/components/financial-workspace";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { generateUUID } from "@/lib/utils";
 import { auth } from "../(auth)/auth";
@@ -37,12 +38,20 @@ export default async function Page() {
             />
           </div>
         </div>
-        <div className="hidden min-h-[320px] flex-1 rounded-3xl border border-white/10 border-dashed bg-muted/10 p-6 text-muted-foreground text-sm lg:flex">
-          <div className="m-auto space-y-2 text-center">
-            <p className="font-semibold text-base text-foreground">
-              Workspace Canvas
-            </p>
-            <p>Reserve this area for future dashboards, charts, or tools.</p>
+        <div className="hidden flex-1 lg:flex lg:flex-col gap-6">
+          {/* Financial Chart - 1/3 height */}
+          <div className="h-[40vh] rounded-3xl border border-gray-700 bg-gray-900 shadow-[0_30px_80px_rgba(3,3,4,0.45)] flex flex-col overflow-hidden">
+            <FinancialWorkspace />
+          </div>
+
+          {/* Reserved space for other tools - 2/3 height */}
+          <div className="flex-1 rounded-3xl border border-white/10 border-dashed bg-muted/10 p-6 text-muted-foreground text-sm flex">
+            <div className="m-auto space-y-2 text-center">
+              <p className="font-semibold text-base text-foreground">
+                Additional Tools
+              </p>
+              <p>Space for other dashboards, charts, or AI tools.</p>
+            </div>
           </div>
         </div>
       </div>
