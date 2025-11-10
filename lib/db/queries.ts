@@ -31,6 +31,8 @@ import {
   type User,
   user,
   vote,
+  actionEvent,
+  type ActionEvent,
 } from "./schema";
 import { generateHashedPassword } from "./utils";
 
@@ -588,6 +590,87 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
     throw new ChatSDKError(
       "bad_request:database",
       "Failed to get stream ids by chat id"
+    );
+  }
+}
+
+export type ActionEventInsert = {
+  intentId: string;
+  chatId?: string | null;
+  userId?: string | null;
+  verb: string;
+  entity: string;
+  target?: string | null;
+  amount?: number | null;
+  currency?: string | null;
+  payload: unknown;
+};
+
+export async function recordActionEvent(
+  input: ActionEventInsert
+): Promise<ActionEvent> {
+  try {
+    await db
+      .insert(actionEvent)
+      .values({
+        intentId: input.intentId,
+        chatId: input.chatId ?? null,
+        userId: input.userId ?? null,
+        verb: input.verb,
+        entity: input.entity,
+        target: input.target ?? null,
+        amount: input.amount ?? null,
+        currency: input.currency ?? null,
+        payload: input.payload,
+        createdAt: new Date(),
+      })
+      .onConflictDoNothing({
+        target: actionEvent.intentId,
+      });
+
+    const [row] = await db
+      .select()
+      .from(actionEvent)
+      .where(eq(actionEvent.intentId, input.intentId))
+      .limit(1);
+
+    if (!row) {
+      throw new Error("record inserted but not retrievable");
+    }
+
+    return row;
+  } catch (error) {
+    console.error("Failed to record action event", error);
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to record action event"
+    );
+  }
+}
+
+export async function listActionEvents({
+  chatId,
+  limit = 50,
+}: {
+  chatId?: string;
+  limit?: number;
+}): Promise<ActionEvent[]> {
+  try {
+    const query = db
+      .select()
+      .from(actionEvent)
+      .orderBy(desc(actionEvent.createdAt))
+      .limit(limit);
+
+    if (chatId) {
+      query.where(eq(actionEvent.chatId, chatId));
+    }
+
+    return await query;
+  } catch (_error) {
+    throw new ChatSDKError(
+      "bad_request:database",
+      "Failed to list action events"
     );
   }
 }
