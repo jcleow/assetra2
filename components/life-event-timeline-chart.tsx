@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCcw, RefreshCw } from 'lucide-react';
 import {
   AreaChart,
   Area,
@@ -85,7 +85,13 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export function LifeEventTimelineChart() {
   const { timeline, projectionSettings } = useNetWorthTimeline();
-  const { refreshData, isLoading } = useFinancialPlanningStore();
+  const {
+    refreshData,
+    runProjection,
+    isLoading,
+    isProjecting,
+    projectionError,
+  } = useFinancialPlanningStore();
 
   // Debug: Log the first few timeline points
   if (timeline.length > 0) {
@@ -113,22 +119,47 @@ export function LifeEventTimelineChart() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="mb-4 flex-shrink-0 flex items-center justify-between">
+      <div className="mb-4 flex-shrink-0 flex items-center justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold text-white mb-1">Net Worth Projection</h3>
           <p className="text-gray-400 text-sm">Next 20 Years</p>
         </div>
-        <button
-          onClick={refreshData}
-          disabled={isLoading}
-          className="p-2 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
-          title="Refresh data"
-        >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => runProjection()}
+            disabled={isProjecting}
+            className="p-2 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+            title="Recompute projection"
+          >
+            <RefreshCcw className={`w-4 h-4 ${isProjecting ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            onClick={refreshData}
+            disabled={isLoading}
+            className="p-2 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+            title="Refresh financial data"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
-      <div className="flex-1 bg-black rounded-lg p-4 min-h-0">
+      {projectionError ? (
+        <div className="mb-3 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-100">
+          <div className="flex items-center justify-between gap-3">
+            <span>{projectionError}</span>
+            <button
+              type="button"
+              onClick={() => runProjection()}
+              className="rounded border border-red-400/60 px-2 py-1 text-xs uppercase tracking-wide"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="relative flex-1 bg-black rounded-lg p-4 min-h-0">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={filteredTimeline}
@@ -198,7 +229,12 @@ export function LifeEventTimelineChart() {
             <Tooltip content={<CustomTooltip />} />
           </AreaChart>
         </ResponsiveContainer>
-
+        {isProjecting ? (
+          <div className="absolute inset-0 rounded-lg bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-2 text-gray-200">
+            <RefreshCcw className="h-5 w-5 animate-spin" />
+            <span className="text-xs uppercase tracking-wide">Recomputing projection…</span>
+          </div>
+        ) : null}
       </div>
     </div>
   );
