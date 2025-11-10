@@ -61,12 +61,12 @@ export class FinancialClientError extends Error {
 
 export class FinancialClient {
   private readonly baseUrl: string;
-  private readonly fetchFn: FetchLike;
+  private readonly fetchFn?: FetchLike;
   private readonly defaultHeaders: Record<string, string>;
 
   constructor(options: FinancialClientOptions = {}) {
     this.baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
-    this.fetchFn = options.fetchFn ?? fetch.bind(globalThis);
+    this.fetchFn = options.fetchFn;
     this.defaultHeaders = {
       Accept: "application/json",
       ...options.defaultHeaders,
@@ -153,7 +153,20 @@ export class FinancialClient {
       ? this.baseUrl.slice(0, -1)
       : this.baseUrl;
     const trimmedPath = path.startsWith("/") ? path : `/${path}`;
-    return `${trimmedBase}${trimmedPath}`;
+    const combined = `${trimmedBase}${trimmedPath}`;
+    if (/^https?:\/\//i.test(combined)) {
+      return combined;
+    }
+
+    if (typeof window !== "undefined" && window.location) {
+      return new URL(combined, window.location.origin).toString();
+    }
+
+    const origin =
+      (typeof process !== "undefined" &&
+        process.env.NEXT_PUBLIC_SITE_URL) ||
+      "http://localhost";
+    return new URL(combined, origin).toString();
   }
 
   private async request<T>(
@@ -180,7 +193,8 @@ export class FinancialClient {
       headers.set("Content-Type", "application/json");
     }
 
-    const response = await this.fetchFn(url, { ...init, headers });
+    const fetchImpl = this.getFetchImpl();
+    const response = await fetchImpl(url, { ...init, headers });
 
     if (!response.ok) {
       let details: unknown;
@@ -197,6 +211,18 @@ export class FinancialClient {
     }
 
     return response;
+  }
+
+  private getFetchImpl(): FetchLike {
+    if (this.fetchFn) {
+      return this.fetchFn;
+    }
+
+    if (typeof globalThis.fetch === "function") {
+      return globalThis.fetch.bind(globalThis);
+    }
+
+    throw new Error("Fetch API is not available in the current environment.");
   }
 }
 

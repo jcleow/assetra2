@@ -867,7 +867,8 @@
                 "frontend",
                 "state"
             ],
-            "id": "T10-FE-TEST"
+            "id": "T10-FE-TEST",
+            "status": "done"
         },
         {
             "title": "State Change Event Stream (Backend)",
