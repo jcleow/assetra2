@@ -45,6 +45,7 @@ until docker exec "${CONTAINER_NAME}" pg_isready -U "${POSTGRES_USER}" >/dev/nul
 done
 
 export POSTGRES_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${POSTGRES_PORT}/${POSTGRES_DB}"
+export DATABASE_URL="${POSTGRES_URL}"
 info "POSTGRES_URL=${POSTGRES_URL}"
 
 info "Installing dependencies (pnpm install)…"

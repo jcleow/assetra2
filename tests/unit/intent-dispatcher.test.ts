@@ -10,13 +10,29 @@ const mockStateRef: {
 } = { current: null };
 const mockSetFinancialPlan = vi.fn();
 const mockRunProjection = vi.fn();
+const mockRefreshData = vi.fn();
+
+const mockFinancialClient = vi.hoisted(() => ({
+  assets: {
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+  liabilities: {
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+}));
 
 vi.mock("@/features/financial-planning/store", () => ({
   useFinancialPlanningStore: {
     getState: () => mockStateRef.current,
   },
 }));
-
+vi.mock("@/lib/financial", () => ({
+  financialClient: mockFinancialClient,
+}));
 import { dispatchIntentActions, IntentDispatchError } from "@/features/financial-planning/intent-dispatcher";
 
 const basePlan = {
@@ -68,10 +84,63 @@ const basePlan = {
 beforeEach(() => {
   mockSetFinancialPlan.mockReset();
   mockRunProjection.mockReset().mockResolvedValue(undefined);
+  mockRefreshData.mockReset().mockResolvedValue(undefined);
+  const now = new Date().toISOString();
+  mockFinancialClient.assets.create.mockReset().mockImplementation(
+    async (payload) => ({
+      id: payload.id ?? "asset-created",
+      name: payload.name,
+      category: payload.category,
+      currentValue: payload.currentValue,
+      annualGrowthRate: payload.annualGrowthRate,
+      notes: payload.notes ?? null,
+      updatedAt: now,
+    })
+  );
+  mockFinancialClient.assets.update.mockReset().mockImplementation(
+    async (payload) => ({
+      id: payload.id,
+      name: payload.name,
+      category: payload.category,
+      currentValue: payload.currentValue,
+      annualGrowthRate: payload.annualGrowthRate,
+      notes: payload.notes ?? null,
+      updatedAt: now,
+    })
+  );
+  mockFinancialClient.assets.delete.mockReset().mockResolvedValue(undefined);
+  mockFinancialClient.liabilities.create.mockReset().mockImplementation(
+    async (payload) => ({
+      id: payload.id ?? "liability-created",
+      name: payload.name,
+      category: payload.category,
+      currentBalance: payload.currentBalance,
+      interestRateApr: payload.interestRateApr,
+      minimumPayment: payload.minimumPayment,
+      notes: payload.notes ?? null,
+      updatedAt: now,
+    })
+  );
+  mockFinancialClient.liabilities.update.mockReset().mockImplementation(
+    async (payload) => ({
+      id: payload.id,
+      name: payload.name,
+      category: payload.category,
+      currentBalance: payload.currentBalance,
+      interestRateApr: payload.interestRateApr,
+      minimumPayment: payload.minimumPayment,
+      notes: payload.notes ?? null,
+      updatedAt: now,
+    })
+  );
+  mockFinancialClient.liabilities.delete.mockReset().mockResolvedValue(
+    undefined
+  );
   mockStateRef.current = {
     financialPlan: structuredClone(basePlan),
     setFinancialPlan: mockSetFinancialPlan,
     runProjection: mockRunProjection,
+    refreshData: mockRefreshData,
   };
   vi.spyOn(global, "fetch").mockResolvedValue({
     ok: true,
@@ -116,6 +185,13 @@ describe("dispatchIntentActions", () => {
     expect(updatedPlan.summary.monthlyExpenses).toBe(3_200);
     expect(mockRunProjection).toHaveBeenCalledTimes(1);
     expect(global.fetch).toHaveBeenCalledTimes(actions.length);
+    expect(mockFinancialClient.assets.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "asset-1",
+        currentValue: 15_000,
+      })
+    );
+    expect(mockRefreshData).toHaveBeenCalled();
   });
 
   it("throws when plan is missing", async () => {
@@ -167,6 +243,12 @@ describe("dispatchIntentActions", () => {
     expect(created).toBeTruthy();
     expect(created?.currentValue).toBe(5_000);
     expect(updatedPlan.summary.totalAssets).toBe(15_000);
+    expect(mockFinancialClient.assets.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "savings account",
+        currentValue: 5_000,
+      })
+    );
   });
 
   it("creates a new liability when target is missing and amount provided", async () => {
@@ -195,6 +277,12 @@ describe("dispatchIntentActions", () => {
     expect(created).toBeTruthy();
     expect(created?.currentBalance).toBe(12_000);
     expect(updatedPlan.summary.totalLiabilities).toBe(212_000);
+    expect(mockFinancialClient.liabilities.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "student loan",
+        currentBalance: 12_000,
+      })
+    );
   });
 
   it("rejects creation when amount is missing", async () => {
@@ -235,5 +323,6 @@ describe("dispatchIntentActions", () => {
     ).rejects.toThrow(IntentDispatchError);
 
     expect(mockSetFinancialPlan).not.toHaveBeenCalled();
+    expect(mockFinancialClient.assets.update).not.toHaveBeenCalled();
   });
 });

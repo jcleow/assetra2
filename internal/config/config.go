@@ -17,6 +17,7 @@ type Config struct {
 	LogLevel          string
 	ShutdownTimeout   time.Duration
 	ReadHeaderTimeout time.Duration
+	DatabaseURL       string
 }
 
 // Load builds a Config from environment variables, applying sensible defaults.
@@ -28,6 +29,7 @@ func Load() (Config, error) {
 		LogLevel:          strings.ToLower(getString("LOG_LEVEL", "info")),
 		ShutdownTimeout:   10 * time.Second,
 		ReadHeaderTimeout: 5 * time.Second,
+		DatabaseURL:       resolveDatabaseURL(),
 	}
 
 	if v := os.Getenv("SERVER_PORT"); v != "" {
@@ -84,4 +86,12 @@ func validate(cfg Config) error {
 		return errors.New("READ_HEADER_TIMEOUT must be greater than zero")
 	}
 	return nil
+}
+
+func resolveDatabaseURL() string {
+	if v := strings.TrimSpace(os.Getenv("DATABASE_URL")); v != "" {
+		return v
+	}
+	// Backwards compatibility with previous tooling.
+	return strings.TrimSpace(os.Getenv("POSTGRES_URL"))
 }
