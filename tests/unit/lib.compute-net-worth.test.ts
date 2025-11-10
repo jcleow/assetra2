@@ -60,7 +60,7 @@ describe("computeNetWorth", () => {
   it("captures declining assets when monthly savings are negative", () => {
     const timeline = computeNetWorth({
       assets: demoFinancialData.assets,
-      liabilities: [],
+      liabilities: demoFinancialData.liabilities,
       monthlyCashFlow: {
         monthlyIncome: 3000,
         monthlyExpenses: 12000,
@@ -116,5 +116,61 @@ describe("computeNetWorth", () => {
     expect(optimisticFinal.netWorth).toBeGreaterThan(
       pessimisticFinal.netWorth
     );
+  });
+
+  it("clamps projection horizon when retirement age is behind current age", () => {
+    const timeline = computeNetWorth({
+      assets: demoFinancialData.assets,
+      liabilities: demoFinancialData.liabilities,
+      monthlyCashFlow: demoMonthlyCashFlow,
+      currentAge: 60,
+      retirementAge: 58,
+      startYear: 2024,
+    });
+
+    expect(timeline).toHaveLength(2);
+  });
+
+  it("keeps zero-growth assets flat when savings are zero", () => {
+    const flatAssets = demoFinancialData.assets.map((asset) => ({
+      ...asset,
+      annualGrowthRate: 0,
+    }));
+
+    const timeline = computeNetWorth({
+      assets: flatAssets,
+      liabilities: [],
+      monthlyCashFlow: {
+        monthlyIncome: 2000,
+        monthlyExpenses: 2000,
+        netMonthly: 0,
+      },
+      currentAge: 30,
+      retirementAge: 33,
+      startYear: 2024,
+    });
+
+    const values = timeline.map((point) => point.assetsTotal);
+    expect(new Set(values).size).toBe(1);
+  });
+
+  it("keeps floating point drift within cents precision", () => {
+    const timeline = computeNetWorth({
+      assets: demoFinancialData.assets,
+      liabilities: demoFinancialData.liabilities,
+      monthlyCashFlow: demoMonthlyCashFlow,
+      currentAge: 30,
+      retirementAge: 70,
+      startYear: 2024,
+    });
+
+    timeline.forEach((point) => {
+      const reconstructed = Number(
+        (point.assetsTotal - point.liabilitiesTotal).toFixed(2)
+      );
+      expect(Math.abs(point.netWorth - reconstructed)).toBeLessThanOrEqual(
+        0.01
+      );
+    });
   });
 });
