@@ -24,19 +24,27 @@ const ActionPayloadSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const parsed = ActionPayloadSchema.parse(await request.json());
-    const event = await recordActionEvent({
-      intentId: parsed.intentId,
-      chatId: parsed.chatId,
-      userId: parsed.userId,
-      verb: parsed.action.verb,
-      entity: parsed.action.entity,
-      target: parsed.action.target,
-      amount: parsed.action.amount ?? null,
-      currency: parsed.action.currency ?? null,
-      payload: parsed.action,
-    } satisfies ActionEventInsert);
+    try {
+      const event = await recordActionEvent({
+        intentId: parsed.intentId,
+        chatId: parsed.chatId,
+        userId: parsed.userId,
+        verb: parsed.action.verb,
+        entity: parsed.action.entity,
+        target: parsed.action.target,
+        amount: parsed.action.amount ?? null,
+        currency: parsed.action.currency ?? null,
+        payload: parsed.action,
+      } satisfies ActionEventInsert);
 
-    return NextResponse.json(event);
+      return NextResponse.json(event);
+    } catch (dbError) {
+      console.warn("Action audit persistence skipped:", dbError);
+      return NextResponse.json(
+        { skipped: true, message: "Action audit storage disabled." },
+        { status: 200 }
+      );
+    }
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
