@@ -5,7 +5,7 @@ vi.mock("server-only", () => ({}));
 import { GET, POST } from "@/app/api/actions/route";
 import * as queries from "@/lib/db/queries";
 
-const buildRequest = (body: unknown) =>
+const buildPostRequest = (body: unknown) =>
   new Request("https://example.com/api/actions", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -36,7 +36,7 @@ describe("POST /api/actions", () => {
       .mockResolvedValue(mockEvent as any);
 
     const response = await POST(
-      buildRequest({
+      buildPostRequest({
         intentId: "intent-1",
         action: {
           verb: "add",
@@ -52,8 +52,25 @@ describe("POST /api/actions", () => {
   });
 
   it("rejects invalid payloads", async () => {
-    const response = await POST(buildRequest({}));
+    const response = await POST(buildPostRequest({}));
     expect(response.status).toBe(400);
+  });
+
+  it("surfaces persistence failures", async () => {
+    vi.spyOn(queries, "recordActionEvent").mockRejectedValue(
+      new Error("db down")
+    );
+
+    const response = await POST(
+      buildPostRequest({
+        intentId: "intent-error",
+        action: {
+          verb: "add",
+          entity: "asset",
+        },
+      })
+    );
+    expect(response.status).toBe(500);
   });
 });
 
@@ -72,5 +89,21 @@ describe("GET /api/actions", () => {
     );
     expect(response.status).toBe(200);
     expect(spy).toHaveBeenCalledWith({ chatId: "abc", limit: 10 });
+  });
+
+  it("validates limit parameter", async () => {
+    const response = await GET(
+      new Request("https://example.com/api/actions?limit=abc")
+    );
+    expect(response.status).toBe(400);
+  });
+
+  it("handles list failures", async () => {
+    vi.spyOn(queries, "listActionEvents").mockRejectedValue(
+      new Error("boom")
+    );
+
+    const response = await GET(new Request("https://example.com/api/actions"));
+    expect(response.status).toBe(500);
   });
 });
