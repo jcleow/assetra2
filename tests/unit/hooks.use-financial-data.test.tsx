@@ -195,14 +195,6 @@ describe("Financial Hooks - Integration Tests", () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      // Mock successful create response
-      const createdAsset = { ...sampleAsset, id: "new-asset-123" };
-      server.use(
-        http.post("*/go-api/assets", () => {
-          return HttpResponse.json(createdAsset);
-        })
-      );
-
       const createPayload: AssetCreatePayload = {
         name: "New Investment",
         category: "brokerage",
@@ -210,6 +202,18 @@ describe("Financial Hooks - Integration Tests", () => {
         annualGrowthRate: 0.08,
         notes: "New asset for testing",
       };
+
+      // Mock successful create response
+      const createdAsset = {
+        ...sampleAsset,
+        ...createPayload,
+        id: "new-asset-123",
+      };
+      server.use(
+        http.post("*/go-api/assets", () => {
+          return HttpResponse.json(createdAsset);
+        })
+      );
 
       // Test optimistic update
       await act(async () => {
@@ -251,7 +255,9 @@ describe("Financial Hooks - Integration Tests", () => {
       };
 
       // Test failed create operation
-      await expect(result.current.createItem(createPayload)).rejects.toThrow();
+      await act(async () => {
+        await expect(result.current.createItem(createPayload)).rejects.toThrow();
+      });
 
       // Verify rollback occurred (data should still be empty)
       expect(result.current.data).toEqual([]);
@@ -322,7 +328,11 @@ describe("Financial Hooks - Integration Tests", () => {
         currentValue: 60_000,
       };
 
-      await expect(result.current.updateItem(updatePayload)).rejects.toThrow();
+      await act(async () => {
+        await expect(
+          result.current.updateItem(updatePayload)
+        ).rejects.toThrow();
+      });
 
       // Verify rollback to original value
       expect(result.current.data?.[0].currentValue).toBe(
@@ -595,7 +605,9 @@ describe("Financial Hooks - Integration Tests", () => {
         annualGrowthRate: 0.05,
       };
 
-      await expect(result.current.createItem(createPayload)).rejects.toThrow();
+      await act(async () => {
+        await expect(result.current.createItem(createPayload)).rejects.toThrow();
+      });
 
       expect(mockToast).toHaveBeenCalledWith({
         type: "error",
@@ -628,7 +640,9 @@ describe("Financial Hooks - Integration Tests", () => {
         annualGrowthRate: 0.05,
       };
 
-      await expect(result.current.createItem(createPayload)).rejects.toThrow();
+      await act(async () => {
+        await expect(result.current.createItem(createPayload)).rejects.toThrow();
+      });
 
       expect(mockToast).toHaveBeenCalledWith({
         type: "error",
