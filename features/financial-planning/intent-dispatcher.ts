@@ -1,8 +1,9 @@
 "use client";
 
-import type { FinancialPlanPayload } from "@/app/api/financial-plan/route";
 import { toast } from "@/components/toast";
+import type { FinancialPlanPayload } from "@/app/api/financial-plan/route";
 import { useFinancialPlanningStore } from "@/features/financial-planning/store";
+import { financialClient } from "@/lib/financial";
 import type { IntentAction } from "@/lib/intent/parser";
 import { generateUUID } from "@/lib/utils";
 
@@ -54,6 +55,7 @@ export async function dispatchIntentActions({
 
   for (const action of actions) {
     logIntentAction(intentId, chatId, action);
+    await persistAction(state.financialPlan, action);
     applyAction(plan, action);
   }
 
@@ -68,6 +70,12 @@ export async function dispatchIntentActions({
       emitAuditEvent(`${intentId}:${index}`, chatId, action)
     )
   );
+
+  try {
+    await state.refreshData();
+  } catch (error) {
+    console.warn("Failed to refresh financial data", error);
+  }
 }
 
 function applyAction(plan: FinancialPlanPayload, action: IntentAction) {
@@ -208,6 +216,25 @@ function recalcSummary(plan: FinancialPlanPayload) {
     plan.summary.monthlySavings;
 }
 
+async function persistAction(
+  plan: FinancialPlanPayload | null,
+  action: IntentAction
+) {
+  if (!plan) return;
+
+  switch (action.entity) {
+    case "asset":
+      await persistAsset(plan, action);
+      break;
+    case "liability":
+      await persistLiability(plan, action);
+      break;
+    default:
+      // income/expense persistence is not supported yet
+      break;
+  }
+}
+
 function normalizeTarget(target?: string | null) {
   return target?.trim().toLowerCase() ?? "";
 }
@@ -304,6 +331,101 @@ async function emitAuditEvent(
       description: "Unable to record action audit trail.",
     });
   }
+}
+
+async function persistAsset(
+  plan: FinancialPlanPayload,
+  action: IntentAction
+) {
+  const target = matchEntity(plan.assets ?? [], action.target);
+
+  if (!target) {
+    if (!canCreateFromAction(action)) {
+      throw new IntentDispatchError(
+        `Could not find an asset matching "${action.target ?? ""}".`
+      );
+    }
+    const amount = ensureAmount(action);
+    await financialClient.assets.create({
+      name: deriveEntityName(action.target, "New Asset"),
+      category: "chat",
+      currentValue: Math.max(0, amount),
+      annualGrowthRate: DEFAULT_ASSET_GROWTH_RATE,
+      notes: CHAT_CREATED_NOTE,
+    });
+    return;
+  }
+
+  if (action.verb === "remove" && action.amount == null) {
+    await financialClient.assets.delete(target.id);
+    return;
+  }
+
+  const delta = ensureAmount(action);
+  const nextValue = Math.max(
+    0,
+    mutateValue(target.currentValue, delta, action.verb)
+  );
+
+  await financialClient.assets.update({
+    id: target.id,
+    name: target.name,
+    category: target.category,
+    currentValue: nextValue,
+    annualGrowthRate: target.annualGrowthRate,
+    notes: target.notes ?? undefined,
+  });
+}
+
+async function persistLiability(
+  plan: FinancialPlanPayload,
+  action: IntentAction
+) {
+  const target = matchEntity(plan.liabilities ?? [], action.target);
+
+  if (!target) {
+    if (!canCreateFromAction(action)) {
+      throw new IntentDispatchError(
+        `Could not find a liability matching "${action.target ?? ""}".`
+      );
+    }
+    const amount = ensureAmount(action);
+    const balance = Math.max(0, amount);
+    const minimumPayment = Math.max(
+      0,
+      Math.round(balance * DEFAULT_LIABILITY_MIN_PAYMENT_FACTOR * 100) / 100
+    );
+    await financialClient.liabilities.create({
+      name: deriveEntityName(action.target, "New Liability"),
+      category: "chat",
+      currentBalance: balance,
+      interestRateApr: DEFAULT_LIABILITY_INTEREST_RATE,
+      minimumPayment,
+      notes: CHAT_CREATED_NOTE,
+    });
+    return;
+  }
+
+  if (action.verb === "remove" && action.amount == null) {
+    await financialClient.liabilities.delete(target.id);
+    return;
+  }
+
+  const delta = ensureAmount(action);
+  const nextBalance = Math.max(
+    0,
+    mutateValue(target.currentBalance, delta, action.verb)
+  );
+
+  await financialClient.liabilities.update({
+    id: target.id,
+    name: target.name,
+    category: target.category,
+    currentBalance: nextBalance,
+    interestRateApr: target.interestRateApr,
+    minimumPayment: target.minimumPayment,
+    notes: target.notes ?? undefined,
+  });
 }
 
 function logIntentAction(

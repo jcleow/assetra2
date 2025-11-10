@@ -990,6 +990,33 @@
             "id": "T11-FE-TEST"
         },
         {
+            "title": "Go-Managed Database & Migrations",
+            "description": "Replace the leftover Drizzle/Postgres migration tooling with a Go-native migration runner that the backend controls.",
+            "technicalDetails": [
+                "Select a Go migration library (e.g., golang-migrate) and define a cli/`make db:migrate` entry point that compiles into our dev workflow.",
+                "Port the existing schema (Chat, Message, Vote, ActionEvent, etc.) from `lib/db/migrations` into Go SQL migrations and ensure they run in order.",
+                "Replace `pnpm db:migrate` usage with a Go command invoked by dev scripts + CI, keeping `POSTGRES_URL` compatibility.",
+                "Update setup docs/scripts to spin up Postgres via Go tooling, and delete obsolete Drizzle migration code.",
+                "Ensure the Go service can optionally auto-run pending migrations at startup (behind a flag) so deployments stay in sync."
+            ],
+            "acceptanceCriteria": [
+                "Running the Go migration command on a fresh database creates every required table (including ActionEvent).",
+                "CI/dev scripts no longer rely on Node/Drizzle to manage schema changes.",
+                "The Go API can report when migrations are pending or fail.",
+                "Previous data is preserved when migrating an existing DB (no destructive resets)."
+            ],
+            "storyPoints": 5,
+            "difficulty": "medium",
+            "priority": "p0-chat-net-worth",
+            "tags": [
+                "backend",
+                "go",
+                "database"
+            ],
+            "id": "T12-BE-DB",
+            "status": "todo"
+        },
+        {
             "title": "Net-Worth Delta Service (Backend)",
             "description": "Compute delta vs previous projections so confirmations show accurate gains/losses.",
             "technicalDetails": [
