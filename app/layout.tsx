@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
-import { GoServiceIndicator } from "@/components/go-service-indicator";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ReactQueryProvider } from "@/components/providers/query-client-provider";
 
 import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://chat.vercel.ai"),
-  title: "Next.js Chatbot Template",
-  description: "Next.js chatbot template using the AI SDK.",
+  title: "Assetra",
+  description: "Modelling Financial Futures",
 };
 
 export const viewport = {
@@ -81,8 +81,9 @@ export default function RootLayout({
         >
           <Toaster position="top-center" />
           <SessionProvider>
-            {children}
-            <GoServiceIndicator />
+            <ReactQueryProvider>
+              {children}
+            </ReactQueryProvider>
           </SessionProvider>
         </ThemeProvider>
       </body>

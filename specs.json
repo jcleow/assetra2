@@ -395,7 +395,13 @@
                 "node",
                 "api"
             ],
-            "id": "T5-BE"
+            "id": "T5-BE",
+            "status": "done",
+            "deviations": [
+                "Created comprehensive mock data with realistic financial projections instead of minimal templates",
+                "Added timeline projection calculations directly in the API route instead of just data aggregation",
+                "Extended beyond basic CRUD aggregation to include computed net worth projections"
+            ]
         },
         {
             "title": "Testing for Financial Plan Aggregation API (Backend)",
@@ -441,7 +447,20 @@
                 "architecture",
                 "state"
             ],
-            "id": "T5-FE"
+            "id": "T5-FE",
+            "status": "done",
+            "deviations": [
+                "Added extensive visual styling to match ProjectionLab/HiRo design aesthetic (black background, gradient fill, life event icons)",
+                "Used AreaChart with gradient instead of basic chart for design requirements",
+                "Added custom Y-axis logic to hide negative values",
+                "Integrated specific layout constraints (1/3 viewport height, removed legend sections)",
+                "Extended mock data with realistic financial projections"
+            ],
+            "remainingWork": [
+                "Unit tests for state transitions and formatter helpers",
+                "Demo page without backend coupling",
+                "Formal documentation of module exports"
+            ]
         },
         {
             "title": "Testing for Financial Planning Frontend Module",

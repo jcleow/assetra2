@@ -66,7 +66,7 @@ export class FinancialClient {
 
   constructor(options: FinancialClientOptions = {}) {
     this.baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
-    this.fetchFn = options.fetchFn ?? fetch;
+    this.fetchFn = options.fetchFn ?? fetch.bind(globalThis);
     this.defaultHeaders = {
       Accept: "application/json",
       ...options.defaultHeaders,
@@ -199,3 +199,6 @@ export class FinancialClient {
     return response;
   }
 }
+
+// Export a default instance
+export const financialClient = new FinancialClient();
