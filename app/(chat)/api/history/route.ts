@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
   }
 
   return Response.json({
-    items: [],
+    chats: [],
+    hasMore: false,
     limit,
     startingAfter,
     endingBefore,
