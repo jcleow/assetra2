@@ -1,0 +1,8 @@
+{
+  "defaultRetirementAge": 65,
+  "maxProjectionYears": 45,
+  "inflationRate": 0.025,
+  "defaultAssetGrowthRate": 0.055,
+  "cashYieldRate": 0.015,
+  "liabilityInterestFloor": 0.03
+}

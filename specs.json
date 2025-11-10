@@ -423,7 +423,8 @@
                 "node",
                 "api"
             ],
-            "id": "T5-BE-TEST"
+            "id": "T5-BE-TEST",
+            "status": "done"
         },
         {
             "title": "Financial Planning Frontend Module (Frontend)",
@@ -458,7 +459,6 @@
             ],
             "remainingWork": [
                 "Unit tests for state transitions and formatter helpers",
-                "Demo page without backend coupling",
                 "Formal documentation of module exports"
             ]
         },
@@ -477,12 +477,14 @@
             ],
             "storyPoints": 3,
             "difficulty": "medium",
+            "priority": "p0-chat-net-worth",
             "tags": [
                 "testing",
                 "frontend",
                 "state"
             ],
-            "id": "T5-FE-TEST"
+            "id": "T5-FE-TEST",
+            "status": "done"
         },
         {
             "title": "Financial Projection Engine (Backend)",
@@ -500,6 +502,7 @@
             ],
             "storyPoints": 5,
             "difficulty": "medium",
+            "priority": "p0-chat-net-worth",
             "tags": [
                 "backend",
                 "model",
@@ -522,6 +525,7 @@
             ],
             "storyPoints": 2,
             "difficulty": "low",
+            "priority": "p0-chat-net-worth",
             "tags": [
                 "testing",
                 "typescript"
@@ -544,6 +548,7 @@
             ],
             "storyPoints": 4,
             "difficulty": "medium",
+            "priority": "p0-chat-net-worth",
             "tags": [
                 "frontend",
                 "state",
@@ -566,6 +571,7 @@
             ],
             "storyPoints": 2,
             "difficulty": "low",
+            "priority": "p0-chat-net-worth",
             "tags": [
                 "testing",
                 "frontend",
@@ -589,6 +595,7 @@
             ],
             "storyPoints": 3,
             "difficulty": "low",
+            "priority": "p0-chat-net-worth",
             "tags": [
                 "backend",
                 "api",
@@ -611,6 +618,7 @@
             ],
             "storyPoints": 2,
             "difficulty": "low",
+            "priority": "p0-chat-net-worth",
             "tags": [
                 "testing",
                 "node",
@@ -634,6 +642,7 @@
             ],
             "storyPoints": 4,
             "difficulty": "medium",
+            "priority": "p0-chat-net-worth",
             "tags": [
                 "frontend",
                 "api",
@@ -656,101 +665,13 @@
             ],
             "storyPoints": 3,
             "difficulty": "medium",
+            "priority": "p0-chat-net-worth",
             "tags": [
                 "testing",
                 "frontend",
                 "api"
             ],
             "id": "T7-FE-TEST"
-        },
-        {
-            "title": "Net-Worth Timeline Formatter Service (Backend)",
-            "description": "Provide a backend utility that normalizes raw projection data into chart-ready buckets (currency formatting, sorting, gap-filling).",
-            "technicalDetails": [
-                "Implement a formatter that sorts NetWorthPoint entries, fills missing years, and enforces currency precision.",
-                "Expose the formatter via the aggregation API so all clients share the same logic.",
-                "Support toggling between annual/monthly views based on query params.",
-                "Handle locale-aware currency symbols before data reaches the frontend."
-            ],
-            "acceptanceCriteria": [
-                "Formatter outputs chronological, gap-free timelines.",
-                "Switching to monthly view densifies the dataset correctly.",
-                "Currency formatting matches locale settings supplied in the request."
-            ],
-            "storyPoints": 4,
-            "difficulty": "medium",
-            "tags": [
-                "backend",
-                "data",
-                "formatting"
-            ],
-            "id": "T8-BE"
-        },
-        {
-            "title": "Testing for Net-Worth Timeline Formatter (Backend)",
-            "description": "Cover the formatter introduced in T8-Backend.",
-            "technicalDetails": [
-                "Write unit tests for chronological sorting, gap-filling, and currency rounding.",
-                "Add regression tests for monthly vs annual view conversions.",
-                "Validate locale overrides using fixture inputs."
-            ],
-            "acceptanceCriteria": [
-                "Tests catch misordered timelines or missing points.",
-                "Currency rounding errors trigger failures.",
-                "Monthly/annual toggle tests guard against regressions."
-            ],
-            "storyPoints": 2,
-            "difficulty": "low",
-            "tags": [
-                "testing",
-                "data"
-            ],
-            "id": "T8-BE-TEST"
-        },
-        {
-            "title": "Net Worth Graph Component (Frontend)",
-            "description": "Render a time-series graph showing net worth over time with smooth updates.",
-            "technicalDetails": [
-                "Use Recharts as the initial charting library (swap-friendly).",
-                "Accept `NetWorthPoint[]` input plus loading/empty states.",
-                "Add transitions/tooltips and ensure responsiveness for desktop/mobile.",
-                "Support toggling between annual and monthly views."
-            ],
-            "acceptanceCriteria": [
-                "Graph renders correctly on load.",
-                "Updates smoothly on data change.",
-                "Responsive and mobile-safe with accessible tooltips."
-            ],
-            "storyPoints": 3,
-            "difficulty": "low",
-            "tags": [
-                "frontend",
-                "visualization",
-                "react"
-            ],
-            "id": "T8-FE"
-        },
-        {
-            "title": "Testing for Net Worth Graph Component (Frontend)",
-            "description": "Automate coverage for the graph from T8-Frontend.",
-            "technicalDetails": [
-                "Use React Testing Library to feed mock datasets and assert axis/tooltip output.",
-                "Add screenshot/visual regression tests for light/dark themes.",
-                "Test responsiveness via container-resize simulations."
-            ],
-            "acceptanceCriteria": [
-                "Graph tests fail if props stop rendering.",
-                "Visual baselines exist for key breakpoints.",
-                "Tooltip behavior is verified across data points."
-            ],
-            "storyPoints": 2,
-            "difficulty": "low",
-            "tags": [
-                "testing",
-                "frontend",
-                "visualization"
-            ],
-            "id": "T8-FE-TEST"
         },
         {
             "title": "Backend Intent Parser for Financial Commands (Backend)",
@@ -768,6 +689,7 @@
             ],
             "storyPoints": 5,
             "difficulty": "medium",
+            "priority": "p0-chat-net-worth",
             "tags": [
                 "backend",
                 "nlp",
@@ -790,6 +712,7 @@
             ],
             "storyPoints": 3,
             "difficulty": "medium",
+            "priority": "p0-chat-net-worth",
             "tags": [
                 "testing",
                 "nlp"
@@ -812,6 +735,7 @@
             ],
             "storyPoints": 4,
             "difficulty": "medium",
+            "priority": "p0-chat-net-worth",
             "tags": [
                 "frontend",
                 "chat",
@@ -834,6 +758,7 @@
             ],
             "storyPoints": 3,
             "difficulty": "medium",
+            "priority": "p0-chat-net-worth",
             "tags": [
                 "testing",
                 "frontend",
@@ -857,6 +782,7 @@
             ],
             "storyPoints": 5,
             "difficulty": "medium",
+            "priority": "p0-chat-net-worth",
             "tags": [
                 "backend",
                 "persistence",
@@ -879,6 +805,7 @@
             ],
             "storyPoints": 3,
             "difficulty": "medium",
+            "priority": "p0-chat-net-worth",
             "tags": [
                 "testing",
                 "backend",
@@ -902,6 +829,7 @@
             ],
             "storyPoints": 5,
             "difficulty": "medium",
+            "priority": "p0-chat-net-worth",
             "tags": [
                 "frontend",
                 "state",
@@ -1287,6 +1215,37 @@
                 "qa"
             ],
             "id": "T14-FE-TEST"
+        },
+        {
+            "title": "Backlog: Timeline Formatter & Graph Enhancements",
+            "description": "Deferred scope (originally T8) that unifies timeline formatting on the backend and polishes the Recharts graph with multi-view support.",
+            "technicalDetails": [
+                "Implement a backend formatter that sorts NetWorthPoint entries, fills gaps, enforces currency precision, and handles annual vs monthly density.",
+                "Expose the formatter through aggregation APIs so every client (dashboard, chat, future surfaces) consumes the same data contract.",
+                "Add locale-aware currency symbol handling before data reaches the frontend.",
+                "Enhance the Net Worth graph with responsive breakpoints, animated transitions, and a user-facing annual/monthly toggle wired to the formatter output.",
+                "Author automated tests (unit + visual) covering formatter scenarios, view toggles, and tooltip/axis rendering."
+            ],
+            "acceptanceCriteria": [
+                "Formatter outputs chronological, gap-free timelines for both annual and monthly modes.",
+                "Switching views in the graph reuses the formatter output without additional client-side math.",
+                "Currency rounding/locale mismatches are caught by tests.",
+                "Graph remains responsive/light & dark theme safe with validated tooltips.",
+                "Visual or screenshot tests detect regressions in the chart presentation."
+            ],
+            "storyPoints": 0,
+            "difficulty": "medium",
+            "tags": [
+                "backlog",
+                "backend",
+                "frontend",
+                "visualization"
+            ],
+            "id": "BACKLOG-TIMELINE",
+            "status": "todo",
+            "notes": [
+                "Moved out of T8 to deprioritize until after chat-driven flows stabilize."
+            ]
         }
     ]
 }
