@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import type { FinancialPlanPayload } from '@/app/api/financial-plan/route';
+import type { NetWorthPoint } from '@/lib/financial';
+import { requestRunModel } from '@/lib/financial/run-model-client';
 
 export interface NetWorthTimelinePoint {
   age: number;
@@ -31,6 +33,12 @@ export interface GraphDisplayOptions {
   customYears?: number;
 }
 
+interface ProjectionMeta {
+  durationMs: number;
+  assetCount: number;
+  liabilityCount: number;
+}
+
 interface FinancialPlanningState {
   // Core data
   financialPlan: FinancialPlanPayload | null;
@@ -38,6 +46,9 @@ interface FinancialPlanningState {
   isLoading: boolean;
   error: string | null;
   lastUpdated: string | null;
+  isProjecting: boolean;
+  projectionError: string | null;
+  projectionMeta: ProjectionMeta | null;
 
   // Settings
   projectionSettings: ProjectionSettings;
@@ -48,6 +59,7 @@ interface FinancialPlanningState {
   updateProjectionSettings: (settings: Partial<ProjectionSettings>) => void;
   updateDisplayOptions: (options: Partial<GraphDisplayOptions>) => void;
   generateTimeline: () => void;
+  runProjection: () => Promise<void>;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearData: () => void;
@@ -82,6 +94,9 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
         isLoading: false,
         error: null,
         lastUpdated: null,
+        isProjecting: false,
+        projectionError: null,
+        projectionMeta: null,
         projectionSettings: DEFAULT_PROJECTION_SETTINGS,
         displayOptions: DEFAULT_DISPLAY_OPTIONS,
 
@@ -98,6 +113,7 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
           );
           // Auto-generate timeline when new data is set
           get().generateTimeline();
+          void get().runProjection().catch(() => {});
         },
 
         updateProjectionSettings: (settings) => {
@@ -110,6 +126,7 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
           );
           // Regenerate timeline with new settings
           get().generateTimeline();
+          void get().runProjection().catch(() => {});
         },
 
         updateDisplayOptions: (options) => {
@@ -204,6 +221,59 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
           set({ timeline }, false, 'generateTimeline');
         },
 
+        runProjection: async () => {
+          const state = get();
+          if (!state.financialPlan || state.isProjecting) {
+            return;
+          }
+
+          set(
+            {
+              isProjecting: true,
+              projectionError: null,
+            },
+            false,
+            'runProjection:start'
+          );
+
+          try {
+            const payload = buildRunModelPayload(
+              state.financialPlan,
+              state.projectionSettings
+            );
+            const response = await requestRunModel(payload);
+            const timeline = mapRunModelTimeline(
+              response.netWorthTimeline,
+              state.projectionSettings,
+              state.financialPlan.summary
+            );
+
+            set(
+              {
+                timeline,
+                projectionMeta: response.meta,
+                projectionError: null,
+              },
+              false,
+              'runProjection:success'
+            );
+          } catch (error) {
+            const message =
+              error instanceof Error
+                ? error.message
+                : 'Failed to recompute projections';
+            set(
+              {
+                projectionError: message,
+              },
+              false,
+              'runProjection:error'
+            );
+          } finally {
+            set({ isProjecting: false }, false, 'runProjection:finish');
+          }
+        },
+
         setLoading: (loading) => {
           set({ isLoading: loading }, false, 'setLoading');
         },
@@ -295,3 +365,52 @@ export const useNetWorthTimeline = () => {
     regenerate: store.generateTimeline,
   };
 };
+
+function buildRunModelPayload(
+  financialPlan: FinancialPlanPayload,
+  projectionSettings: ProjectionSettings
+) {
+  return {
+    assets: financialPlan.assets.map((asset) => ({
+      id: asset.id,
+      name: asset.name,
+      category: asset.category,
+      currentValue: asset.currentValue,
+      annualGrowthRate: asset.annualGrowthRate,
+      notes: asset.notes,
+      updatedAt: asset.updatedAt,
+    })),
+    liabilities: financialPlan.liabilities.map((liability) => ({
+      id: liability.id,
+      name: liability.name,
+      category: liability.category,
+      currentBalance: liability.currentBalance,
+      interestRateApr: liability.interestRateApr,
+      minimumPayment: liability.minimumPayment,
+      notes: liability.notes,
+      updatedAt: liability.updatedAt,
+    })),
+    monthlyIncome: financialPlan.summary.monthlyIncome,
+    monthlyExpenses: financialPlan.summary.monthlyExpenses,
+    currentAge: projectionSettings.currentAge,
+    retirementAge: projectionSettings.retirementAge,
+    startYear: new Date().getFullYear(),
+  };
+}
+
+function mapRunModelTimeline(
+  points: NetWorthPoint[],
+  projectionSettings: ProjectionSettings,
+  summary: FinancialPlanPayload['summary']
+): NetWorthTimelinePoint[] {
+  return points.map((point, index) => ({
+    age: projectionSettings.currentAge + index,
+    year: new Date(point.date).getFullYear(),
+    totalAssets: Math.round(point.assetsTotal),
+    totalLiabilities: Math.round(point.liabilitiesTotal),
+    netWorth: Math.round(point.netWorth),
+    monthlyIncome: Math.round(summary.monthlyIncome),
+    monthlyExpenses: Math.round(summary.monthlyExpenses),
+    monthlySavings: Math.round(summary.monthlySavings),
+  }));
+}
