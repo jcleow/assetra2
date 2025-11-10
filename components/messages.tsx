@@ -10,6 +10,10 @@ import { useDataStream } from "./data-stream-provider";
 import { Conversation, ConversationContent } from "./elements/conversation";
 import { Greeting } from "./greeting";
 import { PreviewMessage, ThinkingMessage } from "./message";
+import {
+  IntentReviewCard,
+  type IntentReviewDisplay,
+} from "./intent-review-card";
 
 type MessagesProps = {
   chatId: string;
@@ -21,6 +25,9 @@ type MessagesProps = {
   isReadonly: boolean;
   isArtifactVisible: boolean;
   selectedModelId: string;
+  intentReviews: IntentReviewDisplay[];
+  onConfirmIntent?: (id: string) => void;
+  onCancelIntent?: (id: string) => void;
 };
 
 function PureMessages({
@@ -32,6 +39,9 @@ function PureMessages({
   regenerate,
   isReadonly,
   selectedModelId,
+  intentReviews,
+  onConfirmIntent,
+  onCancelIntent,
 }: MessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -67,7 +77,16 @@ function PureMessages({
     >
       <Conversation className="mx-auto flex min-w-0 max-w-4xl flex-col gap-4 md:gap-6">
         <ConversationContent className="flex flex-col gap-4 px-2 py-4 md:gap-6 md:px-4">
-          {messages.length === 0 && <Greeting />}
+          {messages.length === 0 && intentReviews.length === 0 && <Greeting />}
+
+          {intentReviews.map((review) => (
+            <IntentReviewCard
+              key={review.id}
+              onCancel={onCancelIntent}
+              onConfirm={onConfirmIntent}
+              review={review}
+            />
+          ))}
 
           {messages.map((message, index) => (
             <PreviewMessage
@@ -125,6 +144,9 @@ export const Messages = memo(PureMessages, (prevProps, nextProps) => {
     return false;
   }
   if (prevProps.selectedModelId !== nextProps.selectedModelId) {
+    return false;
+  }
+  if (!equal(prevProps.intentReviews, nextProps.intentReviews)) {
     return false;
   }
   if (prevProps.messages.length !== nextProps.messages.length) {

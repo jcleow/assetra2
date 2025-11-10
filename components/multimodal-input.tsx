@@ -10,6 +10,7 @@ import {
   memo,
   type SetStateAction,
   startTransition,
+  type FormEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -47,6 +48,11 @@ import { SuggestedActions } from "./suggested-actions";
 import { Button } from "./ui/button";
 import type { VisibilityType } from "./visibility-selector";
 
+type SubmitPayload = {
+  message: string;
+  attachments: Attachment[];
+};
+
 function PureMultimodalInput({
   chatId,
   input,
@@ -63,6 +69,8 @@ function PureMultimodalInput({
   selectedModelId,
   onModelChange,
   usage,
+  onSubmitMessage,
+  intentRequestPending = false,
 }: {
   chatId: string;
   input: string;
@@ -79,6 +87,8 @@ function PureMultimodalInput({
   selectedModelId: string;
   onModelChange?: (modelId: string) => void;
   usage?: AppUsage;
+  onSubmitMessage?: (payload: SubmitPayload) => Promise<boolean>;
+  intentRequestPending?: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -121,6 +131,12 @@ function PureMultimodalInput({
   useEffect(() => {
     setLocalStorageInput(input);
   }, [input, setLocalStorageInput]);
+
+  useEffect(() => {
+    if (input.length === 0) {
+      resetHeight();
+    }
+  }, [input, resetHeight]);
 
   const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(event.target.value);
@@ -167,6 +183,30 @@ function PureMultimodalInput({
     chatId,
     resetHeight,
   ]);
+
+  const handleFormSubmit = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+
+      if (status !== "ready") {
+        toast.error("Please wait for the model to finish its response!");
+        return;
+      }
+
+      if (onSubmitMessage) {
+        const handled = await onSubmitMessage({
+          message: input,
+          attachments,
+        });
+        if (handled) {
+          return;
+        }
+      }
+
+      submitForm();
+    },
+    [attachments, input, onSubmitMessage, status, submitForm]
+  );
 
   const uploadFile = useCallback(async (file: File) => {
     const formData = new FormData();
@@ -309,14 +349,7 @@ function PureMultimodalInput({
 
       <PromptInput
         className="rounded-xl border border-border bg-background p-3 shadow-xs transition-all duration-200 focus-within:border-border hover:border-muted-foreground/50"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (status !== "ready") {
-            toast.error("Please wait for the model to finish its response!");
-          } else {
-            submitForm();
-          }
-        }}
+        onSubmit={handleFormSubmit}
       >
         {(attachments.length > 0 || uploadQueue.length > 0) && (
           <div
@@ -386,7 +419,11 @@ function PureMultimodalInput({
             <PromptInputSubmit
               className="size-8 rounded-full bg-primary text-primary-foreground transition-colors duration-200 hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground"
               data-testid="send-button"
-              disabled={!input.trim() || uploadQueue.length > 0}
+              disabled={
+                !input.trim() ||
+                uploadQueue.length > 0 ||
+                intentRequestPending
+              }
               status={status}
             >
               <ArrowUpIcon size={14} />
@@ -414,6 +451,9 @@ export const MultimodalInput = memo(
       return false;
     }
     if (prevProps.selectedModelId !== nextProps.selectedModelId) {
+      return false;
+    }
+    if (prevProps.intentRequestPending !== nextProps.intentRequestPending) {
       return false;
     }
 
