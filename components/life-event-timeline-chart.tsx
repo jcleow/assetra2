@@ -119,29 +119,19 @@ export function LifeEventTimelineChart() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="mb-4 flex-shrink-0 flex items-center justify-between gap-3">
+      <div className="mb-4 flex-shrink-0 flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-white mb-1">Net Worth Projection</h3>
           <p className="text-gray-400 text-sm">Next 20 Years</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => runProjection()}
-            disabled={isProjecting}
-            className="p-2 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
-            title="Recompute projection"
-          >
-            <RefreshCcw className={`w-4 h-4 ${isProjecting ? 'animate-spin' : ''}`} />
-          </button>
-          <button
-            onClick={refreshData}
-            disabled={isLoading}
-            className="p-2 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
-            title="Refresh financial data"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
+        <button
+          onClick={refreshData}
+          disabled={isLoading}
+          className="p-2 rounded-full hover:bg-gray-700 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+          title="Refresh financial data"
+        >
+          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+        </button>
       </div>
 
       {projectionError ? (
