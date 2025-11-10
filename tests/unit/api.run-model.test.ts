@@ -94,4 +94,33 @@ describe("POST /api/runModel", () => {
     const payload = await response.json();
     expect(payload.error).toBe("Failed to compute projections");
   });
+
+  it("fills defaults for minimal payloads", async () => {
+    const spy = vi.spyOn(financial, "computeNetWorth");
+
+    const response = await POST(
+      buildRequest({
+        assets: [
+          {
+            currentValue: 10_000,
+          },
+        ],
+        liabilities: [
+          {
+            currentBalance: 2_000,
+          },
+        ],
+        currentAge: 40,
+      })
+    );
+
+    expect(response.status).toBe(200);
+    const args = spy.mock.calls[0][0];
+    expect(args.assets[0].id).toMatch(/^asset-/);
+    expect(args.assets[0].name).toContain("Asset");
+    expect(args.assets[0].category).toBe("unspecified");
+    expect(args.liabilities[0].id).toMatch(/^liability-/);
+    expect(args.monthlyCashFlow.monthlyIncome).toBe(0);
+    expect(args.monthlyCashFlow.netMonthly).toBe(0);
+  });
 });
