@@ -41,15 +41,18 @@ vi.mock("@/features/financial-planning/store", () => ({
   },
 }));
 vi.mock("@/lib/financial", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/financial")>(
-    "@/lib/financial"
-  );
+  const actual =
+    await vi.importActual<typeof import("@/lib/financial")>("@/lib/financial");
   return {
     ...actual,
     financialClient: mockFinancialClient,
   };
 });
-import { dispatchIntentActions, IntentDispatchError } from "@/features/financial-planning/intent-dispatcher";
+
+import {
+  dispatchIntentActions,
+  IntentDispatchError,
+} from "@/features/financial-planning/intent-dispatcher";
 
 const basePlan = {
   assets: [
@@ -80,7 +83,7 @@ const basePlan = {
       id: "income-1",
       source: "Salary",
       category: "employment",
-      amount: 8_000,
+      amount: 8000,
       frequency: "monthly",
       startDate: "2023-01-01T00:00:00.000Z",
       notes: null,
@@ -92,7 +95,7 @@ const basePlan = {
       id: "expense-1",
       payee: "Rent",
       category: "housing",
-      amount: 2_500,
+      amount: 2500,
       frequency: "monthly",
       notes: null,
       updatedAt: new Date().toISOString(),
@@ -109,9 +112,9 @@ const basePlan = {
   ],
   cashflow: {
     summary: {
-      monthlyIncome: 8_000,
-      monthlyExpenses: 3_000,
-      netMonthly: 5_000,
+      monthlyIncome: 8000,
+      monthlyExpenses: 3000,
+      netMonthly: 5000,
     },
     breakdown: {},
   },
@@ -119,9 +122,9 @@ const basePlan = {
     totalAssets: 10_000,
     totalLiabilities: 200_000,
     netWorth: -190_000,
-    monthlyIncome: 8_000,
-    monthlyExpenses: 3_000,
-    monthlySavings: 5_000,
+    monthlyIncome: 8000,
+    monthlyExpenses: 3000,
+    monthlySavings: 5000,
     savingsRate: 0.625,
   },
   lastUpdated: new Date().toISOString(),
@@ -132,8 +135,9 @@ beforeEach(() => {
   mockRunProjection.mockReset().mockResolvedValue(undefined);
   mockRefreshData.mockReset().mockResolvedValue(undefined);
   const now = new Date().toISOString();
-  mockFinancialClient.assets.create.mockReset().mockImplementation(
-    async (payload) => ({
+  mockFinancialClient.assets.create
+    .mockReset()
+    .mockImplementation(async (payload) => ({
       id: payload.id ?? "asset-created",
       name: payload.name,
       category: payload.category,
@@ -141,10 +145,10 @@ beforeEach(() => {
       annualGrowthRate: payload.annualGrowthRate,
       notes: payload.notes ?? null,
       updatedAt: now,
-    })
-  );
-  mockFinancialClient.assets.update.mockReset().mockImplementation(
-    async (payload) => ({
+    }));
+  mockFinancialClient.assets.update
+    .mockReset()
+    .mockImplementation(async (payload) => ({
       id: payload.id,
       name: payload.name,
       category: payload.category,
@@ -152,11 +156,11 @@ beforeEach(() => {
       annualGrowthRate: payload.annualGrowthRate,
       notes: payload.notes ?? null,
       updatedAt: now,
-    })
-  );
+    }));
   mockFinancialClient.assets.delete.mockReset().mockResolvedValue(undefined);
-  mockFinancialClient.liabilities.create.mockReset().mockImplementation(
-    async (payload) => ({
+  mockFinancialClient.liabilities.create
+    .mockReset()
+    .mockImplementation(async (payload) => ({
       id: payload.id ?? "liability-created",
       name: payload.name,
       category: payload.category,
@@ -165,10 +169,10 @@ beforeEach(() => {
       minimumPayment: payload.minimumPayment,
       notes: payload.notes ?? null,
       updatedAt: now,
-    })
-  );
-  mockFinancialClient.liabilities.update.mockReset().mockImplementation(
-    async (payload) => ({
+    }));
+  mockFinancialClient.liabilities.update
+    .mockReset()
+    .mockImplementation(async (payload) => ({
       id: payload.id,
       name: payload.name,
       category: payload.category,
@@ -177,13 +181,13 @@ beforeEach(() => {
       minimumPayment: payload.minimumPayment,
       notes: payload.notes ?? null,
       updatedAt: now,
-    })
-  );
-  mockFinancialClient.liabilities.delete.mockReset().mockResolvedValue(
-    undefined
-  );
-  mockFinancialClient.incomes.create.mockReset().mockImplementation(
-    async (payload) => ({
+    }));
+  mockFinancialClient.liabilities.delete
+    .mockReset()
+    .mockResolvedValue(undefined);
+  mockFinancialClient.incomes.create
+    .mockReset()
+    .mockImplementation(async (payload) => ({
       id: payload.id ?? "income-created",
       source: payload.source,
       category: payload.category,
@@ -192,10 +196,10 @@ beforeEach(() => {
       startDate: payload.startDate,
       notes: payload.notes ?? null,
       updatedAt: now,
-    })
-  );
-  mockFinancialClient.incomes.update.mockReset().mockImplementation(
-    async (payload) => ({
+    }));
+  mockFinancialClient.incomes.update
+    .mockReset()
+    .mockImplementation(async (payload) => ({
       id: payload.id,
       source: payload.source,
       category: payload.category,
@@ -204,11 +208,11 @@ beforeEach(() => {
       startDate: payload.startDate,
       notes: payload.notes ?? null,
       updatedAt: now,
-    })
-  );
+    }));
   mockFinancialClient.incomes.delete.mockReset().mockResolvedValue(undefined);
-  mockFinancialClient.expenses.create.mockReset().mockImplementation(
-    async (payload) => ({
+  mockFinancialClient.expenses.create
+    .mockReset()
+    .mockImplementation(async (payload) => ({
       id: payload.id ?? "expense-created",
       payee: payload.payee,
       category: payload.category,
@@ -216,10 +220,10 @@ beforeEach(() => {
       frequency: payload.frequency,
       notes: payload.notes ?? null,
       updatedAt: now,
-    })
-  );
-  mockFinancialClient.expenses.update.mockReset().mockImplementation(
-    async (payload) => ({
+    }));
+  mockFinancialClient.expenses.update
+    .mockReset()
+    .mockImplementation(async (payload) => ({
       id: payload.id,
       payee: payload.payee,
       category: payload.category,
@@ -227,8 +231,7 @@ beforeEach(() => {
       frequency: payload.frequency,
       notes: payload.notes ?? null,
       updatedAt: now,
-    })
-  );
+    }));
   mockFinancialClient.expenses.delete.mockReset().mockResolvedValue(undefined);
   mockStateRef.current = {
     financialPlan: structuredClone(basePlan),
@@ -248,19 +251,19 @@ describe("dispatchIntentActions", () => {
     const actions = [
       {
         id: "a1",
-        verb: "add" as const,
+        verb: "update" as const,
         entity: "asset" as const,
         target: "stocks",
-        amount: 5_000,
+        amount: 15000,
         currency: "USD",
         raw: "Add 5k to stocks",
       },
       {
         id: "a2",
-        verb: "increase" as const,
+        verb: "update" as const,
         entity: "expense" as const,
         target: "rent",
-        amount: 200,
+        amount: 2700,
         currency: "USD",
         raw: "Increase expenses",
       },
@@ -276,7 +279,7 @@ describe("dispatchIntentActions", () => {
     const updatedPlan = mockSetFinancialPlan.mock.calls[0][0];
     expect(updatedPlan.assets[0].currentValue).toBe(15_000);
     expect(updatedPlan.summary.totalAssets).toBe(15_000);
-    expect(updatedPlan.summary.monthlyExpenses).toBe(3_200);
+    expect(updatedPlan.summary.monthlyExpenses).toBe(3200);
     expect(mockRunProjection).toHaveBeenCalledTimes(1);
     expect(global.fetch).toHaveBeenCalledTimes(actions.length);
     expect(mockFinancialClient.assets.update).toHaveBeenCalledWith(
@@ -288,7 +291,7 @@ describe("dispatchIntentActions", () => {
     expect(mockFinancialClient.expenses.update).toHaveBeenCalledWith(
       expect.objectContaining({
         id: "expense-1",
-        amount: 2_700,
+        amount: 2700,
       })
     );
     expect(mockRefreshData).toHaveBeenCalled();
@@ -305,7 +308,7 @@ describe("dispatchIntentActions", () => {
         actions: [
           {
             id: "a1",
-            verb: "add",
+            verb: "add-item",
             entity: "asset",
             target: "stocks",
             amount: 100,
@@ -321,10 +324,10 @@ describe("dispatchIntentActions", () => {
     const actions = [
       {
         id: "a1",
-        verb: "add" as const,
+        verb: "add-item" as const,
         entity: "asset" as const,
         target: "a new asset called savings account",
-        amount: 5_000,
+        amount: 5000,
         currency: "USD",
         raw: "Add a new asset called savings account with 5k",
       },
@@ -341,12 +344,12 @@ describe("dispatchIntentActions", () => {
       (asset: { name: string }) => asset.name === "savings account"
     );
     expect(created).toBeTruthy();
-    expect(created?.currentValue).toBe(5_000);
+    expect(created?.currentValue).toBe(5000);
     expect(updatedPlan.summary.totalAssets).toBe(15_000);
     expect(mockFinancialClient.assets.create).toHaveBeenCalledWith(
       expect.objectContaining({
         name: "savings account",
-        currentValue: 5_000,
+        currentValue: 5000,
       })
     );
   });
@@ -355,7 +358,7 @@ describe("dispatchIntentActions", () => {
     const actions = [
       {
         id: "l1",
-        verb: "add" as const,
+        verb: "add-item" as const,
         entity: "liability" as const,
         target: "a new liability called student loan",
         amount: 12_000,
@@ -389,10 +392,10 @@ describe("dispatchIntentActions", () => {
     const actions = [
       {
         id: "inc-1",
-        verb: "add" as const,
+        verb: "add-item" as const,
         entity: "income" as const,
         target: "a new income called freelance design",
-        amount: 1_200,
+        amount: 1200,
         currency: "USD",
         raw: "Add a new income called freelance design with $1200",
       },
@@ -408,13 +411,13 @@ describe("dispatchIntentActions", () => {
     const created = updatedPlan.incomes.find(
       (income: { source: string }) => income.source === "freelance design"
     );
-    expect(created?.amount).toBe(1_200);
-    expect(updatedPlan.summary.monthlyIncome).toBe(9_200);
-    expect(updatedPlan.summary.monthlySavings).toBe(6_200);
+    expect(created?.amount).toBe(1200);
+    expect(updatedPlan.summary.monthlyIncome).toBe(9200);
+    expect(updatedPlan.summary.monthlySavings).toBe(6200);
     expect(mockFinancialClient.incomes.create).toHaveBeenCalledWith(
       expect.objectContaining({
         source: "freelance design",
-        amount: 1_200,
+        amount: 1200,
       })
     );
   });
@@ -423,7 +426,7 @@ describe("dispatchIntentActions", () => {
     const actions = [
       {
         id: "exp-1",
-        verb: "remove" as const,
+        verb: "remove-item" as const,
         entity: "expense" as const,
         target: "rent",
         amount: null,
@@ -440,7 +443,7 @@ describe("dispatchIntentActions", () => {
     const updatedPlan = mockSetFinancialPlan.mock.calls[0][0];
     expect(updatedPlan.expenses).toHaveLength(1);
     expect(updatedPlan.summary.monthlyExpenses).toBe(500);
-    expect(updatedPlan.summary.monthlySavings).toBe(7_500);
+    expect(updatedPlan.summary.monthlySavings).toBe(7500);
     expect(mockFinancialClient.expenses.delete).toHaveBeenCalledWith(
       "expense-1"
     );
@@ -453,7 +456,7 @@ describe("dispatchIntentActions", () => {
         actions: [
           {
             id: "a1",
-            verb: "add",
+            verb: "add-item",
             entity: "asset",
             target: "new thing",
             amount: null,
@@ -472,7 +475,7 @@ describe("dispatchIntentActions", () => {
         actions: [
           {
             id: "a1",
-            verb: "reduce",
+            verb: "update",
             entity: "asset",
             target: "unknown",
             amount: 100,

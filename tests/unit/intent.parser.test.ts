@@ -1,11 +1,22 @@
-import { describe, expect, it, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// Mock fetch at the top level
+vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+  ok: true,
+  json: async () => ({
+    assets: [{ name: "house", currentValue: 500000 }],
+    liabilities: [{ name: "mortgage", currentBalance: 350000 }],
+    incomes: [{ source: "salary", amount: 8500 }],
+    expenses: [{ payee: "rent", amount: 2500 }]
+  })
+}));
 
 vi.mock("@/lib/intent/llm", () => ({
   inferIntentActions: vi.fn(),
 }));
 
 import { inferIntentActions } from "@/lib/intent/llm";
-import { parseIntent, IntentParseError } from "@/lib/intent/parser";
+import { IntentParseError, parseIntent } from "@/lib/intent/parser";
 
 const mockedInfer = vi.mocked(inferIntentActions);
 
@@ -17,7 +28,7 @@ describe("intent parser", () => {
   it("maps LLM extracted actions into IntentAction objects", async () => {
     mockedInfer.mockResolvedValue([
       {
-        verb: "add",
+        verb: "add-item",
         entity: "asset",
         target: "Brokerage account",
         amount: 5000,
@@ -35,7 +46,7 @@ describe("intent parser", () => {
     const [action] = result.actions;
     expect(action.id).toBeTruthy();
     expect(action).toMatchObject({
-      verb: "add",
+      verb: "add-item",
       entity: "asset",
       target: "Brokerage account",
       amount: 5000,
@@ -47,7 +58,7 @@ describe("intent parser", () => {
   it("normalizes currency casing and amount values", async () => {
     mockedInfer.mockResolvedValue([
       {
-        verb: "increase",
+        verb: "update",
         entity: "expense",
         target: "rent",
         amount: -2500,

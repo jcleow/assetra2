@@ -1,4 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// Mock fetch at the top level
+vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+  ok: true,
+  json: async () => ({
+    assets: [{ name: "house", currentValue: 500000 }],
+    liabilities: [{ name: "mortgage", currentBalance: 350000 }],
+    incomes: [{ source: "salary", amount: 8500 }],
+    expenses: [{ payee: "rent", amount: 2500 }]
+  })
+}));
 
 import { POST } from "@/app/api/intent/route";
 

@@ -1,12 +1,12 @@
 "use client";
 
-import { toast } from "@/components/toast";
 import type { FinancialPlanPayload } from "@/app/api/financial-plan/route";
+import { toast } from "@/components/toast";
 import { useFinancialPlanningStore } from "@/features/financial-planning/store";
 import {
-  financialClient,
   computeMonthlyCashFlow,
   type Frequency,
+  financialClient,
 } from "@/lib/financial";
 import type { IntentAction } from "@/lib/intent/parser";
 import { generateUUID } from "@/lib/utils";
@@ -117,7 +117,7 @@ function ensureAmount(action: IntentAction): number {
 }
 
 function adjustAsset(plan: FinancialPlanPayload, action: IntentAction) {
-  let target = matchEntity(plan.assets ?? [], action.target);
+  const target = matchEntity(plan.assets ?? [], action.target);
   if (!target) {
     if (canCreateFromAction(action)) {
       const created = createAssetFromIntent(action);
@@ -129,20 +129,20 @@ function adjustAsset(plan: FinancialPlanPayload, action: IntentAction) {
     );
   }
 
-  if (action.verb === "remove" && action.amount == null) {
+  if (action.verb === "remove-item") {
     plan.assets = plan.assets?.filter((asset) => asset.id !== target.id) ?? [];
     return;
   }
 
-  const delta = ensureAmount(action);
-  target.currentValue = Math.max(
-    0,
-    mutateValue(target.currentValue, delta, action.verb)
-  );
+  if (action.verb === "update") {
+    const amount = ensureAmount(action);
+    target.currentValue = Math.max(0, amount);
+    target.updatedAt = new Date().toISOString();
+  }
 }
 
 function adjustLiability(plan: FinancialPlanPayload, action: IntentAction) {
-  let target = matchEntity(plan.liabilities ?? [], action.target);
+  const target = matchEntity(plan.liabilities ?? [], action.target);
   if (!target) {
     if (canCreateFromAction(action)) {
       const created = createLiabilityFromIntent(action);
@@ -154,18 +154,17 @@ function adjustLiability(plan: FinancialPlanPayload, action: IntentAction) {
     );
   }
 
-  if (action.verb === "remove" && action.amount == null) {
+  if (action.verb === "remove-item") {
     plan.liabilities =
-      plan.liabilities?.filter((liability) => liability.id !== target.id) ??
-      [];
+      plan.liabilities?.filter((liability) => liability.id !== target.id) ?? [];
     return;
   }
 
-  const delta = ensureAmount(action);
-  target.currentBalance = Math.max(
-    0,
-    mutateValue(target.currentBalance, delta, action.verb)
-  );
+  if (action.verb === "update") {
+    const amount = ensureAmount(action);
+    target.currentBalance = Math.max(0, amount);
+    target.updatedAt = new Date().toISOString();
+  }
 }
 
 function adjustIncome(plan: FinancialPlanPayload, action: IntentAction) {
@@ -184,19 +183,18 @@ function adjustIncome(plan: FinancialPlanPayload, action: IntentAction) {
     return;
   }
 
-  if (action.verb === "remove" && action.amount == null) {
+  if (action.verb === "remove-item") {
     plan.incomes = plan.incomes.filter((income) => income.id !== target.id);
     syncCashflowSummary(plan);
     return;
   }
 
-  const delta = ensureAmount(action);
-  target.amount = Math.max(
-    0,
-    mutateValue(target.amount, delta, action.verb)
-  );
-  target.updatedAt = new Date().toISOString();
-  syncCashflowSummary(plan);
+  if (action.verb === "update") {
+    const amount = ensureAmount(action);
+    target.amount = Math.max(0, amount);
+    target.updatedAt = new Date().toISOString();
+    syncCashflowSummary(plan);
+  }
 }
 
 function adjustExpense(plan: FinancialPlanPayload, action: IntentAction) {
@@ -215,19 +213,18 @@ function adjustExpense(plan: FinancialPlanPayload, action: IntentAction) {
     return;
   }
 
-  if (action.verb === "remove" && action.amount == null) {
+  if (action.verb === "remove-item") {
     plan.expenses = plan.expenses.filter((expense) => expense.id !== target.id);
     syncCashflowSummary(plan);
     return;
   }
 
-  const delta = ensureAmount(action);
-  target.amount = Math.max(
-    0,
-    mutateValue(target.amount, delta, action.verb)
-  );
-  target.updatedAt = new Date().toISOString();
-  syncCashflowSummary(plan);
+  if (action.verb === "update") {
+    const amount = ensureAmount(action);
+    target.amount = Math.max(0, amount);
+    target.updatedAt = new Date().toISOString();
+    syncCashflowSummary(plan);
+  }
 }
 
 function mutateValue(
@@ -237,12 +234,11 @@ function mutateValue(
   options?: { removeZero?: boolean }
 ) {
   switch (verb) {
-    case "add":
-    case "increase":
+    case "add-item":
       return current + delta;
-    case "reduce":
-      return current - delta;
-    case "remove":
+    case "update":
+      return delta; // For update, delta is the final value
+    case "remove-item":
       return options?.removeZero ? 0 : current - delta;
     default:
       return current;
@@ -316,15 +312,12 @@ function matchEntity<T extends { name: string }>(
 
 function canCreateFromAction(action: IntentAction) {
   return (
-    (action.verb === "add" || action.verb === "increase") &&
+    action.verb === "add-item" &&
     typeof action.amount === "number"
   );
 }
 
-function deriveEntityName(
-  target: string | null | undefined,
-  fallback: string
-) {
+function deriveEntityName(target: string | null | undefined, fallback: string) {
   if (!target) {
     return fallback;
   }
@@ -396,10 +389,7 @@ async function emitAuditEvent(
   }
 }
 
-async function persistAsset(
-  plan: FinancialPlanPayload,
-  action: IntentAction
-) {
+async function persistAsset(plan: FinancialPlanPayload, action: IntentAction) {
   const target = matchEntity(plan.assets ?? [], action.target);
 
   if (!target) {
@@ -419,7 +409,7 @@ async function persistAsset(
     return;
   }
 
-  if (action.verb === "remove" && action.amount == null) {
+  if (action.verb === "remove-item") {
     await financialClient.assets.delete(target.id);
     return;
   }
@@ -436,8 +426,8 @@ async function persistAsset(
     category: target.category,
     currentValue: nextValue,
     annualGrowthRate: target.annualGrowthRate,
-      notes: target.notes ?? undefined,
-    });
+    notes: target.notes ?? undefined,
+  });
 }
 
 async function persistLiability(
@@ -445,8 +435,8 @@ async function persistLiability(
   action: IntentAction
 ) {
   const target = matchEntity(plan.liabilities ?? [], action.target);
-  if (!target) {     
-    if (!canCreateFromAction(action)) {      
+  if (!target) {
+    if (!canCreateFromAction(action)) {
       throw new IntentDispatchError(
         `Could not find a liability matching "${action.target ?? ""}".`
       );
@@ -468,7 +458,7 @@ async function persistLiability(
     return;
   }
 
-  if (action.verb === "remove" && action.amount == null) {
+  if (action.verb === "remove-item") {
     await financialClient.liabilities.delete(target.id);
     return;
   }
@@ -479,15 +469,15 @@ async function persistLiability(
     mutateValue(target.currentBalance, delta, action.verb)
   );
 
-    await financialClient.liabilities.update({
-      id: target.id,
-      name: target.name,
-      category: target.category,
-      currentBalance: nextBalance,
-      interestRateApr: target.interestRateApr,
-      minimumPayment: target.minimumPayment,
-      notes: target.notes ?? undefined,
-    });
+  await financialClient.liabilities.update({
+    id: target.id,
+    name: target.name,
+    category: target.category,
+    currentBalance: nextBalance,
+    interestRateApr: target.interestRateApr,
+    minimumPayment: target.minimumPayment,
+    notes: target.notes ?? undefined,
+  });
 }
 
 function matchIncome(
@@ -497,9 +487,7 @@ function matchIncome(
   if (!target) return null;
   const normalized = normalizeTarget(target);
   return (
-    incomes.find(
-      (income) => normalizeTarget(income.source) === normalized
-    ) ??
+    incomes.find((income) => normalizeTarget(income.source) === normalized) ??
     incomes.find((income) =>
       normalizeTarget(income.source).includes(normalized)
     ) ??
@@ -514,9 +502,7 @@ function matchExpense(
   if (!target) return null;
   const normalized = normalizeTarget(target);
   return (
-    expenses.find(
-      (expense) => normalizeTarget(expense.payee) === normalized
-    ) ??
+    expenses.find((expense) => normalizeTarget(expense.payee) === normalized) ??
     expenses.find((expense) =>
       normalizeTarget(expense.payee).includes(normalized)
     ) ??
@@ -576,15 +562,10 @@ function syncCashflowSummary(plan: FinancialPlanPayload) {
   plan.summary.monthlyExpenses = summary.monthlyExpenses;
   plan.summary.monthlySavings = summary.netMonthly;
   plan.summary.savingsRate =
-    summary.monthlyIncome > 0
-      ? summary.netMonthly / summary.monthlyIncome
-      : 0;
+    summary.monthlyIncome > 0 ? summary.netMonthly / summary.monthlyIncome : 0;
 }
 
-async function persistIncome(
-  plan: FinancialPlanPayload,
-  action: IntentAction
-) {
+async function persistIncome(plan: FinancialPlanPayload, action: IntentAction) {
   const target = matchIncome(plan.incomes ?? [], action.target);
 
   if (!target) {
@@ -605,7 +586,7 @@ async function persistIncome(
     return;
   }
 
-  if (action.verb === "remove" && action.amount == null) {
+  if (action.verb === "remove-item") {
     await financialClient.incomes.delete(target.id);
     return;
   }
@@ -650,7 +631,7 @@ async function persistExpense(
     return;
   }
 
-  if (action.verb === "remove" && action.amount == null) {
+  if (action.verb === "remove-item") {
     await financialClient.expenses.delete(target.id);
     return;
   }

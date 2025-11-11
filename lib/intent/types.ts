@@ -1,4 +1,4 @@
-export type IntentVerb = "add" | "increase" | "reduce" | "remove";
+export type IntentVerb = "add-item" | "update" | "remove-item";
 export type IntentEntity = "asset" | "liability" | "income" | "expense";
 
 export interface IntentAction {
