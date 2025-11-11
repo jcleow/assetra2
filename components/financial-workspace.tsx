@@ -18,7 +18,8 @@ export function FinancialWorkspace() {
     if (!data && !isLoading) {
       const loadData = async () => {
         try {
-          const liveResponse = await fetch('/api/financial-plan?refresh=true');
+          const timestamp = Date.now();
+          const liveResponse = await fetch(`/api/financial-plan?refresh=true&t=${timestamp}`);
           if (!liveResponse.ok) {
             throw new Error(`Live data request failed (${liveResponse.status})`);
           }
@@ -30,7 +31,7 @@ export function FinancialWorkspace() {
         }
 
         try {
-          const mockResponse = await fetch('/api/financial-plan?mock=true');
+          const mockResponse = await fetch(`/api/financial-plan?mock=true&t=${Date.now()}`);
           if (mockResponse.ok) {
             const mockData = await mockResponse.json();
             setFinancialPlan(mockData);

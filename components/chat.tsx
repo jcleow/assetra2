@@ -281,7 +281,7 @@ export function Chat({
       if (!review || dispatchingIntentId) {
         return;
       }
-
+      console.info("handle intent confirm")
       setDispatchingIntentId(intentId);
       try {
         await dispatchIntentActions({
