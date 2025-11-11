@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { toast } from "@/components/toast";
 import { useFinancialPlanningStore } from "@/features/financial-planning";
 
 const GO_PROXY_PREFIX =
   process.env.NEXT_PUBLIC_GO_PROXY_PREFIX?.replace(/\/$/, "") || "/go-api";
+const GO_SERVICE_BASE_URL =
+  process.env.NEXT_PUBLIC_GO_SERVICE_BASE_URL?.replace(/\/$/, "") || null;
 const STREAM_PATH = `${GO_PROXY_PREFIX}/events`;
 const EVENT_TYPES = [
   "asset.create",
@@ -30,6 +33,7 @@ export function useFinancialEvents() {
   const invalidate = useFinancialPlanningStore(
     (state) => state.invalidateFinancialData
   );
+  const queryClient = useQueryClient();
   const sourceRef = useRef<EventSource | null>(null);
   const reconnectTimerRef = useRef<number | null>(null);
   const refreshTimerRef = useRef<number | null>(null);
@@ -38,6 +42,7 @@ export function useFinancialEvents() {
   const warnedRef = useRef(false);
 
   useEffect(() => {
+      console.log("[financial-events] hook mounted");
     if (typeof window === "undefined" || typeof EventSource === "undefined") {
       return;
     }
@@ -83,7 +88,14 @@ export function useFinancialEvents() {
     };
 
     const handleEvent = (event: MessageEvent<string>) => {
+      console.log("handling event...")
+      console.log(event,'event')
       cursorRef.current = event.lastEventId || cursorRef.current;
+      const keys = ["assets", "liabilities", "incomes", "expenses"] as const;
+      keys.forEach((key) => {
+        queryClient.invalidateQueries({ queryKey: [key] });
+        queryClient.refetchQueries({ queryKey: [key], type: "active" });
+      });
       scheduleRefresh();
     };
 
@@ -104,24 +116,25 @@ export function useFinancialEvents() {
     const connect = () => {
       cleanupSource();
 
-      const url = new URL(STREAM_PATH, window.location.origin);
+      const url = GO_SERVICE_BASE_URL
+        ? new URL(`${GO_SERVICE_BASE_URL}/events`)
+        : new URL(STREAM_PATH, window.location.origin);
       if (cursorRef.current) {
         url.searchParams.set("cursor", cursorRef.current);
       }
       url.searchParams.set("session", "browser");
 
-      const eventSource = new EventSource(url.toString(), {
-        withCredentials: true,
-      });
+      const eventSource = new EventSource(url.toString());
       sourceRef.current = eventSource;
 
       EVENT_TYPES.forEach((type) =>
-        eventSource.addEventListener(type, handleEvent as EventListener)
-      );
+      eventSource.addEventListener(type, handleEvent as EventListener)
+    );
 
       eventSource.onopen = () => {
         reconnectAttemptsRef.current = 0;
         warnedRef.current = false;
+        console.info("[financial-events] stream connected");
       };
 
       eventSource.onerror = () => {
@@ -146,5 +159,5 @@ export function useFinancialEvents() {
       clearRefreshTimer();
       cleanupSource();
     };
-  }, [invalidate]);
+  }, [invalidate, queryClient]);
 }

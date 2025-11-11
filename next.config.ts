@@ -56,6 +56,7 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_GO_PROXY_PREFIX: GO_PROXY_PREFIX,
     NEXT_PUBLIC_GO_SERVICE_HEALTH: normalizedHealthPath,
+    NEXT_PUBLIC_GO_SERVICE_BASE_URL: goServiceDestination,
   },
 };
 

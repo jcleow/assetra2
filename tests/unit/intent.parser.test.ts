@@ -1,32 +1,76 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 
+vi.mock("@/lib/intent/llm", () => ({
+  inferIntentActions: vi.fn(),
+}));
+
+import { inferIntentActions } from "@/lib/intent/llm";
 import { parseIntent, IntentParseError } from "@/lib/intent/parser";
 
+const mockedInfer = vi.mocked(inferIntentActions);
+
 describe("intent parser", () => {
-  it("parses a single add command", () => {
-    const result = parseIntent("Add $5,000 to stocks");
+  beforeEach(() => {
+    mockedInfer.mockReset();
+  });
+
+  it("maps LLM extracted actions into IntentAction objects", async () => {
+    mockedInfer.mockResolvedValue([
+      {
+        verb: "add",
+        entity: "asset",
+        target: "Brokerage account",
+        amount: 5000,
+        currency: "USD",
+        raw: "Add $5,000 to my brokerage account",
+      },
+    ]);
+
+    const result = await parseIntent("Add $5,000 to my brokerage account");
+
+    expect(mockedInfer).toHaveBeenCalledWith(
+      "Add $5,000 to my brokerage account"
+    );
     expect(result.actions).toHaveLength(1);
-    const action = result.actions[0];
-    expect(action.verb).toBe("add");
-    expect(action.entity).toBe("asset");
-    expect(action.amount).toBe(5000);
-    expect(action.currency).toBe("USD");
-    expect(action.target.toLowerCase()).toContain("stocks");
+    const [action] = result.actions;
+    expect(action.id).toBeTruthy();
+    expect(action).toMatchObject({
+      verb: "add",
+      entity: "asset",
+      target: "Brokerage account",
+      amount: 5000,
+      currency: "USD",
+      raw: "Add $5,000 to my brokerage account",
+    });
   });
 
-  it("parses chained commands separated by and", () => {
-    const result = parseIntent("Increase mortgage payment 200 and remove 1k from cash");
-    expect(result.actions).toHaveLength(2);
-    expect(result.actions[0].verb).toBe("increase");
-    expect(result.actions[1].verb).toBe("remove");
+  it("normalizes currency casing and amount values", async () => {
+    mockedInfer.mockResolvedValue([
+      {
+        verb: "increase",
+        entity: "expense",
+        target: "rent",
+        amount: -2500,
+        currency: "usd",
+        raw: "increase rent payments",
+      },
+    ]);
+
+    const result = await parseIntent("increase rent payments");
+
+    expect(result.actions[0].amount).toBe(2500);
+    expect(result.actions[0].currency).toBe("USD");
   });
 
-  it("supports shorthand magnitudes", () => {
-    const result = parseIntent("Reduce debt by 2k");
-    expect(result.actions[0].amount).toBe(2000);
+  it("throws on empty input", async () => {
+    await expect(parseIntent("   ")).rejects.toThrow(IntentParseError);
   });
 
-  it("throws on empty input", () => {
-    expect(() => parseIntent("   ")).toThrow(IntentParseError);
+  it("wraps llm errors in IntentParseError", async () => {
+    mockedInfer.mockRejectedValue(new Error("upstream failure"));
+
+    await expect(parseIntent("Add 100 to savings")).rejects.toThrow(
+      IntentParseError
+    );
   });
 });

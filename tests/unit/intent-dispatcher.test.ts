@@ -23,6 +23,16 @@ const mockFinancialClient = vi.hoisted(() => ({
     update: vi.fn(),
     delete: vi.fn(),
   },
+  incomes: {
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
+  expenses: {
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  },
 }));
 
 vi.mock("@/features/financial-planning/store", () => ({
@@ -30,9 +40,15 @@ vi.mock("@/features/financial-planning/store", () => ({
     getState: () => mockStateRef.current,
   },
 }));
-vi.mock("@/lib/financial", () => ({
-  financialClient: mockFinancialClient,
-}));
+vi.mock("@/lib/financial", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/financial")>(
+    "@/lib/financial"
+  );
+  return {
+    ...actual,
+    financialClient: mockFinancialClient,
+  };
+});
 import { dispatchIntentActions, IntentDispatchError } from "@/features/financial-planning/intent-dispatcher";
 
 const basePlan = {
@@ -59,8 +75,38 @@ const basePlan = {
       updatedAt: new Date().toISOString(),
     },
   ],
-  incomes: [],
-  expenses: [],
+  incomes: [
+    {
+      id: "income-1",
+      source: "Salary",
+      category: "employment",
+      amount: 8_000,
+      frequency: "monthly",
+      startDate: "2023-01-01T00:00:00.000Z",
+      notes: null,
+      updatedAt: new Date().toISOString(),
+    },
+  ],
+  expenses: [
+    {
+      id: "expense-1",
+      payee: "Rent",
+      category: "housing",
+      amount: 2_500,
+      frequency: "monthly",
+      notes: null,
+      updatedAt: new Date().toISOString(),
+    },
+    {
+      id: "expense-2",
+      payee: "Utilities",
+      category: "living",
+      amount: 500,
+      frequency: "monthly",
+      notes: null,
+      updatedAt: new Date().toISOString(),
+    },
+  ],
   cashflow: {
     summary: {
       monthlyIncome: 8_000,
@@ -136,6 +182,54 @@ beforeEach(() => {
   mockFinancialClient.liabilities.delete.mockReset().mockResolvedValue(
     undefined
   );
+  mockFinancialClient.incomes.create.mockReset().mockImplementation(
+    async (payload) => ({
+      id: payload.id ?? "income-created",
+      source: payload.source,
+      category: payload.category,
+      amount: payload.amount,
+      frequency: payload.frequency,
+      startDate: payload.startDate,
+      notes: payload.notes ?? null,
+      updatedAt: now,
+    })
+  );
+  mockFinancialClient.incomes.update.mockReset().mockImplementation(
+    async (payload) => ({
+      id: payload.id,
+      source: payload.source,
+      category: payload.category,
+      amount: payload.amount,
+      frequency: payload.frequency,
+      startDate: payload.startDate,
+      notes: payload.notes ?? null,
+      updatedAt: now,
+    })
+  );
+  mockFinancialClient.incomes.delete.mockReset().mockResolvedValue(undefined);
+  mockFinancialClient.expenses.create.mockReset().mockImplementation(
+    async (payload) => ({
+      id: payload.id ?? "expense-created",
+      payee: payload.payee,
+      category: payload.category,
+      amount: payload.amount,
+      frequency: payload.frequency,
+      notes: payload.notes ?? null,
+      updatedAt: now,
+    })
+  );
+  mockFinancialClient.expenses.update.mockReset().mockImplementation(
+    async (payload) => ({
+      id: payload.id,
+      payee: payload.payee,
+      category: payload.category,
+      amount: payload.amount,
+      frequency: payload.frequency,
+      notes: payload.notes ?? null,
+      updatedAt: now,
+    })
+  );
+  mockFinancialClient.expenses.delete.mockReset().mockResolvedValue(undefined);
   mockStateRef.current = {
     financialPlan: structuredClone(basePlan),
     setFinancialPlan: mockSetFinancialPlan,
@@ -189,6 +283,12 @@ describe("dispatchIntentActions", () => {
       expect.objectContaining({
         id: "asset-1",
         currentValue: 15_000,
+      })
+    );
+    expect(mockFinancialClient.expenses.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "expense-1",
+        amount: 2_700,
       })
     );
     expect(mockRefreshData).toHaveBeenCalled();
@@ -282,6 +382,67 @@ describe("dispatchIntentActions", () => {
         name: "student loan",
         currentBalance: 12_000,
       })
+    );
+  });
+
+  it("creates a new income when target is missing and amount provided", async () => {
+    const actions = [
+      {
+        id: "inc-1",
+        verb: "add" as const,
+        entity: "income" as const,
+        target: "a new income called freelance design",
+        amount: 1_200,
+        currency: "USD",
+        raw: "Add a new income called freelance design with $1200",
+      },
+    ];
+
+    await dispatchIntentActions({
+      intentId: "intent-create-income",
+      actions,
+    });
+
+    const updatedPlan = mockSetFinancialPlan.mock.calls[0][0];
+    expect(updatedPlan.incomes).toHaveLength(2);
+    const created = updatedPlan.incomes.find(
+      (income: { source: string }) => income.source === "freelance design"
+    );
+    expect(created?.amount).toBe(1_200);
+    expect(updatedPlan.summary.monthlyIncome).toBe(9_200);
+    expect(updatedPlan.summary.monthlySavings).toBe(6_200);
+    expect(mockFinancialClient.incomes.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        source: "freelance design",
+        amount: 1_200,
+      })
+    );
+  });
+
+  it("removes an expense when using remove verb without amount", async () => {
+    const actions = [
+      {
+        id: "exp-1",
+        verb: "remove" as const,
+        entity: "expense" as const,
+        target: "rent",
+        amount: null,
+        currency: "USD",
+        raw: "Remove rent",
+      },
+    ];
+
+    await dispatchIntentActions({
+      intentId: "intent-remove-expense",
+      actions,
+    });
+
+    const updatedPlan = mockSetFinancialPlan.mock.calls[0][0];
+    expect(updatedPlan.expenses).toHaveLength(1);
+    expect(updatedPlan.summary.monthlyExpenses).toBe(500);
+    expect(updatedPlan.summary.monthlySavings).toBe(7_500);
+    expect(mockFinancialClient.expenses.delete).toHaveBeenCalledWith(
+      "expense-1"
     );
   });
 

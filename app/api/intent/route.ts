@@ -15,7 +15,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = parseIntent(body.message);
+    const result = await parseIntent(body.message);
     console.info("[intent] parsed", result);
 
     return NextResponse.json({

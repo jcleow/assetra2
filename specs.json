@@ -1314,6 +1314,33 @@
             "notes": [
                 "Moved out of T8 to deprioritize until after chat-driven flows stabilize."
             ]
+        },
+        {
+            "title": "Bug: Financial Data cards ignore live liability updates",
+            "description": "The Financial Data management cards stay stale after chat intents or SSE pushes because only the Zustand store refreshes while the React Query caches remain untouched.",
+            "technicalDetails": [
+                "Document that FinancialDataManagement relies on React Query (assets/liabilities/incomes/expenses) instead of the shared store.",
+                "Update `useFinancialEvents` to invalidate the ['assets', 'liabilities', 'incomes', 'expenses'] queries whenever finance change events arrive so cards refetch instantly.",
+                "Ensure cache-busting parameters (refresh=true&t=timestamp) persist so refreshed queries bypass the Next.js financial-plan cache.",
+                "Expose the Go service base URL to the client and point the EventSource directly at it so SSE payloads bypass any buffering proxy."
+            ],
+            "acceptanceCriteria": [
+                "Liability/asset/income/expense cards update immediately after an intent dispatch without a manual page reload.",
+                "React Query panels show refetch activity following SSE events (no stale data).",
+                "QA can reproduce the original bug description and confirm it is resolved."
+            ],
+            "storyPoints": 1,
+            "difficulty": "low",
+            "tags": [
+                "bug",
+                "frontend",
+                "realtime"
+            ],
+            "id": "BUG-NETWORTH-LIAB",
+            "status": "in_progress",
+            "notes": [
+                "Root cause: SSE handler refreshed only the graph store; React Query caches for the Financial Data cards were never invalidated."
+            ]
         }
     ]
 }

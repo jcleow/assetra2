@@ -61,6 +61,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (rt *router) handleEventStream(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("handling new connections!");
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
 		return
@@ -287,6 +288,7 @@ func (rt *router) createLiability(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, http.StatusCreated, created)
 	rt.publishChange("liability", "create", created.ID, created)
+	fmt.Println("Published changed on liability create")
 }
 
 func (rt *router) updateLiability(w http.ResponseWriter, r *http.Request, id string) {
@@ -308,6 +310,7 @@ func (rt *router) updateLiability(w http.ResponseWriter, r *http.Request, id str
 	}
 	writeJSON(w, http.StatusOK, updated)
 	rt.publishChange("liability", "update", updated.ID, updated)
+	fmt.Println("Published changed on liability update")
 }
 
 func (rt *router) deleteLiability(w http.ResponseWriter, r *http.Request, id string) {
@@ -564,6 +567,8 @@ func (rt *router) publishChange(entity, action, id string, payload any) {
 		ResourceID: id,
 		Data:       payload,
 	})
+
+	fmt.Printf("finance change for %s %s", entity, action);
 }
 
 // --- payload helpers ---

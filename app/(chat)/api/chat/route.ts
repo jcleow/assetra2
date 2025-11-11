@@ -119,8 +119,7 @@ export async function POST(request: Request) {
     const messageCount = await getMessageCountByUserId({
       id: session.user.id,
       differenceInHours: 24,
-    });
-
+    });    
     if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
       return new ChatSDKError("rate_limit:chat").toResponse();
     }

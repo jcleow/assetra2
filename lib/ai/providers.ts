@@ -37,7 +37,7 @@ const providerConfig: ProviderConfig = (() => {
       loadModel: (model: string) => googleProvider.languageModel(model),
       models: applyModelOverrides({
         chat: process.env.GEMINI_CHAT_MODEL_ID ?? "gemini-2.5-flash",
-        reasoning: process.env.GEMINI_REASONING_MODEL_ID ?? "gemini-2.5-pro",
+        reasoning: process.env.GEMINI_REASONING_MODEL_ID ?? "gemini-2.5-flash",
         title: process.env.GEMINI_TITLE_MODEL_ID ?? "gemini-2.5-flash",
         artifact: process.env.GEMINI_ARTIFACT_MODEL_ID ?? "gemini-2.5-flash",
       }),
