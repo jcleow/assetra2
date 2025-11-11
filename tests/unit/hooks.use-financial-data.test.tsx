@@ -256,7 +256,9 @@ describe("Financial Hooks - Integration Tests", () => {
 
       // Test failed create operation
       await act(async () => {
-        await expect(result.current.createItem(createPayload)).rejects.toThrow();
+        await expect(
+          result.current.createItem(createPayload)
+        ).rejects.toThrow();
       });
 
       // Verify rollback occurred (data should still be empty)
@@ -606,7 +608,9 @@ describe("Financial Hooks - Integration Tests", () => {
       };
 
       await act(async () => {
-        await expect(result.current.createItem(createPayload)).rejects.toThrow();
+        await expect(
+          result.current.createItem(createPayload)
+        ).rejects.toThrow();
       });
 
       expect(mockToast).toHaveBeenCalledWith({
@@ -641,7 +645,9 @@ describe("Financial Hooks - Integration Tests", () => {
       };
 
       await act(async () => {
-        await expect(result.current.createItem(createPayload)).rejects.toThrow();
+        await expect(
+          result.current.createItem(createPayload)
+        ).rejects.toThrow();
       });
 
       expect(mockToast).toHaveBeenCalledWith({

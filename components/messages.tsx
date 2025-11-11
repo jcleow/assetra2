@@ -9,11 +9,11 @@ import type { ChatMessage } from "@/lib/types";
 import { useDataStream } from "./data-stream-provider";
 import { Conversation, ConversationContent } from "./elements/conversation";
 import { Greeting } from "./greeting";
-import { PreviewMessage, ThinkingMessage } from "./message";
 import {
   IntentReviewCard,
   type IntentReviewDisplay,
 } from "./intent-review-card";
+import { PreviewMessage, ThinkingMessage } from "./message";
 
 type MessagesProps = {
   chatId: string;
@@ -83,10 +83,10 @@ function PureMessages({
 
           {intentReviews.map((review) => (
             <IntentReviewCard
+              isProcessing={dispatchingIntentId === review.id}
               key={review.id}
               onCancel={onCancelIntent}
               onConfirm={onConfirmIntent}
-              isProcessing={dispatchingIntentId === review.id}
               review={review}
             />
           ))}

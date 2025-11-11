@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import {
+  type ActionEventInsert,
   listActionEvents,
   recordActionEvent,
-  type ActionEventInsert,
 } from "@/lib/db/queries";
 
 const ActionPayloadSchema = z.object({

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { parseIntent, IntentParseError } from "@/lib/intent/parser";
+import { IntentParseError, parseIntent } from "@/lib/intent/parser";
 
 export async function POST(request: Request) {
   try {

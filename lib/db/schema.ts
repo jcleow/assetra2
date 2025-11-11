@@ -1,6 +1,7 @@
 import type { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
+  doublePrecision,
   foreignKey,
   json,
   jsonb,
@@ -10,7 +11,6 @@ import {
   timestamp,
   uuid,
   varchar,
-  doublePrecision,
 } from "drizzle-orm/pg-core";
 import type { AppUsage } from "../usage";
 

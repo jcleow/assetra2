@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
   Area,
   AreaChart,
-} from 'recharts';
-import { useNetWorthTimeline } from '../store';
-import { formatCurrency, formatAge } from '../utils';
+  CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { useNetWorthTimeline } from "../store";
+import { formatAge, formatCurrency } from "../utils";
 
 interface NetWorthGraphProps {
   height?: number;
@@ -26,10 +26,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     const data = payload[0].payload;
 
     return (
-      <div className="bg-white p-4 border border-gray-200 rounded-lg shadow-lg">
+      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-lg">
         <p className="font-semibold text-gray-900">{`Age ${data.age} (${data.year})`}</p>
         {payload.map((entry: any, index: number) => (
-          <p key={index} className="text-sm" style={{ color: entry.color }}>
+          <p className="text-sm" key={index} style={{ color: entry.color }}>
             {`${entry.name}: ${formatCurrency(entry.value)}`}
           </p>
         ))}
@@ -41,29 +41,44 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const LoadingState = () => (
-  <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
+  <div className="flex h-64 items-center justify-center rounded-lg bg-gray-50">
     <div className="text-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+      <div className="mx-auto mb-2 h-8 w-8 animate-spin rounded-full border-blue-600 border-b-2" />
       <p className="text-gray-600">Loading financial projection...</p>
     </div>
   </div>
 );
 
 const EmptyState = () => (
-  <div className="flex items-center justify-center h-64 bg-gray-50 rounded-lg">
+  <div className="flex h-64 items-center justify-center rounded-lg bg-gray-50">
     <div className="text-center">
-      <div className="text-gray-400 mb-2">
-        <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      <div className="mb-2 text-gray-400">
+        <svg
+          className="mx-auto h-12 w-12"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+          />
         </svg>
       </div>
-      <p className="text-gray-600 font-medium">No Financial Data</p>
-      <p className="text-gray-500 text-sm">Load your financial plan to see projections</p>
+      <p className="font-medium text-gray-600">No Financial Data</p>
+      <p className="text-gray-500 text-sm">
+        Load your financial plan to see projections
+      </p>
     </div>
   </div>
 );
 
-export function NetWorthGraph({ height = 400, className = '' }: NetWorthGraphProps) {
+export function NetWorthGraph({
+  height = 400,
+  className = "",
+}: NetWorthGraphProps) {
   const { timeline, displayOptions } = useNetWorthTimeline();
 
   if (timeline.length === 0) {
@@ -72,13 +87,13 @@ export function NetWorthGraph({ height = 400, className = '' }: NetWorthGraphPro
 
   const filteredTimeline = timeline.filter((point, index) => {
     switch (displayOptions.timeframe) {
-      case 'next5years':
+      case "next5years":
         return index <= 5;
-      case 'next10years':
+      case "next10years":
         return index <= 10;
-      case 'custom':
+      case "custom":
         return index <= (displayOptions.customYears || 10);
-      case 'untilRetirement':
+      case "untilRetirement":
       default:
         return true;
     }
@@ -86,7 +101,7 @@ export function NetWorthGraph({ height = 400, className = '' }: NetWorthGraphPro
 
   return (
     <div className={`w-full ${className}`}>
-      <ResponsiveContainer width="100%" height={height}>
+      <ResponsiveContainer height={height} width="100%">
         <AreaChart
           data={filteredTimeline}
           margin={{
@@ -99,70 +114,70 @@ export function NetWorthGraph({ height = 400, className = '' }: NetWorthGraphPro
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="age"
+            label={{ value: "Age", position: "insideBottom", offset: -5 }}
             tickFormatter={(value) => `${value}`}
-            label={{ value: 'Age', position: 'insideBottom', offset: -5 }}
           />
           <YAxis
+            label={{ value: "Amount ($)", angle: -90, position: "insideLeft" }}
             tickFormatter={(value) => formatCurrency(value, { compact: true })}
-            label={{ value: 'Amount ($)', angle: -90, position: 'insideLeft' }}
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend />
 
           {displayOptions.showAssets && (
             <Area
-              type="monotone"
               dataKey="totalAssets"
-              stackId="1"
-              stroke="#10b981"
               fill="#10b981"
               fillOpacity={0.6}
               name="Total Assets"
+              stackId="1"
+              stroke="#10b981"
+              type="monotone"
             />
           )}
 
           {displayOptions.showLiabilities && (
             <Area
-              type="monotone"
               dataKey="totalLiabilities"
-              stackId="2"
-              stroke="#ef4444"
               fill="#ef4444"
               fillOpacity={0.6}
               name="Total Liabilities"
+              stackId="2"
+              stroke="#ef4444"
+              type="monotone"
             />
           )}
 
           {displayOptions.showNetWorth && (
             <Line
-              type="monotone"
               dataKey="netWorth"
+              dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
+              name="Net Worth"
               stroke="#3b82f6"
               strokeWidth={3}
-              dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-              name="Net Worth"
+              type="monotone"
             />
           )}
 
           {displayOptions.showIncome && (
             <Line
-              type="monotone"
               dataKey="monthlyIncome"
-              stroke="#8b5cf6"
-              strokeWidth={2}
-              strokeDasharray="5 5"
               name="Monthly Income"
+              stroke="#8b5cf6"
+              strokeDasharray="5 5"
+              strokeWidth={2}
+              type="monotone"
             />
           )}
 
           {displayOptions.showExpenses && (
             <Line
-              type="monotone"
               dataKey="monthlyExpenses"
-              stroke="#f59e0b"
-              strokeWidth={2}
-              strokeDasharray="5 5"
               name="Monthly Expenses"
+              stroke="#f59e0b"
+              strokeDasharray="5 5"
+              strokeWidth={2}
+              type="monotone"
             />
           )}
         </AreaChart>
@@ -171,7 +186,10 @@ export function NetWorthGraph({ height = 400, className = '' }: NetWorthGraphPro
   );
 }
 
-export function NetWorthLineGraph({ height = 400, className = '' }: NetWorthGraphProps) {
+export function NetWorthLineGraph({
+  height = 400,
+  className = "",
+}: NetWorthGraphProps) {
   const { timeline, displayOptions } = useNetWorthTimeline();
 
   if (timeline.length === 0) {
@@ -180,13 +198,13 @@ export function NetWorthLineGraph({ height = 400, className = '' }: NetWorthGrap
 
   const filteredTimeline = timeline.filter((point, index) => {
     switch (displayOptions.timeframe) {
-      case 'next5years':
+      case "next5years":
         return index <= 5;
-      case 'next10years':
+      case "next10years":
         return index <= 10;
-      case 'custom':
+      case "custom":
         return index <= (displayOptions.customYears || 10);
-      case 'untilRetirement':
+      case "untilRetirement":
       default:
         return true;
     }
@@ -194,7 +212,7 @@ export function NetWorthLineGraph({ height = 400, className = '' }: NetWorthGrap
 
   return (
     <div className={`w-full ${className}`}>
-      <ResponsiveContainer width="100%" height={height}>
+      <ResponsiveContainer height={height} width="100%">
         <LineChart
           data={filteredTimeline}
           margin={{
@@ -207,46 +225,46 @@ export function NetWorthLineGraph({ height = 400, className = '' }: NetWorthGrap
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="age"
+            label={{ value: "Age", position: "insideBottom", offset: -5 }}
             tickFormatter={(value) => `${value}`}
-            label={{ value: 'Age', position: 'insideBottom', offset: -5 }}
           />
           <YAxis
+            label={{ value: "Amount ($)", angle: -90, position: "insideLeft" }}
             tickFormatter={(value) => formatCurrency(value, { compact: true })}
-            label={{ value: 'Amount ($)', angle: -90, position: 'insideLeft' }}
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend />
 
           {displayOptions.showAssets && (
             <Line
-              type="monotone"
               dataKey="totalAssets"
+              dot={{ fill: "#10b981", strokeWidth: 2, r: 3 }}
+              name="Total Assets"
               stroke="#10b981"
               strokeWidth={2}
-              dot={{ fill: '#10b981', strokeWidth: 2, r: 3 }}
-              name="Total Assets"
+              type="monotone"
             />
           )}
 
           {displayOptions.showLiabilities && (
             <Line
-              type="monotone"
               dataKey="totalLiabilities"
+              dot={{ fill: "#ef4444", strokeWidth: 2, r: 3 }}
+              name="Total Liabilities"
               stroke="#ef4444"
               strokeWidth={2}
-              dot={{ fill: '#ef4444', strokeWidth: 2, r: 3 }}
-              name="Total Liabilities"
+              type="monotone"
             />
           )}
 
           {displayOptions.showNetWorth && (
             <Line
-              type="monotone"
               dataKey="netWorth"
+              dot={{ fill: "#3b82f6", strokeWidth: 2, r: 4 }}
+              name="Net Worth"
               stroke="#3b82f6"
               strokeWidth={3}
-              dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
-              name="Net Worth"
+              type="monotone"
             />
           )}
         </LineChart>

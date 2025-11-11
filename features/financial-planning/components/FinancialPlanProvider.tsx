@@ -1,7 +1,12 @@
-'use client';
+"use client";
 
-import React, { createContext, useContext, useEffect, ReactNode } from 'react';
-import { useFinancialPlanningStore } from '../store';
+import React, {
+  createContext,
+  type ReactNode,
+  useContext,
+  useEffect,
+} from "react";
+import { useFinancialPlanningStore } from "../store";
 
 interface FinancialPlanContextValue {
   isInitialized: boolean;
@@ -9,7 +14,9 @@ interface FinancialPlanContextValue {
   setAutoRefresh: (enabled: boolean) => void;
 }
 
-const FinancialPlanContext = createContext<FinancialPlanContextValue | null>(null);
+const FinancialPlanContext = createContext<FinancialPlanContextValue | null>(
+  null
+);
 
 interface FinancialPlanProviderProps {
   children: ReactNode;
@@ -25,7 +32,9 @@ export function FinancialPlanProvider({
   const [isInitialized, setIsInitialized] = React.useState(false);
   const [autoRefresh, setAutoRefresh] = React.useState(false);
   const refreshData = useFinancialPlanningStore((state) => state.refreshData);
-  const financialPlan = useFinancialPlanningStore((state) => state.financialPlan);
+  const financialPlan = useFinancialPlanningStore(
+    (state) => state.financialPlan
+  );
 
   useEffect(() => {
     if (autoLoadData && !financialPlan) {
@@ -61,7 +70,9 @@ export function FinancialPlanProvider({
 export function useFinancialPlanContext(): FinancialPlanContextValue {
   const context = useContext(FinancialPlanContext);
   if (!context) {
-    throw new Error('useFinancialPlanContext must be used within a FinancialPlanProvider');
+    throw new Error(
+      "useFinancialPlanContext must be used within a FinancialPlanProvider"
+    );
   }
   return context;
 }

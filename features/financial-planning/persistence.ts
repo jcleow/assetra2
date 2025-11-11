@@ -1,11 +1,11 @@
-import type { FinancialPlanPayload } from '@/app/api/financial-plan/route';
-import type { ProjectionSettings, GraphDisplayOptions } from './store';
+import type { FinancialPlanPayload } from "@/app/api/financial-plan/route";
+import type { GraphDisplayOptions, ProjectionSettings } from "./store";
 
 const STORAGE_KEYS = {
-  FINANCIAL_PLAN: 'financial-plan-data',
-  PROJECTION_SETTINGS: 'financial-plan-projection-settings',
-  DISPLAY_OPTIONS: 'financial-plan-display-options',
-  CACHE_TIMESTAMP: 'financial-plan-cache-timestamp',
+  FINANCIAL_PLAN: "financial-plan-data",
+  PROJECTION_SETTINGS: "financial-plan-projection-settings",
+  DISPLAY_OPTIONS: "financial-plan-display-options",
+  CACHE_TIMESTAMP: "financial-plan-cache-timestamp",
 } as const;
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -25,7 +25,7 @@ export interface PersistenceHelpers {
 
 function isLocalStorageAvailable(): boolean {
   try {
-    const test = '__localStorage_test__';
+    const test = "__localStorage_test__";
     localStorage.setItem(test, test);
     localStorage.removeItem(test);
     return true;
@@ -38,8 +38,8 @@ function safeStringify(data: any): string {
   try {
     return JSON.stringify(data);
   } catch (error) {
-    console.warn('Failed to stringify data for storage:', error);
-    return '';
+    console.warn("Failed to stringify data for storage:", error);
+    return "";
   }
 }
 
@@ -49,14 +49,14 @@ function safeParse<T>(jsonString: string | null): T | null {
   try {
     return JSON.parse(jsonString) as T;
   } catch (error) {
-    console.warn('Failed to parse data from storage:', error);
+    console.warn("Failed to parse data from storage:", error);
     return null;
   }
 }
 
 function saveToStorage(key: string, data: any): void {
   if (!isLocalStorageAvailable()) {
-    console.warn('localStorage is not available');
+    console.warn("localStorage is not available");
     return;
   }
 
@@ -80,7 +80,10 @@ function loadFromStorage<T>(key: string): T | null {
     const item = localStorage.getItem(key);
     return safeParse<T>(item);
   } catch (error) {
-    console.warn(`Failed to load data from localStorage for key ${key}:`, error);
+    console.warn(
+      `Failed to load data from localStorage for key ${key}:`,
+      error
+    );
     return null;
   }
 }
@@ -93,7 +96,10 @@ function removeFromStorage(key: string): void {
   try {
     localStorage.removeItem(key);
   } catch (error) {
-    console.warn(`Failed to remove data from localStorage for key ${key}:`, error);
+    console.warn(
+      `Failed to remove data from localStorage for key ${key}:`,
+      error
+    );
   }
 }
 
@@ -111,7 +117,9 @@ export const persistenceHelpers: PersistenceHelpers = {
   },
 
   loadProjectionSettings: () => {
-    return loadFromStorage<ProjectionSettings>(STORAGE_KEYS.PROJECTION_SETTINGS);
+    return loadFromStorage<ProjectionSettings>(
+      STORAGE_KEYS.PROJECTION_SETTINGS
+    );
   },
 
   saveDisplayOptions: (options: GraphDisplayOptions) => {
@@ -123,7 +131,7 @@ export const persistenceHelpers: PersistenceHelpers = {
   },
 
   clearAllData: () => {
-    Object.values(STORAGE_KEYS).forEach(key => {
+    Object.values(STORAGE_KEYS).forEach((key) => {
       removeFromStorage(key);
     });
   },
@@ -132,10 +140,10 @@ export const persistenceHelpers: PersistenceHelpers = {
     const timestamp = loadFromStorage<string>(STORAGE_KEYS.CACHE_TIMESTAMP);
     if (!timestamp) return false;
 
-    const cacheTime = parseInt(timestamp, 10);
+    const cacheTime = Number.parseInt(timestamp, 10);
     const now = Date.now();
 
-    return (now - cacheTime) < CACHE_TTL;
+    return now - cacheTime < CACHE_TTL;
   },
 
   exportData: () => {
@@ -144,7 +152,7 @@ export const persistenceHelpers: PersistenceHelpers = {
       projectionSettings: loadFromStorage(STORAGE_KEYS.PROJECTION_SETTINGS),
       displayOptions: loadFromStorage(STORAGE_KEYS.DISPLAY_OPTIONS),
       exportedAt: new Date().toISOString(),
-      version: '1.0',
+      version: "1.0",
     };
 
     return safeStringify(data);
@@ -154,8 +162,8 @@ export const persistenceHelpers: PersistenceHelpers = {
     try {
       const data = safeParse(jsonString);
 
-      if (!data || typeof data !== 'object') {
-        throw new Error('Invalid data format');
+      if (!data || typeof data !== "object") {
+        throw new Error("Invalid data format");
       }
 
       const typedData = data as any;
@@ -167,7 +175,10 @@ export const persistenceHelpers: PersistenceHelpers = {
 
       // Validate and import projection settings
       if (typedData.projectionSettings) {
-        saveToStorage(STORAGE_KEYS.PROJECTION_SETTINGS, typedData.projectionSettings);
+        saveToStorage(
+          STORAGE_KEYS.PROJECTION_SETTINGS,
+          typedData.projectionSettings
+        );
       }
 
       // Validate and import display options
@@ -177,7 +188,7 @@ export const persistenceHelpers: PersistenceHelpers = {
 
       return true;
     } catch (error) {
-      console.error('Failed to import data:', error);
+      console.error("Failed to import data:", error);
       return false;
     }
   },

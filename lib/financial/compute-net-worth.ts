@@ -1,10 +1,7 @@
-import type {
-  Asset,
-  Liability,
-  MonthlyCashFlow,
-  NetWorthPoint,
-} from "./types";
-import defaultProjectionAssumptions from "./projection-assumptions.json";
+import defaultProjectionAssumptions from "./projection-assumptions.json" with {
+  type: "json",
+};
+import type { Asset, Liability, MonthlyCashFlow, NetWorthPoint } from "./types";
 
 export interface ProjectionAssumptions {
   defaultRetirementAge: number;
@@ -87,10 +84,7 @@ const buildLiabilityBuckets = (
     minimumPayment: Math.max(liability.minimumPayment, 0),
   }));
 
-const distributeContribution = (
-  buckets: AssetBucket[],
-  amount: number
-) => {
+const distributeContribution = (buckets: AssetBucket[], amount: number) => {
   if (amount === 0 || buckets.length === 0) {
     return;
   }

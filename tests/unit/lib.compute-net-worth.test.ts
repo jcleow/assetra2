@@ -63,7 +63,7 @@ describe("computeNetWorth", () => {
       liabilities: demoFinancialData.liabilities,
       monthlyCashFlow: {
         monthlyIncome: 3000,
-        monthlyExpenses: 12000,
+        monthlyExpenses: 12_000,
         netMonthly: -9000,
       },
       currentAge: 30,
@@ -113,9 +113,7 @@ describe("computeNetWorth", () => {
     const optimisticFinal = optimistic.at(-1) as NetWorthPoint;
     const pessimisticFinal = pessimistic.at(-1) as NetWorthPoint;
 
-    expect(optimisticFinal.netWorth).toBeGreaterThan(
-      pessimisticFinal.netWorth
-    );
+    expect(optimisticFinal.netWorth).toBeGreaterThan(pessimisticFinal.netWorth);
   });
 
   it("clamps projection horizon when retirement age is behind current age", () => {

@@ -23,49 +23,48 @@
  * ```
  */
 
-// Store exports - Core state management
+// Type exports - TypeScript interfaces
+export type { FinancialPlanPayload } from "@/app/api/financial-plan/route";
 export {
-  useFinancialPlanningStore,
-  useFinancialPlan,
-  useNetWorthTimeline,
-  type NetWorthTimelinePoint,
-  type ProjectionSettings,
-  type GraphDisplayOptions,
-} from './store';
-
+  FinancialPlanProvider,
+  useFinancialPlanContext,
+} from "./components/FinancialPlanProvider";
+export { FinancialSummary } from "./components/FinancialSummary";
 // Component exports - UI components with loading/empty states
-export { NetWorthGraph, NetWorthLineGraph } from './components/NetWorthGraph';
-export { FinancialSummary } from './components/FinancialSummary';
-export { ProjectionControls } from './components/ProjectionControls';
-export { FinancialPlanProvider, useFinancialPlanContext } from './components/FinancialPlanProvider';
-
-// Utility exports - Formatters and calculations
-export {
-  formatCurrency,
-  formatPercentage,
-  formatAge,
-  formatYear,
-  calculateNetWorth,
-  calculateSavingsRate,
-  formatSummaryText,
-  generateProjectionSummary,
-  formatTimelineTooltip,
-  validateProjectionSettings,
-  calculateCompoundGrowth,
-  calculateFutureValue,
-  getNetWorthColor,
-  getNetWorthStatus,
-  formatConfirmationSummary,
-  type CurrencyFormatOptions,
-} from './utils';
-
+export { NetWorthGraph, NetWorthLineGraph } from "./components/NetWorthGraph";
+export { ProjectionControls } from "./components/ProjectionControls";
 // Persistence exports - Local storage helpers
 export {
-  persistenceHelpers,
-  usePersistence,
   createStorageSync,
   type PersistenceHelpers,
-} from './persistence';
-
-// Type exports - TypeScript interfaces
-export type { FinancialPlanPayload } from '@/app/api/financial-plan/route';
+  persistenceHelpers,
+  usePersistence,
+} from "./persistence";
+// Store exports - Core state management
+export {
+  type GraphDisplayOptions,
+  type NetWorthTimelinePoint,
+  type ProjectionSettings,
+  useFinancialPlan,
+  useFinancialPlanningStore,
+  useNetWorthTimeline,
+} from "./store";
+// Utility exports - Formatters and calculations
+export {
+  type CurrencyFormatOptions,
+  calculateCompoundGrowth,
+  calculateFutureValue,
+  calculateNetWorth,
+  calculateSavingsRate,
+  formatAge,
+  formatConfirmationSummary,
+  formatCurrency,
+  formatPercentage,
+  formatSummaryText,
+  formatTimelineTooltip,
+  formatYear,
+  generateProjectionSummary,
+  getNetWorthColor,
+  getNetWorthStatus,
+  validateProjectionSettings,
+} from "./utils";

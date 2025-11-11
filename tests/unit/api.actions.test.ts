@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
@@ -99,9 +99,7 @@ describe("GET /api/actions", () => {
   });
 
   it("handles list failures", async () => {
-    vi.spyOn(queries, "listActionEvents").mockRejectedValue(
-      new Error("boom")
-    );
+    vi.spyOn(queries, "listActionEvents").mockRejectedValue(new Error("boom"));
 
     const response = await GET(new Request("https://example.com/api/actions"));
     expect(response.status).toBe(500);

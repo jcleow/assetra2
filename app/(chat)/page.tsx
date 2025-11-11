@@ -2,8 +2,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Chat } from "@/components/chat";
 import { DataStreamHandler } from "@/components/data-stream-handler";
-import { FinancialWorkspace } from "@/components/financial-workspace";
 import { FinancialDataManagement } from "@/components/financial-data-management";
+import { FinancialWorkspace } from "@/components/financial-workspace";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { generateUUID } from "@/lib/utils";
 import { auth } from "../(auth)/auth";
@@ -39,14 +39,14 @@ export default async function Page() {
             />
           </div>
         </div>
-        <div className="hidden flex-1 lg:flex lg:flex-col gap-6">
+        <div className="hidden flex-1 gap-6 lg:flex lg:flex-col">
           {/* Financial Chart - 1/3 height */}
-          <div className="h-[40vh] rounded-3xl border border-gray-700 bg-gray-900 shadow-[0_30px_80px_rgba(3,3,4,0.45)] flex flex-col overflow-hidden">
+          <div className="flex h-[40vh] flex-col overflow-hidden rounded-3xl border border-gray-700 bg-gray-900 shadow-[0_30px_80px_rgba(3,3,4,0.45)]">
             <FinancialWorkspace />
           </div>
 
           {/* Financial Data Management - 2/3 height */}
-          <div className="flex-1 rounded-3xl border border-gray-700 bg-gray-900 shadow-[0_30px_80px_rgba(3,3,4,0.45)] overflow-hidden">
+          <div className="flex-1 overflow-hidden rounded-3xl border border-gray-700 bg-gray-900 shadow-[0_30px_80px_rgba(3,3,4,0.45)]">
             <FinancialDataManagement />
           </div>
         </div>
