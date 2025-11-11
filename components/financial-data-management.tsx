@@ -1,15 +1,27 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import { Plus, SlidersHorizontal } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { financialClient } from '@/lib/financial/client';
-import { FinancialFormModal } from './financial-form-modal';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { useFinancialPlanningStore } from '@/features/financial-planning';
+import { useQuery } from "@tanstack/react-query";
+import { Plus, SlidersHorizontal } from "lucide-react";
+import type React from "react";
+import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useFinancialPlanningStore } from "@/features/financial-planning";
+import { financialClient } from "@/lib/financial/client";
+import { FinancialFormModal } from "./financial-form-modal";
 
 interface FinancialItem {
   id: string;
@@ -35,119 +47,125 @@ export function FinancialDataManagement() {
 
   // Query data from Go service
   const { data: assets = [], isLoading: assetsLoading } = useQuery({
-    queryKey: ['assets'],
+    queryKey: ["assets"],
     queryFn: () => financialClient.assets.list(),
   });
 
   const { data: liabilities = [], isLoading: liabilitiesLoading } = useQuery({
-    queryKey: ['liabilities'],
+    queryKey: ["liabilities"],
     queryFn: () => financialClient.liabilities.list(),
   });
 
   const { data: incomes = [], isLoading: incomesLoading } = useQuery({
-    queryKey: ['incomes'],
+    queryKey: ["incomes"],
     queryFn: () => financialClient.incomes.list(),
   });
 
   const { data: expenses = [], isLoading: expensesLoading } = useQuery({
-    queryKey: ['expenses'],
+    queryKey: ["expenses"],
     queryFn: () => financialClient.expenses.list(),
   });
 
   const formatIncomeItems = (): FinancialItem[] => {
-    return incomes.map(income => ({
+    return incomes.map((income) => ({
       id: income.id,
       name: income.source,
-      subtitle: `${income.frequency} • ${income.category || 'Income'}`,
+      subtitle: `${income.frequency} • ${income.category || "Income"}`,
       amount: `$${income.amount.toLocaleString()}`,
-      icon: '💼',
-      color: 'bg-emerald-500'
+      icon: "💼",
+      color: "bg-emerald-500",
     }));
   };
 
   const formatExpenseItems = (): FinancialItem[] => {
-    return expenses.map(expense => ({
+    return expenses.map((expense) => ({
       id: expense.id,
       name: expense.payee,
-      subtitle: `${expense.frequency} • ${expense.category || 'Expense'}`,
+      subtitle: `${expense.frequency} • ${expense.category || "Expense"}`,
       amount: `$${expense.amount.toLocaleString()}`,
-      icon: '💰',
-      color: 'bg-orange-500'
+      icon: "💰",
+      color: "bg-orange-500",
     }));
   };
 
   const formatAssetItems = (): FinancialItem[] => {
-    return assets.map(asset => ({
+    return assets.map((asset) => ({
       id: asset.id,
       name: asset.name,
       subtitle: `${asset.category} • ${asset.annualGrowthRate}% growth`,
       amount: `$${asset.currentValue.toLocaleString()}`,
-      icon: '📈',
-      color: 'bg-blue-500'
+      icon: "📈",
+      color: "bg-blue-500",
     }));
   };
 
   const formatLiabilityItems = (): FinancialItem[] => {
-    return liabilities.map(liability => ({
+    return liabilities.map((liability) => ({
       id: liability.id,
       name: liability.name,
       subtitle: `${liability.category} • ${liability.interestRateApr}% APR`,
       amount: `$${liability.currentBalance.toLocaleString()}`,
-      icon: '💳',
-      color: 'bg-red-500'
+      icon: "💳",
+      color: "bg-red-500",
     }));
   };
 
   const categories: CategoryConfig[] = [
     {
-      title: 'Income',
-      description: 'Every source of income you expect to have throughout your life',
+      title: "Income",
+      description:
+        "Every source of income you expect to have throughout your life",
       items: formatIncomeItems(),
       isLoading: incomesLoading,
-      modalType: 'incomes'
+      modalType: "incomes",
     },
     {
-      title: 'Expenses',
-      description: 'All the known expenses likely to occur throughout your life',
+      title: "Expenses",
+      description:
+        "All the known expenses likely to occur throughout your life",
       items: formatExpenseItems(),
       isLoading: expensesLoading,
-      modalType: 'expenses'
+      modalType: "expenses",
     },
     {
-      title: 'Assets',
-      description: 'Everything you own that has monetary value',
+      title: "Assets",
+      description: "Everything you own that has monetary value",
       items: formatAssetItems(),
       isLoading: assetsLoading,
-      modalType: 'assets',
-      onOpenSettings: () => setShowGrowthSettings(true)
+      modalType: "assets",
+      onOpenSettings: () => setShowGrowthSettings(true),
     },
     {
-      title: 'Liabilities',
-      description: 'All debts and financial obligations you owe',
+      title: "Liabilities",
+      description: "All debts and financial obligations you owe",
       items: formatLiabilityItems(),
       isLoading: liabilitiesLoading,
-      modalType: 'liabilities'
-    }
+      modalType: "liabilities",
+    },
   ];
 
   return (
-    <div className="h-full w-full bg-gray-900 text-white p-6 overflow-auto">
+    <div className="h-full w-full overflow-auto bg-gray-900 p-6 text-white">
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-white mb-1">Financial Data</h2>
-        <p className="text-gray-400 text-sm">Manage your income, expenses, assets, and liabilities</p>
+        <h2 className="mb-1 font-semibold text-white text-xl">
+          Financial Data
+        </h2>
+        <p className="text-gray-400 text-sm">
+          Manage your income, expenses, assets, and liabilities
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {categories.map((category) => (
           <FinancialCard
-            key={category.title}
-            title={category.title}
             description={category.description}
-            items={category.items}
             isLoading={category.isLoading}
+            items={category.items}
+            key={category.title}
             onAddItem={() => setActiveModal(category.modalType)}
             onEditItem={(id) => setActiveModal(`${category.modalType}-${id}`)}
             onOpenSettings={category.onOpenSettings}
+            title={category.title}
           />
         ))}
       </div>
@@ -155,14 +173,14 @@ export function FinancialDataManagement() {
       {/* Modals */}
       {activeModal && (
         <FinancialFormModal
-          type={activeModal}
           onClose={() => setActiveModal(null)}
+          type={activeModal}
         />
       )}
 
       <GrowthSettingsSheet
-        open={showGrowthSettings}
         onOpenChange={setShowGrowthSettings}
+        open={showGrowthSettings}
       />
     </div>
   );
@@ -187,19 +205,31 @@ function FinancialCard({
   onEditItem,
   onOpenSettings,
 }: FinancialCardProps) {
-  const iconColor = title === 'Income' ? 'text-emerald-500'
-                  : title === 'Expenses' ? 'text-orange-500'
-                  : title === 'Assets' ? 'text-blue-500'
-                  : 'text-red-500';
+  const iconColor =
+    title === "Income"
+      ? "text-emerald-500"
+      : title === "Expenses"
+        ? "text-orange-500"
+        : title === "Assets"
+          ? "text-blue-500"
+          : "text-red-500";
 
   return (
-    <div className="bg-gray-800 rounded-lg border border-gray-700">
+    <div className="rounded-lg border border-gray-700 bg-gray-800">
       {/* Header */}
-      <div className="p-4 border-b border-gray-700">
+      <div className="border-gray-700 border-b p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center ${iconColor}`}>
-              {title === 'Income' ? '💼' : title === 'Expenses' ? '💰' : title === 'Assets' ? '📈' : '💳'}
+            <div
+              className={`flex h-8 w-8 items-center justify-center rounded-full bg-gray-700 ${iconColor}`}
+            >
+              {title === "Income"
+                ? "💼"
+                : title === "Expenses"
+                  ? "💰"
+                  : title === "Assets"
+                    ? "📈"
+                    : "💳"}
             </div>
             <div>
               <h3 className="font-semibold text-white">{title}</h3>
@@ -212,11 +242,11 @@ function FinancialCard({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
-                      type="button"
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-700 text-gray-200 transition-colors hover:bg-gray-700"
                       onClick={onOpenSettings}
-                      className="w-8 h-8 rounded-full border border-gray-700 text-gray-200 hover:bg-gray-700 transition-colors flex items-center justify-center"
+                      type="button"
                     >
-                      <SlidersHorizontal className="w-4 h-4" />
+                      <SlidersHorizontal className="h-4 w-4" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent className="text-xs">
@@ -226,10 +256,10 @@ function FinancialCard({
               </TooltipProvider>
             )}
             <button
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 transition-colors hover:bg-emerald-600"
               onClick={onAddItem}
-              className="w-8 h-8 rounded-full bg-emerald-500 hover:bg-emerald-600 flex items-center justify-center transition-colors"
             >
-              <Plus className="w-4 h-4 text-white" />
+              <Plus className="h-4 w-4 text-white" />
             </button>
           </div>
         </div>
@@ -240,14 +270,14 @@ function FinancialCard({
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse">
+              <div className="animate-pulse" key={i}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gray-700 rounded-full"></div>
+                  <div className="h-10 w-10 rounded-full bg-gray-700" />
                   <div className="flex-1">
-                    <div className="h-4 bg-gray-700 rounded w-1/3 mb-2"></div>
-                    <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                    <div className="mb-2 h-4 w-1/3 rounded bg-gray-700" />
+                    <div className="h-3 w-1/2 rounded bg-gray-700" />
                   </div>
-                  <div className="h-4 bg-gray-700 rounded w-20"></div>
+                  <div className="h-4 w-20 rounded bg-gray-700" />
                 </div>
               </div>
             ))}
@@ -256,25 +286,33 @@ function FinancialCard({
           <div className="space-y-3">
             {items.map((item) => (
               <div
+                className="flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors hover:bg-gray-700"
                 key={item.id}
                 onClick={() => onEditItem(item.id)}
-                className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-700 cursor-pointer transition-colors"
               >
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${item.color}`}>
-                  <span className="text-white text-lg">{item.icon}</span>
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-full ${item.color}`}
+                >
+                  <span className="text-lg text-white">{item.icon}</span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-white truncate">{item.name}</div>
-                  <div className="text-gray-400 text-sm truncate">{item.subtitle}</div>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-medium text-white">
+                    {item.name}
+                  </div>
+                  <div className="truncate text-gray-400 text-sm">
+                    {item.subtitle}
+                  </div>
                 </div>
-                <div className="text-white font-semibold">{item.amount}</div>
+                <div className="font-semibold text-white">{item.amount}</div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 text-gray-500">
+          <div className="py-8 text-center text-gray-500">
             <p className="text-sm">No {title.toLowerCase()} added yet</p>
-            <p className="text-xs mt-1">Click the + button to add your first entry</p>
+            <p className="mt-1 text-xs">
+              Click the + button to add your first entry
+            </p>
           </div>
         )}
       </div>
@@ -295,7 +333,9 @@ function GrowthSettingsSheet({ open, onOpenChange }: GrowthSettingsSheetProps) {
     (state) => state.updateProjectionSettings
   );
 
-  const [value, setValue] = useState(() => (averageReturnRate * 100).toFixed(1));
+  const [value, setValue] = useState(() =>
+    (averageReturnRate * 100).toFixed(1)
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -308,18 +348,18 @@ function GrowthSettingsSheet({ open, onOpenChange }: GrowthSettingsSheetProps) {
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!value.trim()) {
-      setError('Please enter a percentage.');
+      setError("Please enter a percentage.");
       return;
     }
 
     const percent = Number(value);
     if (!Number.isFinite(percent)) {
-      setError('Enter a valid number.');
+      setError("Enter a valid number.");
       return;
     }
 
     if (percent < 0 || percent > 25) {
-      setError('Choose a value between 0% and 25%.');
+      setError("Choose a value between 0% and 25%.");
       return;
     }
 
@@ -328,42 +368,47 @@ function GrowthSettingsSheet({ open, onOpenChange }: GrowthSettingsSheetProps) {
   };
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-sm bg-gray-900 text-white border-l border-gray-800">
+    <Sheet onOpenChange={onOpenChange} open={open}>
+      <SheetContent
+        className="w-full border-gray-800 border-l bg-gray-900 text-white sm:max-w-sm"
+        side="right"
+      >
         <SheetHeader>
           <SheetTitle>Global asset assumptions</SheetTitle>
           <SheetDescription className="text-gray-400">
-            This percentage is used when projecting assets that do not include their own growth rate.
+            This percentage is used when projecting assets that do not include
+            their own growth rate.
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
-            <Label htmlFor="growth-rate" className="text-gray-200">
+            <Label className="text-gray-200" htmlFor="growth-rate">
               Average annual return (%)
             </Label>
             <Input
+              className="border-gray-700 bg-gray-800 text-white"
               id="growth-rate"
-              type="number"
-              min="0"
               max="25"
-              step="0.1"
-              value={value}
+              min="0"
               onChange={(event) => {
                 setValue(event.target.value);
                 setError(null);
               }}
-              className="bg-gray-800 border-gray-700 text-white"
+              step="0.1"
+              type="number"
+              value={value}
             />
-            <p className="text-xs text-gray-400">
-              Currently applied as {(averageReturnRate * 100).toFixed(1)}% in forecasts.
+            <p className="text-gray-400 text-xs">
+              Currently applied as {(averageReturnRate * 100).toFixed(1)}% in
+              forecasts.
             </p>
-            {error && <p className="text-xs text-red-400">{error}</p>}
+            {error && <p className="text-red-400 text-xs">{error}</p>}
           </div>
 
           <button
+            className="w-full rounded-md bg-emerald-500 px-4 py-2 font-medium text-white transition-colors hover:bg-emerald-600"
             type="submit"
-            className="w-full rounded-md bg-emerald-500 px-4 py-2 font-medium text-white hover:bg-emerald-600 transition-colors"
           >
             Save
           </button>

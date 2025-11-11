@@ -1,0 +1,15 @@
+{
+	"bugs":
+	[
+	
+		{
+		"title": "Intent parser lacks context-aware ADD vs UPDATE logic",
+		"description": "Intent parser defaults to ADD actions even when user is stating current values that should UPDATE existing entries. Example: User says 'housing loan of 20k' but already has 85k loan - should UPDATE to 20k, not ADD 20k. Parser needs to distinguish between increase/decrease operations vs setting absolute values.",
+		"priority": "P2",
+		"status": "open",
+		"approach": "Requires: (1) API call to retrieve current financial state before intent parsing, (2) Comparison logic to determine ADD vs UPDATE vs INCREASE/DECREASE based on context, (3) Updated intent parsing system to handle these scenarios with existing data context",
+		"components": ["lib/intent/llm.ts", "lib/intent/parser.ts", "app/api/intent/route.ts"],
+		"impact": "Users may accidentally duplicate financial entries instead of updating them"
+		}
+	]
+}

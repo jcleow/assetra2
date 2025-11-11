@@ -20,6 +20,8 @@ import { ChatSDKError } from "../errors";
 import type { AppUsage } from "../usage";
 import { generateUUID } from "../utils";
 import {
+  type ActionEvent,
+  actionEvent,
   type Chat,
   chat,
   type DBMessage,
@@ -31,8 +33,6 @@ import {
   type User,
   user,
   vote,
-  actionEvent,
-  type ActionEvent,
 } from "./schema";
 import { generateHashedPassword } from "./utils";
 

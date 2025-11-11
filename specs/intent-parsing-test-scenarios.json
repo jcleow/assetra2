@@ -1,0 +1,300 @@
+{
+  "description": "Test scenarios for context-aware intent parsing bug fix",
+  "testingFramework": {
+    "steps": [
+      "1. Fetch existing financial data using GET /api/financial-plan",
+      "2. Send user input to intent parser via POST /api/intent",
+      "3. Analyze returned actions against expected behavior",
+      "4. Verify if intent should be ADD, UPDATE, INCREASE, or DECREASE"
+    ],
+    "currentMockData": {
+      "assets": [
+        {"id": "mock-asset-1", "name": "Investment Portfolio", "category": "brokerage", "currentValue": 75000},
+        {"id": "mock-asset-2", "name": "Emergency Fund", "category": "cash", "currentValue": 25000}
+      ],
+      "liabilities": [
+        {"id": "mock-liability-1", "name": "Mortgage", "category": "mortgage", "currentBalance": 350000}
+      ],
+      "incomes": [
+        {"id": "mock-income-1", "source": "Software Engineering", "amount": 8500, "frequency": "monthly"}
+      ],
+      "expenses": [
+        {"id": "mock-expense-1", "payee": "Rent", "amount": 2000, "frequency": "monthly"},
+        {"id": "mock-expense-2", "payee": "Groceries", "amount": 600, "frequency": "monthly"}
+      ]
+    }
+  },
+  "scenarios": [
+    {
+      "id": "scenario-1",
+      "category": "UPDATE_EXISTING_LIABILITY",
+      "description": "User states a different value for existing liability",
+      "userInput": "I have a mortgage of 320k",
+      "existingContext": {
+        "liabilities": [{"name": "Mortgage", "currentBalance": 350000}]
+      },
+      "expectedIntent": {
+        "verb": "update",
+        "entity": "liability",
+        "target": "mortgage",
+        "amount": 320000,
+        "action": "UPDATE_TO_VALUE"
+      },
+      "currentBehavior": {
+        "verb": "add",
+        "entity": "liability",
+        "target": "mortgage",
+        "amount": 320000,
+        "issue": "Creates duplicate mortgage instead of updating existing one"
+      },
+      "testSteps": [
+        "GET /api/financial-plan?mock=true",
+        "Verify mortgage exists with currentBalance: 350000",
+        "POST /api/intent with message: 'I have a mortgage of 320k'",
+        "Check if action is ADD (wrong) or UPDATE (correct)"
+      ]
+    },
+    {
+      "id": "scenario-2",
+      "category": "UPDATE_EXISTING_ASSET",
+      "description": "User states current asset value different from database",
+      "userInput": "My emergency fund has 30k",
+      "existingContext": {
+        "assets": [{"name": "Emergency Fund", "currentValue": 25000}]
+      },
+      "expectedIntent": {
+        "verb": "update",
+        "entity": "asset",
+        "target": "emergency fund",
+        "amount": 30000,
+        "action": "UPDATE_TO_VALUE"
+      },
+      "currentBehavior": {
+        "verb": "add",
+        "entity": "asset",
+        "target": "emergency fund",
+        "amount": 30000,
+        "issue": "Creates duplicate emergency fund instead of updating"
+      },
+      "testSteps": [
+        "GET /api/financial-plan?mock=true",
+        "Verify Emergency Fund exists with currentValue: 25000",
+        "POST /api/intent with message: 'My emergency fund has 30k'",
+        "Check if action is ADD (wrong) or UPDATE (correct)"
+      ]
+    },
+    {
+      "id": "scenario-3",
+      "category": "INCREASE_EXISTING_VALUE",
+      "description": "User explicitly increases existing value",
+      "userInput": "I want to increase my emergency fund by 5k",
+      "existingContext": {
+        "assets": [{"name": "Emergency Fund", "currentValue": 25000}]
+      },
+      "expectedIntent": {
+        "verb": "increase",
+        "entity": "asset",
+        "target": "emergency fund",
+        "amount": 5000,
+        "action": "ADD_TO_EXISTING"
+      },
+      "currentBehavior": {
+        "verb": "increase",
+        "entity": "asset",
+        "target": "emergency fund",
+        "amount": 5000,
+        "issue": "This should work correctly as is"
+      },
+      "testSteps": [
+        "GET /api/financial-plan?mock=true",
+        "POST /api/intent with message: 'I want to increase my emergency fund by 5k'",
+        "Verify action verb is 'increase' (should be correct)"
+      ]
+    },
+    {
+      "id": "scenario-4",
+      "category": "ADD_NEW_ITEM",
+      "description": "User adds completely new financial item",
+      "userInput": "I have a new car loan of 45k",
+      "existingContext": {
+        "liabilities": [{"name": "Mortgage", "currentBalance": 350000}]
+      },
+      "expectedIntent": {
+        "verb": "add",
+        "entity": "liability",
+        "target": "car loan",
+        "amount": 45000,
+        "action": "CREATE_NEW"
+      },
+      "currentBehavior": {
+        "verb": "add",
+        "entity": "liability",
+        "target": "car loan",
+        "amount": 45000,
+        "issue": "This should work correctly as is"
+      },
+      "testSteps": [
+        "GET /api/financial-plan?mock=true",
+        "Verify no car loan exists in liabilities",
+        "POST /api/intent with message: 'I have a new car loan of 45k'",
+        "Verify action verb is 'add' (should be correct)"
+      ]
+    },
+    {
+      "id": "scenario-5",
+      "category": "REDUCE_EXISTING_VALUE",
+      "description": "User pays down existing liability",
+      "userInput": "I paid down my mortgage by 10k",
+      "existingContext": {
+        "liabilities": [{"name": "Mortgage", "currentBalance": 350000}]
+      },
+      "expectedIntent": {
+        "verb": "reduce",
+        "entity": "liability",
+        "target": "mortgage",
+        "amount": 10000,
+        "action": "SUBTRACT_FROM_EXISTING"
+      },
+      "currentBehavior": {
+        "verb": "reduce",
+        "entity": "liability",
+        "target": "mortgage",
+        "amount": 10000,
+        "issue": "This should work correctly as is"
+      },
+      "testSteps": [
+        "GET /api/financial-plan?mock=true",
+        "POST /api/intent with message: 'I paid down my mortgage by 10k'",
+        "Verify action verb is 'reduce' (should be correct)"
+      ]
+    },
+    {
+      "id": "scenario-6",
+      "category": "AMBIGUOUS_STATEMENT",
+      "description": "User statement could be interpreted multiple ways",
+      "userInput": "My investment portfolio is at 80k",
+      "existingContext": {
+        "assets": [{"name": "Investment Portfolio", "currentValue": 75000}]
+      },
+      "expectedIntent": {
+        "verb": "update",
+        "entity": "asset",
+        "target": "investment portfolio",
+        "amount": 80000,
+        "action": "UPDATE_TO_VALUE",
+        "reasoning": "User is stating current value, not adding new portfolio"
+      },
+      "currentBehavior": {
+        "verb": "add",
+        "entity": "asset",
+        "target": "investment portfolio",
+        "amount": 80000,
+        "issue": "Creates duplicate instead of updating existing one"
+      },
+      "testSteps": [
+        "GET /api/financial-plan?mock=true",
+        "Verify Investment Portfolio exists with currentValue: 75000",
+        "POST /api/intent with message: 'My investment portfolio is at 80k'",
+        "Check if action is ADD (wrong) or UPDATE (correct)"
+      ]
+    },
+    {
+      "id": "scenario-7",
+      "category": "UPDATE_INCOME_VALUE",
+      "description": "User updates salary/income amount",
+      "userInput": "My salary is now 9000 per month",
+      "existingContext": {
+        "incomes": [{"source": "Software Engineering", "amount": 8500, "frequency": "monthly"}]
+      },
+      "expectedIntent": {
+        "verb": "update",
+        "entity": "income",
+        "target": "salary",
+        "amount": 9000,
+        "action": "UPDATE_TO_VALUE"
+      },
+      "currentBehavior": {
+        "verb": "add",
+        "entity": "income",
+        "target": "salary",
+        "amount": 9000,
+        "issue": "Creates duplicate income source instead of updating"
+      },
+      "testSteps": [
+        "GET /api/financial-plan?mock=true",
+        "Verify Software Engineering income exists with amount: 8500",
+        "POST /api/intent with message: 'My salary is now 9000 per month'",
+        "Check if action is ADD (wrong) or UPDATE (correct)"
+      ]
+    },
+    {
+      "id": "scenario-8",
+      "category": "MULTIPLE_UPDATES",
+      "description": "User mentions multiple items in one statement",
+      "userInput": "I have a house worth 500k and housing loan of 20k",
+      "existingContext": {
+        "assets": [],
+        "liabilities": [{"name": "Mortgage", "currentBalance": 350000}]
+      },
+      "expectedIntents": [
+        {
+          "verb": "add",
+          "entity": "asset",
+          "target": "house",
+          "amount": 500000,
+          "action": "CREATE_NEW"
+        },
+        {
+          "verb": "update",
+          "entity": "liability",
+          "target": "housing loan",
+          "amount": 20000,
+          "action": "UPDATE_TO_VALUE",
+          "reasoning": "Should map to existing mortgage and update it"
+        }
+      ],
+      "currentBehavior": {
+        "actions": [
+          {"verb": "add", "entity": "asset", "target": "house", "amount": 500000},
+          {"verb": "add", "entity": "liability", "target": "housing loan", "amount": 20000}
+        ],
+        "issue": "Second action should update existing mortgage instead of adding new liability"
+      },
+      "testSteps": [
+        "GET /api/financial-plan?mock=true",
+        "Verify Mortgage exists with currentBalance: 350000",
+        "POST /api/intent with message: 'I have a house worth 500k and housing loan of 20k'",
+        "Check if second action updates mortgage or creates duplicate"
+      ]
+    }
+  ],
+  "implementationRequirements": {
+    "contextAwareParser": {
+      "description": "Intent parser needs to fetch existing financial data before parsing",
+      "steps": [
+        "1. Call GET /api/financial-plan before parsing intents",
+        "2. Build lookup tables for existing assets, liabilities, incomes, expenses",
+        "3. Match user-mentioned items against existing items (fuzzy matching)",
+        "4. Determine if action should be ADD (new item) or UPDATE (existing item)",
+        "5. For explicit increase/decrease language, use those verbs appropriately"
+      ]
+    },
+    "matchingLogic": {
+      "description": "How to match user input to existing items",
+      "rules": [
+        "Exact name match (case insensitive)",
+        "Fuzzy matching for common synonyms (mortgage = housing loan)",
+        "Category-based matching (emergency fund = cash asset)",
+        "If no match found, default to ADD",
+        "If match found and user states value, default to UPDATE"
+      ]
+    },
+    "requiredChanges": {
+      "files": [
+        "lib/intent/parser.ts - Add context fetching before parsing",
+        "lib/intent/llm.ts - Update system prompt and add context parameter",
+        "app/api/intent/route.ts - Fetch financial data and pass to parser"
+      ]
+    }
+  }
+}

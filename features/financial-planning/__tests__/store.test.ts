@@ -1,7 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useFinancialPlanningStore, useFinancialPlan, useNetWorthTimeline } from '../store';
-import type { FinancialPlanPayload } from '@/app/api/financial-plan/route';
+import { act, renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { FinancialPlanPayload } from "@/app/api/financial-plan/route";
+import {
+  useFinancialPlan,
+  useFinancialPlanningStore,
+  useNetWorthTimeline,
+} from "../store";
 
 // Mock fetch
 global.fetch = vi.fn();
@@ -9,46 +13,46 @@ global.fetch = vi.fn();
 const mockFinancialPlan: FinancialPlanPayload = {
   assets: [
     {
-      id: 'asset-1',
-      name: 'Investment Portfolio',
-      category: 'brokerage',
-      currentValue: 100000,
+      id: "asset-1",
+      name: "Investment Portfolio",
+      category: "brokerage",
+      currentValue: 100_000,
       annualGrowthRate: 0.07,
-      notes: 'Test asset',
-      updatedAt: '2024-01-01T00:00:00Z',
+      notes: "Test asset",
+      updatedAt: "2024-01-01T00:00:00Z",
     },
   ],
   liabilities: [
     {
-      id: 'liability-1',
-      name: 'Mortgage',
-      category: 'mortgage',
-      currentBalance: 300000,
+      id: "liability-1",
+      name: "Mortgage",
+      category: "mortgage",
+      currentBalance: 300_000,
       interestRateApr: 0.035,
       minimumPayment: 2000,
-      notes: 'Test liability',
-      updatedAt: '2024-01-01T00:00:00Z',
+      notes: "Test liability",
+      updatedAt: "2024-01-01T00:00:00Z",
     },
   ],
   incomes: [
     {
-      id: 'income-1',
-      source: 'Salary',
+      id: "income-1",
+      source: "Salary",
       amount: 8000,
-      frequency: 'monthly',
-      startDate: '2024-01-01T00:00:00Z',
-      category: 'employment',
-      updatedAt: '2024-01-01T00:00:00Z',
+      frequency: "monthly",
+      startDate: "2024-01-01T00:00:00Z",
+      category: "employment",
+      updatedAt: "2024-01-01T00:00:00Z",
     },
   ],
   expenses: [
     {
-      id: 'expense-1',
-      payee: 'Rent',
+      id: "expense-1",
+      payee: "Rent",
       amount: 2500,
-      frequency: 'monthly',
-      category: 'housing',
-      updatedAt: '2024-01-01T00:00:00Z',
+      frequency: "monthly",
+      category: "housing",
+      updatedAt: "2024-01-01T00:00:00Z",
     },
   ],
   cashflow: {
@@ -60,26 +64,26 @@ const mockFinancialPlan: FinancialPlanPayload = {
     breakdown: {},
   },
   summary: {
-    totalAssets: 100000,
-    totalLiabilities: 300000,
-    netWorth: -200000,
+    totalAssets: 100_000,
+    totalLiabilities: 300_000,
+    netWorth: -200_000,
     monthlyIncome: 8000,
     monthlyExpenses: 2500,
     monthlySavings: 5500,
     savingsRate: 0.6875,
   },
-  lastUpdated: '2024-01-01T00:00:00Z',
+  lastUpdated: "2024-01-01T00:00:00Z",
 };
 
-describe('Financial Planning Store', () => {
+describe("Financial Planning Store", () => {
   beforeEach(() => {
     // Reset store state
     useFinancialPlanningStore.getState().clearData();
     vi.clearAllMocks();
   });
 
-  describe('useFinancialPlan hook', () => {
-    it('should initialize with empty state', () => {
+  describe("useFinancialPlan hook", () => {
+    it("should initialize with empty state", () => {
       const { result } = renderHook(() => useFinancialPlan());
 
       expect(result.current.data).toBeNull();
@@ -88,11 +92,13 @@ describe('Financial Planning Store', () => {
       expect(result.current.lastUpdated).toBeNull();
     });
 
-    it('should set financial plan data', () => {
+    it("should set financial plan data", () => {
       const { result } = renderHook(() => useFinancialPlan());
 
       act(() => {
-        useFinancialPlanningStore.getState().setFinancialPlan(mockFinancialPlan);
+        useFinancialPlanningStore
+          .getState()
+          .setFinancialPlan(mockFinancialPlan);
       });
 
       expect(result.current.data).toEqual(mockFinancialPlan);
@@ -100,7 +106,7 @@ describe('Financial Planning Store', () => {
       expect(result.current.error).toBeNull();
     });
 
-    it('should handle refresh data success', async () => {
+    it("should handle refresh data success", async () => {
       const mockFetch = vi.mocked(fetch);
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -118,11 +124,11 @@ describe('Financial Planning Store', () => {
       expect(result.current.error).toBeNull();
     });
 
-    it('should handle refresh data error', async () => {
+    it("should handle refresh data error", async () => {
       const mockFetch = vi.mocked(fetch);
       mockFetch.mockResolvedValueOnce({
         ok: false,
-        json: async () => ({ message: 'API Error' }),
+        json: async () => ({ message: "API Error" }),
       } as Response);
 
       const { result } = renderHook(() => useFinancialPlan());
@@ -133,15 +139,17 @@ describe('Financial Planning Store', () => {
 
       expect(result.current.data).toBeNull();
       expect(result.current.isLoading).toBe(false);
-      expect(result.current.error).toBe('API Error');
+      expect(result.current.error).toBe("API Error");
     });
 
-    it('should clear data', () => {
+    it("should clear data", () => {
       const { result } = renderHook(() => useFinancialPlan());
 
       // Set data first
       act(() => {
-        useFinancialPlanningStore.getState().setFinancialPlan(mockFinancialPlan);
+        useFinancialPlanningStore
+          .getState()
+          .setFinancialPlan(mockFinancialPlan);
       });
 
       expect(result.current.data).toEqual(mockFinancialPlan);
@@ -157,8 +165,8 @@ describe('Financial Planning Store', () => {
     });
   });
 
-  describe('useNetWorthTimeline hook', () => {
-    it('should initialize with default settings', () => {
+  describe("useNetWorthTimeline hook", () => {
+    it("should initialize with default settings", () => {
       const { result } = renderHook(() => useNetWorthTimeline());
 
       expect(result.current.timeline).toEqual([]);
@@ -175,30 +183,32 @@ describe('Financial Planning Store', () => {
         showNetWorth: true,
         showIncome: false,
         showExpenses: false,
-        timeframe: 'untilRetirement',
+        timeframe: "untilRetirement",
       });
     });
 
-    it('should generate timeline when financial plan is set', () => {
+    it("should generate timeline when financial plan is set", () => {
       const { result } = renderHook(() => useNetWorthTimeline());
 
       act(() => {
-        useFinancialPlanningStore.getState().setFinancialPlan(mockFinancialPlan);
+        useFinancialPlanningStore
+          .getState()
+          .setFinancialPlan(mockFinancialPlan);
       });
 
       expect(result.current.timeline.length).toBeGreaterThan(0);
       expect(result.current.timeline[0]).toMatchObject({
         age: 30,
-        totalAssets: 100000,
-        totalLiabilities: 300000,
-        netWorth: -200000,
+        totalAssets: 100_000,
+        totalLiabilities: 300_000,
+        netWorth: -200_000,
         monthlyIncome: 8000,
         monthlyExpenses: 2500,
         monthlySavings: 5500,
       });
     });
 
-    it('should update projection settings', () => {
+    it("should update projection settings", () => {
       const { result } = renderHook(() => useNetWorthTimeline());
 
       act(() => {
@@ -212,28 +222,30 @@ describe('Financial Planning Store', () => {
       expect(result.current.projectionSettings.retirementAge).toBe(60);
     });
 
-    it('should update display options', () => {
+    it("should update display options", () => {
       const { result } = renderHook(() => useNetWorthTimeline());
 
       act(() => {
         result.current.updateDisplayOptions({
           showIncome: true,
           showExpenses: true,
-          timeframe: 'next5years',
+          timeframe: "next5years",
         });
       });
 
       expect(result.current.displayOptions.showIncome).toBe(true);
       expect(result.current.displayOptions.showExpenses).toBe(true);
-      expect(result.current.displayOptions.timeframe).toBe('next5years');
+      expect(result.current.displayOptions.timeframe).toBe("next5years");
     });
 
-    it('should regenerate timeline when settings change', () => {
+    it("should regenerate timeline when settings change", () => {
       const { result } = renderHook(() => useNetWorthTimeline());
 
       // Set financial plan first
       act(() => {
-        useFinancialPlanningStore.getState().setFinancialPlan(mockFinancialPlan);
+        useFinancialPlanningStore
+          .getState()
+          .setFinancialPlan(mockFinancialPlan);
       });
 
       const initialTimeline = result.current.timeline;
@@ -241,7 +253,7 @@ describe('Financial Planning Store', () => {
       // Update settings
       act(() => {
         result.current.updateProjectionSettings({
-          averageReturnRate: 0.10, // Higher return rate
+          averageReturnRate: 0.1, // Higher return rate
         });
       });
 
@@ -261,8 +273,8 @@ describe('Financial Planning Store', () => {
     });
   });
 
-  describe('Store actions', () => {
-    it('should handle loading states', () => {
+  describe("Store actions", () => {
+    it("should handle loading states", () => {
       const store = useFinancialPlanningStore.getState();
 
       act(() => {
@@ -278,14 +290,14 @@ describe('Financial Planning Store', () => {
       expect(useFinancialPlanningStore.getState().isLoading).toBe(false);
     });
 
-    it('should handle error states', () => {
+    it("should handle error states", () => {
       const store = useFinancialPlanningStore.getState();
 
       act(() => {
-        store.setError('Test error');
+        store.setError("Test error");
       });
 
-      expect(useFinancialPlanningStore.getState().error).toBe('Test error');
+      expect(useFinancialPlanningStore.getState().error).toBe("Test error");
 
       act(() => {
         store.setError(null);
@@ -294,7 +306,7 @@ describe('Financial Planning Store', () => {
       expect(useFinancialPlanningStore.getState().error).toBeNull();
     });
 
-    it('should generate timeline with compound growth', () => {
+    it("should generate timeline with compound growth", () => {
       const store = useFinancialPlanningStore.getState();
 
       act(() => {

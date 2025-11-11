@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 
 import { toast } from "@/components/toast";
 import { useFinancialPlanningStore } from "@/features/financial-planning";
@@ -42,7 +42,7 @@ export function useFinancialEvents() {
   const warnedRef = useRef(false);
 
   useEffect(() => {
-      console.log("[financial-events] hook mounted");
+    console.log("[financial-events] hook mounted");
     if (typeof window === "undefined" || typeof EventSource === "undefined") {
       return;
     }
@@ -88,8 +88,8 @@ export function useFinancialEvents() {
     };
 
     const handleEvent = (event: MessageEvent<string>) => {
-      console.log("handling event...")
-      console.log(event,'event')
+      console.log("handling event...");
+      console.log(event, "event");
       cursorRef.current = event.lastEventId || cursorRef.current;
       const keys = ["assets", "liabilities", "incomes", "expenses"] as const;
       keys.forEach((key) => {
@@ -128,8 +128,8 @@ export function useFinancialEvents() {
       sourceRef.current = eventSource;
 
       EVENT_TYPES.forEach((type) =>
-      eventSource.addEventListener(type, handleEvent as EventListener)
-    );
+        eventSource.addEventListener(type, handleEvent as EventListener)
+      );
 
       eventSource.onopen = () => {
         reconnectAttemptsRef.current = 0;

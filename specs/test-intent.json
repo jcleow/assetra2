@@ -1,0 +1,556 @@
+{
+	"INTENT_VERBS":["add-item", "remove-item", "update"],
+	"INTENT_ENTITIES": ["asset", "liability", "income", "expense"],
+    "scenarios": [
+        {
+			"id": 1,
+            "initial-state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "house": 300000
+                },
+                "liabilities": {
+                    "car loan": 10000
+                }
+            },
+            "final_state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "house": 500000
+                },
+                "liabilities": {
+                    "car loan": 10000,
+                    "housing loan": 20000
+                }
+            },
+            "user_prompt": "I have a house worth 500k and housing loan of 20k",
+            "correct_parsed_intent": {
+                "parsed": {
+                    "actions": [
+                        {
+                            "id": "some-uuid-1",
+                            "verb": "update",
+                            "entity": "asset",
+                            "target": "house",
+                            "amount": 500000,
+                            "currency": null,
+                            "raw": "a house worth 500k"
+                        },
+                        {
+                            "id": "some-uuid-2",
+                            "verb": "update",
+                            "entity": "liability",
+                            "target": "housing loan",
+                            "amount": 20000,
+                            "currency": null,
+                            "raw": "housing loan of 20k"
+                        }
+                    ],
+                    "raw": "I have a house worth 500k and housing loan of 20k"
+                }
+            }
+        },
+		 {
+			"id": 2,
+            "initial-state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                },
+                "liabilities": {
+                    "car loan": 10000,
+					"housing loan": 30000
+                }
+            },
+            "final_state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "house": 500000
+                },
+                "liabilities": {
+                    "car loan": 10000,
+                    "housing loan": 20000
+                }
+            },
+            "user_prompt": "I have a house worth 500k and housing loan of 20k",
+            "correct_parsed_intent": {
+                "parsed": {
+                    "actions": [
+                        {
+                            "id": "some-uuid-1",
+                            "verb": "update",
+                            "entity": "asset",
+                            "target": "house",
+                            "amount": 500000,
+                            "currency": null,
+                            "raw": "a house worth 500k"
+                        },
+                        {
+                            "id": "some-uuid-2",
+                            "verb": "update",
+                            "entity": "liability",
+                            "target": "housing loan",
+                            "amount": 20000,
+                            "currency": null,
+                            "raw": "housing loan of 20k"
+                        }
+                    ],
+                    "raw": "I have a house worth 500k and housing loan of 20k"
+                }
+            }
+        },
+		{
+			"id": 3,
+            "initial-state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                },
+                "liabilities": {
+                    "car loan": 10000,
+					"housing loan": 30000
+                }
+            },
+            "final_state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "house": 500000
+                },
+                "liabilities": {
+                    "car loan": 10000
+                }
+            },
+            "user_prompt": "I have a house worth 500k and don't have a housing loan",
+            "correct_parsed_intent": {
+                "parsed": {
+                    "actions": [
+                        {
+                            "id": "some-uuid-1",
+                            "verb": "update",
+                            "entity": "asset",
+                            "target": "house",
+                            "amount": 500000,
+                            "currency": null,
+                            "raw": "a house worth 500k"
+                        },
+                        {
+                            "id": "some-uuid-2",
+                            "verb": "remove-item",
+                            "entity": "liability",
+                            "target": "housing loan",
+                            "amount": null,
+                            "currency": null,
+                            "raw": "housing loan of 20k"
+                        }
+                    ],
+                    "raw": "I have a house worth 500k and don't have a housing loan"
+                }
+            }
+        },
+		{
+			"id": 4,
+            "description": "House appreciation - LLM calculates final value",
+            "initial-state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "house": 500000,
+                    "emergency fund": 25000
+                },
+                "liabilities": {
+                    "mortgage": 350000
+                }
+            },
+            "final_state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "house": 700000,
+                    "emergency fund": 25000
+                },
+                "liabilities": {
+                    "mortgage": 350000
+                }
+            },
+            "user_prompt": "My house appreciated to 700k",
+            "correct_parsed_intent": {
+                "parsed": {
+                    "actions": [
+                        {
+                            "id": "some-uuid-1",
+                            "verb": "update",
+                            "entity": "asset",
+                            "target": "house",
+                            "amount": 700000,
+                            "currency": null,
+                            "raw": "My house appreciated to 700k"
+                        }
+                    ],
+                    "raw": "My house appreciated to 700k"
+                }
+            }
+        },
+		{
+			"id": 5,
+            "description": "Mortgage paydown - LLM calculates remaining balance",
+            "initial-state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "house": 500000,
+                    "emergency fund": 25000
+                },
+                "liabilities": {
+                    "mortgage": 350000
+                }
+            },
+            "final_state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "house": 500000,
+                    "emergency fund": 25000
+                },
+                "liabilities": {
+                    "mortgage": 335000
+                }
+            },
+            "user_prompt": "I paid down my mortgage by 15k",
+            "correct_parsed_intent": {
+                "parsed": {
+                    "actions": [
+                        {
+                            "id": "some-uuid-1",
+                            "verb": "update",
+                            "entity": "liability",
+                            "target": "mortgage",
+                            "amount": 335000,
+                            "currency": null,
+                            "raw": "I paid down my mortgage by 15k"
+                        }
+                    ],
+                    "raw": "I paid down my mortgage by 15k"
+                }
+            }
+        },
+		{
+			"id": 6,
+            "description": "Portfolio growth - LLM calculates final value",
+            "initial-state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "investment portfolio": 75000,
+                    "emergency fund": 25000
+                },
+                "liabilities": {
+                    "car loan": 10000
+                }
+            },
+            "final_state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "investment portfolio": 90000,
+                    "emergency fund": 25000
+                },
+                "liabilities": {
+                    "car loan": 10000
+                }
+            },
+            "user_prompt": "I added 15k to my investment portfolio",
+            "correct_parsed_intent": {
+                "parsed": {
+                    "actions": [
+                        {
+                            "id": "some-uuid-1",
+                            "verb": "update",
+                            "entity": "asset",
+                            "target": "investment portfolio",
+                            "amount": 90000,
+                            "currency": null,
+                            "raw": "I added 15k to my investment portfolio"
+                        }
+                    ],
+                    "raw": "I added 15k to my investment portfolio"
+                }
+            }
+        },
+		{
+			"id": 7,
+            "description": "Salary increase - LLM calculates new monthly amount",
+            "initial-state": {
+                "income": {
+                    "salary": 8500
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "house": 500000
+                },
+                "liabilities": {
+                    "mortgage": 350000
+                }
+            },
+            "final_state": {
+                "income": {
+                    "salary": 9000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "house": 500000
+                },
+                "liabilities": {
+                    "mortgage": 350000
+                }
+            },
+            "user_prompt": "My salary increased by 500 per month",
+            "correct_parsed_intent": {
+                "parsed": {
+                    "actions": [
+                        {
+                            "id": "some-uuid-1",
+                            "verb": "update",
+                            "entity": "income",
+                            "target": "salary",
+                            "amount": 9000,
+                            "currency": null,
+                            "raw": "My salary increased by 500 per month"
+                        }
+                    ],
+                    "raw": "My salary increased by 500 per month"
+                }
+            }
+        },
+		{
+			"id": 8,
+            "description": "Emergency fund withdrawal - LLM calculates remaining balance",
+            "initial-state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "house": 500000,
+                    "emergency fund": 25000
+                },
+                "liabilities": {
+                    "mortgage": 350000
+                }
+            },
+            "final_state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "house": 500000,
+                    "emergency fund": 20000
+                },
+                "liabilities": {
+                    "mortgage": 350000
+                }
+            },
+            "user_prompt": "I withdrew 5k from my emergency fund",
+            "correct_parsed_intent": {
+                "parsed": {
+                    "actions": [
+                        {
+                            "id": "some-uuid-1",
+                            "verb": "update",
+                            "entity": "asset",
+                            "target": "emergency fund",
+                            "amount": 20000,
+                            "currency": null,
+                            "raw": "I withdrew 5k from my emergency fund"
+                        }
+                    ],
+                    "raw": "I withdrew 5k from my emergency fund"
+                }
+            }
+        },
+		{
+			"id": 9,
+            "description": "Complete loan payoff - remove item entirely",
+            "initial-state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "house": 500000,
+                    "emergency fund": 25000
+                },
+                "liabilities": {
+                    "car loan": 10000,
+                    "mortgage": 350000
+                }
+            },
+            "final_state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "house": 500000,
+                    "emergency fund": 25000
+                },
+                "liabilities": {
+                    "mortgage": 350000
+                }
+            },
+            "user_prompt": "I paid off my car loan completely",
+            "correct_parsed_intent": {
+                "parsed": {
+                    "actions": [
+                        {
+                            "id": "some-uuid-1",
+                            "verb": "remove-item",
+                            "entity": "liability",
+                            "target": "car loan",
+                            "amount": null,
+                            "currency": null,
+                            "raw": "I paid off my car loan completely"
+                        }
+                    ],
+                    "raw": "I paid off my car loan completely"
+                }
+            }
+        },
+		{
+			"id": 10,
+            "description": "New liability creation",
+            "initial-state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "house": 500000,
+                    "emergency fund": 25000
+                },
+                "liabilities": {
+                    "mortgage": 350000
+                }
+            },
+            "final_state": {
+                "income": {
+                    "salary": 10000
+                },
+                "expenses": {
+                    "food and drinks": 1000,
+                    "parent allowance": 2000
+                },
+                "assets": {
+                    "house": 500000,
+                    "emergency fund": 25000
+                },
+                "liabilities": {
+                    "mortgage": 350000,
+                    "car loan": 45000
+                }
+            },
+            "user_prompt": "I took out a new 45k car loan",
+            "correct_parsed_intent": {
+                "parsed": {
+                    "actions": [
+                        {
+                            "id": "some-uuid-1",
+                            "verb": "add-item",
+                            "entity": "liability",
+                            "target": "car loan",
+                            "amount": 45000,
+                            "currency": null,
+                            "raw": "I took out a new 45k car loan"
+                        }
+                    ],
+                    "raw": "I took out a new 45k car loan"
+                }
+            }
+        }
+    ]
+}

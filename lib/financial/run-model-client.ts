@@ -4,13 +4,26 @@ export interface RunModelRequestBody {
   assets: Array<
     Pick<
       Asset,
-      "id" | "name" | "category" | "currentValue" | "annualGrowthRate" | "notes" | "updatedAt"
+      | "id"
+      | "name"
+      | "category"
+      | "currentValue"
+      | "annualGrowthRate"
+      | "notes"
+      | "updatedAt"
     >
   >;
   liabilities: Array<
     Pick<
       Liability,
-      "id" | "name" | "category" | "currentBalance" | "interestRateApr" | "minimumPayment" | "notes" | "updatedAt"
+      | "id"
+      | "name"
+      | "category"
+      | "currentBalance"
+      | "interestRateApr"
+      | "minimumPayment"
+      | "notes"
+      | "updatedAt"
     >
   >;
   monthlyIncome: number;
@@ -36,12 +49,13 @@ export interface RunModelClientOptions {
   fetchFn?: typeof fetch;
 }
 
-const defaultOptions: Required<Pick<RunModelClientOptions, "endpoint" | "retries" | "retryDelayMs">> =
-  {
-    endpoint: "/api/runModel",
-    retries: 2,
-    retryDelayMs: 300,
-  };
+const defaultOptions: Required<
+  Pick<RunModelClientOptions, "endpoint" | "retries" | "retryDelayMs">
+> = {
+  endpoint: "/api/runModel",
+  retries: 2,
+  retryDelayMs: 300,
+};
 
 const sleep = (ms: number) =>
   new Promise((resolve) => {

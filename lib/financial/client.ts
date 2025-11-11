@@ -163,8 +163,7 @@ export class FinancialClient {
     }
 
     const origin =
-      (typeof process !== "undefined" &&
-        process.env.NEXT_PUBLIC_SITE_URL) ||
+      (typeof process !== "undefined" && process.env.NEXT_PUBLIC_SITE_URL) ||
       "http://localhost";
     return new URL(combined, origin).toString();
   }

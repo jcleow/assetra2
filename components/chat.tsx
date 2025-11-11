@@ -17,6 +17,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  dispatchIntentActions,
+  IntentDispatchError,
+} from "@/features/financial-planning/intent-dispatcher";
 import { useArtifactSelector } from "@/hooks/use-artifact";
 import { useAutoResume } from "@/hooks/use-auto-resume";
 import { useChatVisibility } from "@/hooks/use-chat-visibility";
@@ -26,11 +30,10 @@ import type { Attachment, ChatMessage } from "@/lib/types";
 import type { AppUsage } from "@/lib/usage";
 import { cn, fetcher, fetchWithErrorHandlers, generateUUID } from "@/lib/utils";
 import { Artifact } from "./artifact";
-import type { IntentReviewDisplay } from "./intent-review-card";
 import { useDataStream } from "./data-stream-provider";
+import type { IntentReviewDisplay } from "./intent-review-card";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
-import { dispatchIntentActions, IntentDispatchError } from "@/features/financial-planning/intent-dispatcher";
 import { getChatHistoryPaginationKey } from "./sidebar-history";
 import { toast } from "./toast";
 import type { VisibilityType } from "./visibility-selector";
@@ -215,7 +218,7 @@ export function Chat({
           headers: {
             "content-type": "application/json",
           },
-          body: JSON.stringify({ message }),
+          body: JSON.stringify({ message: trimmed }),
         });
 
         if (!response.ok) {
@@ -243,13 +246,36 @@ export function Chat({
           (typeof crypto.randomUUID === "function"
             ? crypto.randomUUID()
             : generateUUID());
+        // Manually add user message to chat history without triggering LLM
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            id: generateUUID(),
+            role: "user",
+            parts: [
+              ...attachments.map((attachment) => ({
+                type: "file" as const,
+                url: attachment.url,
+                name: attachment.name,
+                mediaType: attachment.contentType,
+              })),
+              {
+                type: "text",
+                text: trimmed,
+              },
+            ],
+            createdAt: new Date(),
+          },
+        ]);
+
+        // Add the intent review UI
         setIntentReviews((prev) => [
           ...prev,
           {
             id: intentId,
             intentId,
-            message,
-            raw: payload.raw ?? message,
+            message: trimmed,
+            raw: payload.raw ?? trimmed,
             actions: payload.actions,
             status: "pending",
             attachments,
@@ -258,6 +284,7 @@ export function Chat({
         ]);
         setInput("");
         setAttachments([]);
+
         return true;
       } catch (error) {
         console.error("Intent parser failed", error);
@@ -270,7 +297,7 @@ export function Chat({
         setIsIntentRequestPending(false);
       }
     },
-    [setAttachments, setInput]
+    [setAttachments, setInput, setMessages]
   );
 
   const handleIntentConfirm = useCallback(
@@ -281,7 +308,7 @@ export function Chat({
       if (!review || dispatchingIntentId) {
         return;
       }
-      console.info("handle intent confirm")
+      console.info("handle intent confirm");
       setDispatchingIntentId(intentId);
       try {
         await dispatchIntentActions({
@@ -296,10 +323,21 @@ export function Chat({
           )
         );
 
-        dispatchMessage({
-          message: review.message,
-          attachments: review.attachments,
-        });
+        // Add confirmation message
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            id: generateUUID(),
+            role: "assistant",
+            parts: [
+              {
+                type: "text",
+                text: "Thank you for confirming! I've applied the changes to your financial plan. Let me know if there's anything else I can help you with.",
+              },
+            ],
+            createdAt: new Date(),
+          },
+        ]);
       } catch (error) {
         const description =
           error instanceof IntentDispatchError || error instanceof Error
@@ -310,12 +348,7 @@ export function Chat({
         setDispatchingIntentId(null);
       }
     },
-    [
-      dispatchMessage,
-      dispatchingIntentId,
-      id,
-      intentReviews,
-    ]
+    [dispatchingIntentId, id, intentReviews, setMessages]
   );
 
   const handleIntentCancel = useCallback(
@@ -334,9 +367,25 @@ export function Chat({
       if (pendingReview) {
         setInput(pendingReview.message);
         setAttachments(pendingReview.attachments);
+
+        // Add cancellation message
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            id: generateUUID(),
+            role: "assistant",
+            parts: [
+              {
+                type: "text",
+                text: "I'm sorry I didn't quite get it right. I've restored your message so you can edit it. Please let me know how else I can help improve this.",
+              },
+            ],
+            createdAt: new Date(),
+          },
+        ]);
       }
     },
-    [setAttachments, setInput]
+    [setAttachments, setInput, setMessages]
   );
   const isArtifactVisible = useArtifactSelector((state) => state.isVisible);
 
@@ -363,10 +412,10 @@ export function Chat({
 
         <Messages
           chatId={id}
-          isArtifactVisible={isArtifactVisible}
-          isReadonly={isReadonly}
           dispatchingIntentId={dispatchingIntentId}
           intentReviews={intentReviewDisplays}
+          isArtifactVisible={isArtifactVisible}
+          isReadonly={isReadonly}
           messages={messages}
           onCancelIntent={handleIntentCancel}
           onConfirmIntent={handleIntentConfirm}

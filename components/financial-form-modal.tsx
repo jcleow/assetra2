@@ -1,20 +1,21 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Trash2 } from 'lucide-react';
-import { financialClient } from '@/lib/financial/client';
-import { useFinancialPlanningStore } from '@/features/financial-planning';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Trash2 } from "lucide-react";
+import type React from "react";
+import { useEffect, useState } from "react";
+import { useFinancialPlanningStore } from "@/features/financial-planning";
+import { financialClient } from "@/lib/financial/client";
 import type {
-  AssetCreatePayload,
-  LiabilityCreatePayload,
-  IncomeCreatePayload,
-  ExpenseCreatePayload,
   Asset,
-  Liability,
+  AssetCreatePayload,
+  Expense,
+  ExpenseCreatePayload,
   Income,
-  Expense
-} from '@/lib/financial/types';
+  IncomeCreatePayload,
+  Liability,
+  LiabilityCreatePayload,
+} from "@/lib/financial/types";
 
 interface FinancialFormModalProps {
   type: string;
@@ -22,34 +23,42 @@ interface FinancialFormModalProps {
 }
 
 export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
-  console.log('FinancialFormModal opened with type:', type);
+  console.log("FinancialFormModal opened with type:", type);
 
-  const isEdit = type.includes('-');
-  const category = isEdit ? type.split('-')[0] : type;
-  const itemId = isEdit ? type.split('-').slice(1).join('-') : null;
+  const isEdit = type.includes("-");
+  const category = isEdit ? type.split("-")[0] : type;
+  const itemId = isEdit ? type.split("-").slice(1).join("-") : null;
 
-  console.log('Parsed:', { isEdit, category, itemId });
+  console.log("Parsed:", { isEdit, category, itemId });
 
   // Normalize category names (handle both singular and plural)
-  const normalizedCategory = (category === 'income' || category === 'incomes') ? 'incomes' :
-                           (category === 'expense' || category === 'expenses') ? 'expenses' :
-                           (category === 'asset' || category === 'assets') ? 'assets' :
-                           (category === 'liability' || category === 'liabilities') ? 'liabilities' : category;
+  const normalizedCategory =
+    category === "income" || category === "incomes"
+      ? "incomes"
+      : category === "expense" || category === "expenses"
+        ? "expenses"
+        : category === "asset" || category === "assets"
+          ? "assets"
+          : category === "liability" || category === "liabilities"
+            ? "liabilities"
+            : category;
 
-  console.log('Normalized category:', normalizedCategory);
+  console.log("Normalized category:", normalizedCategory);
 
   const queryClient = useQueryClient();
-  const invalidateFinancialData = useFinancialPlanningStore((state) => state.invalidateFinancialData);
+  const invalidateFinancialData = useFinancialPlanningStore(
+    (state) => state.invalidateFinancialData
+  );
 
   // Form state
   const [formData, setFormData] = useState({
-    name: '',
-    amount: '',
-    frequency: 'monthly',
-    category: '',
-    annualGrowthRate: '7.0',
-    interestRateApr: '4.5',
-    minimumPayment: ''
+    name: "",
+    amount: "",
+    frequency: "monthly",
+    category: "",
+    annualGrowthRate: "7.0",
+    interestRateApr: "4.5",
+    minimumPayment: "",
   });
 
   // Load existing data for edit mode
@@ -60,19 +69,19 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
           let data: Asset | Liability | Income | Expense;
 
           switch (normalizedCategory) {
-            case 'assets':
+            case "assets":
               data = await financialClient.assets.get(itemId);
               setFormData({
                 name: data.name,
                 amount: data.currentValue.toString(),
                 category: data.category,
                 annualGrowthRate: (data.annualGrowthRate * 100).toString(),
-                frequency: 'monthly',
-                interestRateApr: '4.5',
-                minimumPayment: ''
+                frequency: "monthly",
+                interestRateApr: "4.5",
+                minimumPayment: "",
               });
               break;
-            case 'liabilities':
+            case "liabilities":
               data = await financialClient.liabilities.get(itemId);
               setFormData({
                 name: data.name,
@@ -80,37 +89,37 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
                 category: data.category,
                 interestRateApr: (data.interestRateApr * 100).toString(),
                 minimumPayment: data.minimumPayment.toString(),
-                frequency: 'monthly',
-                annualGrowthRate: '7.0'
+                frequency: "monthly",
+                annualGrowthRate: "7.0",
               });
               break;
-            case 'incomes':
+            case "incomes":
               data = await financialClient.incomes.get(itemId);
               setFormData({
                 name: data.source,
                 amount: data.amount.toString(),
                 frequency: data.frequency,
                 category: data.category,
-                annualGrowthRate: '7.0',
-                interestRateApr: '4.5',
-                minimumPayment: ''
+                annualGrowthRate: "7.0",
+                interestRateApr: "4.5",
+                minimumPayment: "",
               });
               break;
-            case 'expenses':
+            case "expenses":
               data = await financialClient.expenses.get(itemId);
               setFormData({
                 name: data.payee,
                 amount: data.amount.toString(),
                 frequency: data.frequency,
                 category: data.category,
-                annualGrowthRate: '7.0',
-                interestRateApr: '4.5',
-                minimumPayment: ''
+                annualGrowthRate: "7.0",
+                interestRateApr: "4.5",
+                minimumPayment: "",
               });
               break;
           }
         } catch (error) {
-          console.error('Failed to load item for editing:', error);
+          console.error("Failed to load item for editing:", error);
         }
       };
 
@@ -120,73 +129,80 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
 
   // Mutations for CRUD operations
   const createAssetMutation = useMutation({
-    mutationFn: (data: AssetCreatePayload) => financialClient.assets.create(data),
+    mutationFn: (data: AssetCreatePayload) =>
+      financialClient.assets.create(data),
     onSuccess: () => {
-      console.log('Asset created successfully');
-      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      console.log("Asset created successfully");
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
       invalidateFinancialData();
       onClose();
     },
     onError: (error) => {
-      console.error('Failed to create asset:', error);
-      alert('Failed to create asset. Please try again.');
+      console.error("Failed to create asset:", error);
+      alert("Failed to create asset. Please try again.");
     },
   });
 
   const updateAssetMutation = useMutation({
-    mutationFn: (data: { id: string } & AssetCreatePayload) => financialClient.assets.update(data),
+    mutationFn: (data: { id: string } & AssetCreatePayload) =>
+      financialClient.assets.update(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
       invalidateFinancialData();
       onClose();
     },
   });
 
   const createLiabilityMutation = useMutation({
-    mutationFn: (data: LiabilityCreatePayload) => financialClient.liabilities.create(data),
+    mutationFn: (data: LiabilityCreatePayload) =>
+      financialClient.liabilities.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['liabilities'] });
+      queryClient.invalidateQueries({ queryKey: ["liabilities"] });
       invalidateFinancialData();
       onClose();
     },
   });
 
   const updateLiabilityMutation = useMutation({
-    mutationFn: (data: { id: string } & LiabilityCreatePayload) => financialClient.liabilities.update(data),
+    mutationFn: (data: { id: string } & LiabilityCreatePayload) =>
+      financialClient.liabilities.update(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['liabilities'] });
+      queryClient.invalidateQueries({ queryKey: ["liabilities"] });
       invalidateFinancialData();
       onClose();
     },
   });
 
   const createIncomeMutation = useMutation({
-    mutationFn: (data: IncomeCreatePayload) => financialClient.incomes.create(data),
+    mutationFn: (data: IncomeCreatePayload) =>
+      financialClient.incomes.create(data),
     onSuccess: () => {
-      console.log('Income created successfully');
-      queryClient.invalidateQueries({ queryKey: ['incomes'] });
+      console.log("Income created successfully");
+      queryClient.invalidateQueries({ queryKey: ["incomes"] });
       invalidateFinancialData();
       onClose();
     },
     onError: (error) => {
-      console.error('Failed to create income:', error);
-      alert('Failed to create income. Please try again.');
+      console.error("Failed to create income:", error);
+      alert("Failed to create income. Please try again.");
     },
   });
 
   const updateIncomeMutation = useMutation({
-    mutationFn: (data: { id: string } & IncomeCreatePayload) => financialClient.incomes.update(data),
+    mutationFn: (data: { id: string } & IncomeCreatePayload) =>
+      financialClient.incomes.update(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['incomes'] });
+      queryClient.invalidateQueries({ queryKey: ["incomes"] });
       invalidateFinancialData();
       onClose();
     },
   });
 
   const createExpenseMutation = useMutation({
-    mutationFn: (data: ExpenseCreatePayload) => financialClient.expenses.create(data),
+    mutationFn: (data: ExpenseCreatePayload) =>
+      financialClient.expenses.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
       invalidateFinancialData();
       onClose();
     },
@@ -196,7 +212,7 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
   const deleteAssetMutation = useMutation({
     mutationFn: (id: string) => financialClient.assets.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
       invalidateFinancialData();
       onClose();
     },
@@ -205,7 +221,7 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
   const deleteLiabilityMutation = useMutation({
     mutationFn: (id: string) => financialClient.liabilities.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['liabilities'] });
+      queryClient.invalidateQueries({ queryKey: ["liabilities"] });
       invalidateFinancialData();
       onClose();
     },
@@ -214,7 +230,7 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
   const deleteIncomeMutation = useMutation({
     mutationFn: (id: string) => financialClient.incomes.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['incomes'] });
+      queryClient.invalidateQueries({ queryKey: ["incomes"] });
       invalidateFinancialData();
       onClose();
     },
@@ -223,16 +239,17 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
   const deleteExpenseMutation = useMutation({
     mutationFn: (id: string) => financialClient.expenses.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
       invalidateFinancialData();
       onClose();
     },
   });
 
   const updateExpenseMutation = useMutation({
-    mutationFn: (data: { id: string } & ExpenseCreatePayload) => financialClient.expenses.update(data),
+    mutationFn: (data: { id: string } & ExpenseCreatePayload) =>
+      financialClient.expenses.update(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
       invalidateFinancialData();
       onClose();
     },
@@ -241,29 +258,30 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log('Form submitted with data:', formData);
+    console.log("Form submitted with data:", formData);
 
     if (!formData.name.trim() || !formData.amount.trim()) {
-      alert('Please fill in all required fields');
+      alert("Please fill in all required fields");
       return;
     }
 
     const baseData = {
       name: formData.name.trim(),
-      amount: parseFloat(formData.amount) || 0,
-      category: formData.category.trim() || 'other',
+      amount: Number.parseFloat(formData.amount) || 0,
+      category: formData.category.trim() || "other",
     };
 
-    console.log('Processed base data:', baseData);
+    console.log("Processed base data:", baseData);
 
     try {
       switch (normalizedCategory) {
-        case 'assets':
+        case "assets": {
           const assetData = {
             name: baseData.name,
             category: baseData.category,
             currentValue: baseData.amount,
-            annualGrowthRate: parseFloat(formData.annualGrowthRate) / 100,
+            annualGrowthRate:
+              Number.parseFloat(formData.annualGrowthRate) / 100,
           };
 
           if (isEdit && itemId) {
@@ -272,14 +290,15 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
             createAssetMutation.mutate(assetData);
           }
           break;
+        }
 
-        case 'liabilities':
+        case "liabilities": {
           const liabilityData = {
             name: baseData.name,
             category: baseData.category,
             currentBalance: baseData.amount,
-            interestRateApr: parseFloat(formData.interestRateApr) / 100,
-            minimumPayment: parseFloat(formData.minimumPayment) || 0,
+            interestRateApr: Number.parseFloat(formData.interestRateApr) / 100,
+            minimumPayment: Number.parseFloat(formData.minimumPayment) || 0,
           };
 
           if (isEdit && itemId) {
@@ -288,8 +307,9 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
             createLiabilityMutation.mutate(liabilityData);
           }
           break;
+        }
 
-        case 'incomes':
+        case "incomes": {
           const incomeData = {
             source: baseData.name,
             amount: baseData.amount,
@@ -298,7 +318,7 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
             category: baseData.category,
           };
 
-          console.log('Creating income with data:', incomeData);
+          console.log("Creating income with data:", incomeData);
 
           if (isEdit && itemId) {
             updateIncomeMutation.mutate({ id: itemId, ...incomeData });
@@ -306,8 +326,9 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
             createIncomeMutation.mutate(incomeData);
           }
           break;
+        }
 
-        case 'expenses':
+        case "expenses": {
           const expenseData = {
             payee: baseData.name,
             amount: baseData.amount,
@@ -321,86 +342,105 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
             createExpenseMutation.mutate(expenseData);
           }
           break;
+        }
       }
     } catch (error) {
-      console.error('Form submission error:', error);
+      console.error("Form submission error:", error);
     }
   };
 
   const handleDelete = async () => {
     if (!isEdit || !itemId) return;
 
-    if (!confirm('Are you sure you want to delete this item?')) {
+    if (!confirm("Are you sure you want to delete this item?")) {
       return;
     }
 
     try {
       switch (normalizedCategory) {
-        case 'assets':
+        case "assets":
           deleteAssetMutation.mutate(itemId);
           break;
-        case 'liabilities':
+        case "liabilities":
           deleteLiabilityMutation.mutate(itemId);
           break;
-        case 'incomes':
+        case "incomes":
           deleteIncomeMutation.mutate(itemId);
           break;
-        case 'expenses':
+        case "expenses":
           deleteExpenseMutation.mutate(itemId);
           break;
       }
     } catch (error) {
-      console.error('Delete error:', error);
+      console.error("Delete error:", error);
     }
   };
 
   const getModalTitle = () => {
-    const action = isEdit ? 'Edit' : 'Add';
-    const categoryTitle = normalizedCategory === 'incomes' ? 'Income' :
-                         normalizedCategory === 'expenses' ? 'Expense' :
-                         normalizedCategory === 'assets' ? 'Asset' : 'Liability';
+    const action = isEdit ? "Edit" : "Add";
+    const categoryTitle =
+      normalizedCategory === "incomes"
+        ? "Income"
+        : normalizedCategory === "expenses"
+          ? "Expense"
+          : normalizedCategory === "assets"
+            ? "Asset"
+            : "Liability";
     return `${action} ${categoryTitle}`;
   };
 
   const getModalIcon = () => {
-    return normalizedCategory === 'incomes' ? '💼' :
-           normalizedCategory === 'expenses' ? '💰' :
-           normalizedCategory === 'assets' ? '📈' : '💳';
+    return normalizedCategory === "incomes"
+      ? "💼"
+      : normalizedCategory === "expenses"
+        ? "💰"
+        : normalizedCategory === "assets"
+          ? "📈"
+          : "💳";
   };
 
-  const isLoading = createAssetMutation.isPending || updateAssetMutation.isPending ||
-                   createLiabilityMutation.isPending || updateLiabilityMutation.isPending ||
-                   createIncomeMutation.isPending || updateIncomeMutation.isPending ||
-                   createExpenseMutation.isPending || updateExpenseMutation.isPending ||
-                   deleteAssetMutation.isPending || deleteLiabilityMutation.isPending ||
-                   deleteIncomeMutation.isPending || deleteExpenseMutation.isPending;
+  const isLoading =
+    createAssetMutation.isPending ||
+    updateAssetMutation.isPending ||
+    createLiabilityMutation.isPending ||
+    updateLiabilityMutation.isPending ||
+    createIncomeMutation.isPending ||
+    updateIncomeMutation.isPending ||
+    createExpenseMutation.isPending ||
+    updateExpenseMutation.isPending ||
+    deleteAssetMutation.isPending ||
+    deleteLiabilityMutation.isPending ||
+    deleteIncomeMutation.isPending ||
+    deleteExpenseMutation.isPending;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100]">
-      <div className="bg-gray-800 rounded-lg border border-gray-700 w-full max-w-md mx-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="mx-4 w-full max-w-md rounded-lg border border-gray-700 bg-gray-800">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
+        <div className="flex items-center justify-between border-gray-700 border-b p-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center">
-              <span className="text-white text-lg">{getModalIcon()}</span>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500">
+              <span className="text-lg text-white">{getModalIcon()}</span>
             </div>
-            <h2 className="text-lg font-semibold text-white">{getModalTitle()}</h2>
+            <h2 className="font-semibold text-lg text-white">
+              {getModalTitle()}
+            </h2>
           </div>
           <div className="flex items-center gap-3">
             {isEdit && (
               <button
-                onClick={handleDelete}
-                className="w-8 h-8 rounded-full hover:bg-red-600/20 flex items-center justify-center text-gray-400 hover:text-red-400 transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-red-600/20 hover:text-red-400"
                 disabled={isLoading}
+                onClick={handleDelete}
                 title="Delete item"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="h-4 w-4" />
               </button>
             )}
             <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full hover:bg-gray-700 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-700 hover:text-white"
               disabled={isLoading}
+              onClick={onClose}
               title="Close"
             >
               ✕
@@ -409,45 +449,65 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form className="space-y-4 p-6" onSubmit={handleSubmit}>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">
-              {normalizedCategory === 'incomes' ? 'Source' : normalizedCategory === 'expenses' ? 'Payee' : 'Name'}
+            <label className="mb-2 block font-medium text-gray-300 text-sm">
+              {normalizedCategory === "incomes"
+                ? "Source"
+                : normalizedCategory === "expenses"
+                  ? "Payee"
+                  : "Name"}
             </label>
             <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500"
+              className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:border-emerald-500 focus:outline-none"
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, name: e.target.value }))
+              }
               placeholder="Enter name"
               required
+              type="text"
+              value={formData.name}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                {normalizedCategory === 'assets' ? 'Current Value' : normalizedCategory === 'liabilities' ? 'Balance' : 'Amount'}
+              <label className="mb-2 block font-medium text-gray-300 text-sm">
+                {normalizedCategory === "assets"
+                  ? "Current Value"
+                  : normalizedCategory === "liabilities"
+                    ? "Balance"
+                    : "Amount"}
               </label>
               <input
+                className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:border-emerald-500 focus:outline-none"
+                min="0"
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, amount: e.target.value }))
+                }
+                placeholder="0"
+                required
+                step="0.01"
                 type="number"
                 value={formData.amount}
-                onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500"
-                placeholder="0"
-                min="0"
-                step="0.01"
-                required
               />
             </div>
 
-            {(normalizedCategory === 'incomes' || normalizedCategory === 'expenses') && (
+            {(normalizedCategory === "incomes" ||
+              normalizedCategory === "expenses") && (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Frequency</label>
+                <label className="mb-2 block font-medium text-gray-300 text-sm">
+                  Frequency
+                </label>
                 <select
+                  className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-white focus:border-emerald-500 focus:outline-none"
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      frequency: e.target.value,
+                    }))
+                  }
                   value={formData.frequency}
-                  onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value }))}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-emerald-500"
                 >
                   <option value="weekly">Weekly</option>
                   <option value="biweekly">Bi-weekly</option>
@@ -458,76 +518,101 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
               </div>
             )}
 
-            {normalizedCategory === 'assets' && (
+            {normalizedCategory === "assets" && (
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Annual Growth Rate (%)</label>
+                <label className="mb-2 block font-medium text-gray-300 text-sm">
+                  Annual Growth Rate (%)
+                </label>
                 <input
+                  className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:border-emerald-500 focus:outline-none"
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      annualGrowthRate: e.target.value,
+                    }))
+                  }
+                  placeholder="7.0"
+                  step="0.1"
                   type="number"
                   value={formData.annualGrowthRate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, annualGrowthRate: e.target.value }))}
-                  step="0.1"
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500"
-                  placeholder="7.0"
                 />
               </div>
             )}
           </div>
 
-          {normalizedCategory === 'liabilities' && (
+          {normalizedCategory === "liabilities" && (
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Interest Rate APR (%)</label>
+                <label className="mb-2 block font-medium text-gray-300 text-sm">
+                  Interest Rate APR (%)
+                </label>
                 <input
+                  className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:border-emerald-500 focus:outline-none"
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      interestRateApr: e.target.value,
+                    }))
+                  }
+                  placeholder="4.5"
+                  step="0.1"
                   type="number"
                   value={formData.interestRateApr}
-                  onChange={(e) => setFormData(prev => ({ ...prev, interestRateApr: e.target.value }))}
-                  step="0.1"
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500"
-                  placeholder="4.5"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Min Payment</label>
+                <label className="mb-2 block font-medium text-gray-300 text-sm">
+                  Min Payment
+                </label>
                 <input
+                  className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:border-emerald-500 focus:outline-none"
+                  min="0"
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      minimumPayment: e.target.value,
+                    }))
+                  }
+                  placeholder="100"
+                  step="0.01"
                   type="number"
                   value={formData.minimumPayment}
-                  onChange={(e) => setFormData(prev => ({ ...prev, minimumPayment: e.target.value }))}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500"
-                  placeholder="100"
-                  min="0"
-                  step="0.01"
                 />
               </div>
             </div>
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Category</label>
+            <label className="mb-2 block font-medium text-gray-300 text-sm">
+              Category
+            </label>
             <input
+              className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:border-emerald-500 focus:outline-none"
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, category: e.target.value }))
+              }
+              placeholder="e.g., salary, retirement, mortgage"
               type="text"
               value={formData.category}
-              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500"
-              placeholder="e.g., salary, retirement, mortgage"
             />
           </div>
 
           {/* Footer */}
-          <div className="flex justify-between pt-4 border-t border-gray-700">
+          <div className="flex justify-between border-gray-700 border-t pt-4">
             <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+              className="px-4 py-2 text-gray-400 transition-colors hover:text-white"
               disabled={isLoading}
+              onClick={onClose}
+              type="button"
             >
               Cancel
             </button>
             <button
-              type="submit"
+              className="rounded-lg bg-emerald-500 px-6 py-2 text-white transition-colors hover:bg-emerald-600 disabled:bg-gray-600"
               disabled={isLoading}
-              className="px-6 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-600 text-white rounded-lg transition-colors"
+              type="submit"
             >
-              {isLoading ? 'Saving...' : (isEdit ? 'Update' : 'Add')}
+              {isLoading ? "Saving..." : isEdit ? "Update" : "Add"}
             </button>
           </div>
         </form>

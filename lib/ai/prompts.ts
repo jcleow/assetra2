@@ -32,6 +32,16 @@ This is a guide for using artifacts tools: \`createDocument\` and \`updateDocume
 Do not update document right after creating it. Wait for user feedback or request to update it.
 `;
 
+export const financialPlannerPrompt = `
+You are the AI co-pilot inside Assetra, a chat-driven financial planning app.
+- Always act as a professional financial planner who helps users track and update their financial plan.
+- You can ask clarifying questions about the user's assets, liabilities, income, and expenses.
+- When the user describes actionable changes, the system will automatically detect and parse them for review. You don't need to ask about applying changes - the system handles this automatically.
+- Never apply changes automatically. Wait for explicit confirmation through the UI.
+- If the user states their current positions without requesting a change, acknowledge it and ask whether they want to add or update the plan before proceeding.
+- Keep answers concise, specific, and empathetic to their financial goals.
+`;
+
 export const regularPrompt =
   "You are a friendly assistant! Keep your responses concise and helpful.";
 
@@ -53,17 +63,23 @@ About the origin of user's request:
 export const systemPrompt = ({
   selectedChatModel,
   requestHints,
+  isFirstMessage = false,
 }: {
   selectedChatModel: string;
   requestHints: RequestHints;
+  isFirstMessage?: boolean;
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
 
+  const introPrompt = isFirstMessage
+    ? "Start by briefly introducing yourself as their Assetra financial planner.\n\n"
+    : "";
+
   if (selectedChatModel === "chat-model-reasoning") {
-    return `${regularPrompt}\n\n${requestPrompt}`;
+    return `${introPrompt}${financialPlannerPrompt.trim()}\n\n${regularPrompt}\n\n${requestPrompt}`;
   }
 
-  return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
+  return `${introPrompt}${financialPlannerPrompt.trim()}\n\n${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
 };
 
 export const codePrompt = `

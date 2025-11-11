@@ -1,0 +1,131 @@
+{
+  "tickets": [
+    {
+      "title": "Frontend: LLM Financial Planner Context & Intent Suggestions",
+      "description": "Teach the chat assistant that it lives inside Assetra's financial planning workspace so it acts like a planner, nudges users to apply actionable statements, and never auto-dispatches changes.",
+      "technicalDetails": [
+        "Update the chat system prompt (all chat models) to establish the financial planner role: acknowledge assets/liabilities/income/expenses, remind users that the intent confirmation UI is required, and forbid automatic changes.",
+        "When the model detects actionable statements (e.g., new debt, adjusting an asset), have it ask whether to add/update the plan and instruct the user to press the intent button before the parser runs.",
+        "If the user merely states current positions, ensure the assistant asks whether to add/amend the plan before suggesting the intent flow.",
+        "Keep the dispatcher unchanged: no auto-dispatch, and intents still surface through the existing confirmation card."
+      ],
+      "acceptanceCriteria": [
+        "The assistant introduces itself as an Assetra financial planner and references updating the user's plan.",
+        "Actionable statements lead to a follow-up question asking if the user wants to apply the change, with guidance to use the intent confirmation.",
+        "Descriptive statements (\"I have 20k car loan\") result in clarifying questions rather than silent intent parsing.",
+        "No intents are auto-dispatched; the user must still confirm via the UI."
+      ],
+      "storyPoints": 2,
+      "difficulty": "low",
+      "tags": ["frontend", "llm", "ux"],
+      "id": "T15-FE-LLM-CONTEXT",
+      "status": "done"
+    },
+    {
+      "title": "Context-Aware Intent Parser with Simplified Verb Structure",
+      "description": "Implement context-aware intent parsing that fetches existing financial state before parsing user input, uses simplified 3-verb structure (add-item, update, remove-item), and leverages LLM mathematical capabilities to calculate final values from relative changes and absolute statements.",
+      "technicalDetails": [
+        "Update INTENT_VERBS from ['add', 'increase', 'reduce', 'remove'] to simplified ['add-item', 'update', 'remove-item'] structure.",
+        "Modify intent parser to fetch current financial state (GET /api/financial-plan) before parsing user input to understand existing context.",
+        "Implement context-aware verb selection logic: item exists + user states value → 'update', item exists + user says 'don't have' → 'remove-item', item doesn't exist + user states value → 'add-item'.",
+        "Update LLM system prompt to include current financial state context (assets, liabilities, income, expenses with current values) formatted clearly for mathematical operations.",
+        "Enhance LLM prompt to handle mathematical calculations for relative changes: 'paid down by 15k' (350k - 15k = 335k), 'added 10k' (75k + 10k = 85k), 'increased by 500' (8500 + 500 = 9000).",
+        "Use LLM's natural language understanding for item matching instead of complex fuzzy logic - let LLM determine if user input (e.g., 'housing loan') matches existing items (e.g., 'Mortgage') through enhanced prompting.",
+        "Add validation logic to ensure LLM-calculated amounts are reasonable and handle edge cases like complete debt payoffs ('paid off completely' → remove-item)."
+      ],
+      "acceptanceCriteria": [
+        "User saying 'I have a house worth 500k' when house exists (300k) produces 'update' action to 500k, not 'add' duplicate.",
+        "User saying 'housing loan of 20k' when mortgage exists (350k) produces 'update' action, not 'add' duplicate liability.",
+        "User saying 'I don't have a housing loan' when loan exists produces 'remove-item' action.",
+        "User mentioning completely new items (e.g., 'new car loan 45k') produces 'add-item' action.",
+        "LLM correctly matches user terms to existing items through context understanding (mortgage = housing loan, salary = software engineering income).",
+        "LLM calculates final values for relative changes: 'My house appreciated to 700k' (house 500k → 700k), 'I paid down mortgage by 15k' (350k → 335k).",
+        "LLM handles additions correctly: 'I added 15k to my portfolio' (75k → 90k), 'My salary increased by 500' (8500 → 9000).",
+        "LLM handles withdrawals correctly: 'I withdrew 5k from emergency fund' (25k → 20k).",
+        "LLM handles complete payoffs: 'I paid off my car loan completely' → remove-item action with null amount."
+      ],
+      "storyPoints": 5,
+      "difficulty": "medium",
+      "tags": ["backend", "llm", "intent", "context"],
+      "id": "T16-BE-CONTEXT-INTENT",
+      "status": "todo",
+      "approach": "LLM-based matching via enhanced prompting instead of custom fuzzy logic",
+      "testScenarios": [
+        {
+          "id": 1,
+          "description": "Update existing asset value",
+          "initialState": {"assets": {"house": 300000}, "liabilities": {"car loan": 10000}},
+          "userInput": "I have a house worth 500k and housing loan of 20k",
+          "expectedActions": [
+            {"verb": "update", "entity": "asset", "target": "house", "amount": 500000},
+            {"verb": "add-item", "entity": "liability", "target": "housing loan", "amount": 20000}
+          ]
+        },
+        {
+          "id": 2,
+          "description": "Remove existing liability",
+          "initialState": {"assets": {}, "liabilities": {"car loan": 10000, "housing loan": 30000}},
+          "userInput": "I have a house worth 500k and don't have a housing loan",
+          "expectedActions": [
+            {"verb": "add-item", "entity": "asset", "target": "house", "amount": 500000},
+            {"verb": "remove-item", "entity": "liability", "target": "housing loan", "amount": null}
+          ]
+        },
+        {
+          "id": 3,
+          "description": "House appreciation - LLM calculates final value",
+          "initialState": {"assets": {"house": 500000}, "liabilities": {"mortgage": 350000}},
+          "userInput": "My house appreciated to 700k",
+          "expectedActions": [
+            {"verb": "update", "entity": "asset", "target": "house", "amount": 700000}
+          ]
+        },
+        {
+          "id": 4,
+          "description": "Mortgage paydown - LLM calculates remaining balance",
+          "initialState": {"assets": {"house": 500000}, "liabilities": {"mortgage": 350000}},
+          "userInput": "I paid down my mortgage by 15k",
+          "expectedActions": [
+            {"verb": "update", "entity": "liability", "target": "mortgage", "amount": 335000}
+          ]
+        },
+        {
+          "id": 5,
+          "description": "Portfolio addition - LLM calculates new total",
+          "initialState": {"assets": {"investment portfolio": 75000}},
+          "userInput": "I added 15k to my investment portfolio",
+          "expectedActions": [
+            {"verb": "update", "entity": "asset", "target": "investment portfolio", "amount": 90000}
+          ]
+        },
+        {
+          "id": 6,
+          "description": "Salary increase - LLM calculates new monthly amount",
+          "initialState": {"income": {"salary": 8500}},
+          "userInput": "My salary increased by 500 per month",
+          "expectedActions": [
+            {"verb": "update", "entity": "income", "target": "salary", "amount": 9000}
+          ]
+        },
+        {
+          "id": 7,
+          "description": "Emergency fund withdrawal - LLM calculates remaining",
+          "initialState": {"assets": {"emergency fund": 25000}},
+          "userInput": "I withdrew 5k from my emergency fund",
+          "expectedActions": [
+            {"verb": "update", "entity": "asset", "target": "emergency fund", "amount": 20000}
+          ]
+        },
+        {
+          "id": 8,
+          "description": "Complete loan payoff - remove item entirely",
+          "initialState": {"liabilities": {"car loan": 10000, "mortgage": 350000}},
+          "userInput": "I paid off my car loan completely",
+          "expectedActions": [
+            {"verb": "remove-item", "entity": "liability", "target": "car loan", "amount": null}
+          ]
+        }
+      ]
+    }
+  ]
+}

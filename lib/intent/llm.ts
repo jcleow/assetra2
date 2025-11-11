@@ -4,23 +4,35 @@ import { z } from "zod";
 import { myProvider } from "@/lib/ai/providers";
 import type { IntentActionCandidate } from "./types";
 
-const INTENT_VERBS = ["add", "increase", "reduce", "remove"] as const;
+const INTENT_VERBS = ["add-item", "update", "remove-item"] as const;
 const INTENT_ENTITIES = ["asset", "liability", "income", "expense"] as const;
 
-const INTENT_SYSTEM_PROMPT = `\
-You convert user chat commands into structured financial plan intent actions.
+function buildContextAwarePrompt(financialContext: string): string {
+  return `\
+You convert user chat commands into structured financial plan intent actions using their current financial state as context.
+
+Current Financial State:
+${financialContext}
 
 Rules:
-- Only create an action when the user explicitly asks to modify their plan.
-- Supported verbs: add, increase, reduce, remove. Never invent other verbs.
+- Supported verbs: "add-item" (create new), "update" (change existing), "remove-item" (delete existing)
 - Supported entities: asset, liability, income, expense. Pick the best match.
-- Amounts must be positive numbers representing the magnitude of change. Use null if no amount is provided.
-- Currency should be a 3-letter ISO code (USD, EUR, GBP, etc.) when explicitly mentioned. Otherwise set it to null.
-- Target is the described account or category (e.g., "savings account", "mortgage").
-- Raw is the exact text span from the user message that led to the action.
-- When a single message contains multiple changes, return one action per change.
-- If nothing actionable is found, return an empty actions array.
-`;
+- Use context to determine if item exists: if exists use "update" or "remove-item", if new use "add-item"
+- For updates, calculate the final amount based on user intent and current values:
+  * Absolute values: "My house is worth 700k" → amount: 700000
+  * Relative additions: "I added 15k to portfolio" (current: 75k) → amount: 90000
+  * Relative subtractions: "I paid down mortgage by 15k" (current: 350k) → amount: 335000
+  * Complete payoffs: "I paid off completely" → use "remove-item" with amount: null
+- Match user terms to existing items using natural language understanding (e.g., "housing loan" = "mortgage")
+- Currency should be 3-letter ISO code when mentioned, otherwise null
+- Target is the described account/category name
+- Raw is the exact text span that led to the action
+- When single message has multiple items, return one action per item
+- If nothing actionable found, return empty actions array
+`
+}
+
+const INTENT_SYSTEM_PROMPT = buildContextAwarePrompt("");
 
 const IntentLLMActionSchema = z.object({
   verb: z.enum(INTENT_VERBS),
@@ -29,7 +41,9 @@ const IntentLLMActionSchema = z.object({
   amount: z.number().finite().nullable(),
   currency: z
     .union([z.string().length(3), z.null()])
-    .transform((value) => (typeof value === "string" ? value.toUpperCase() : null)),
+    .transform((value) =>
+      typeof value === "string" ? value.toUpperCase() : null
+    ),
   raw: z.string().min(1),
 });
 
@@ -43,14 +57,19 @@ User request:
 ${message}
 """
 
-Extract the structured actions.`;
+Extract the structured actions using the current financial state context above.`;
 
 export async function inferIntentActions(
-  message: string
+  message: string,
+  financialContext?: string
 ): Promise<IntentActionCandidate[]> {
+  const systemPrompt = financialContext
+    ? buildContextAwarePrompt(financialContext)
+    : INTENT_SYSTEM_PROMPT;
+
   const { object } = await generateObject({
     model: myProvider.languageModel("chat-model-reasoning"),
-    system: INTENT_SYSTEM_PROMPT,
+    system: systemPrompt,
     prompt: buildPrompt(message),
     temperature: 0,
     schema: IntentLLMResponseSchema,

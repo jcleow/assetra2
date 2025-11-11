@@ -1,10 +1,5 @@
 "use client";
 
-import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import type { IntentAction } from "@/lib/intent/parser";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -13,6 +8,11 @@ import {
   Loader2,
   XCircle,
 } from "lucide-react";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import type { IntentAction } from "@/lib/intent/parser";
+import { cn } from "@/lib/utils";
 
 export type IntentReviewStatus = "pending" | "confirmed" | "cancelled";
 
@@ -69,7 +69,7 @@ export function IntentReviewCard({
     <div className="rounded-2xl border border-border/60 bg-muted/10 p-4 text-sm shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
+          <p className="text-muted-foreground text-xs uppercase tracking-wide">
             Intent Preview
           </p>
           <p className="font-semibold text-white">
@@ -79,7 +79,7 @@ export function IntentReviewCard({
         </div>
         <span
           className={cn(
-            "inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium",
+            "inline-flex items-center gap-1 rounded-full border px-3 py-1 font-medium text-xs",
             status.tone
           )}
         >
@@ -95,14 +95,14 @@ export function IntentReviewCard({
             key={action.id}
           >
             <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary" className="uppercase text-[10px]">
+              <Badge className="text-[10px] uppercase" variant="secondary">
                 {action.verb}
               </Badge>
               <span className="text-muted-foreground">
                 {formatAmount(action)}
               </span>
             </div>
-            <div className="mt-1 text-xs text-muted-foreground">
+            <div className="mt-1 text-muted-foreground text-xs">
               Target:{" "}
               <span className="font-medium text-white">
                 {action.target || "unspecified"}
@@ -116,7 +116,7 @@ export function IntentReviewCard({
       {isPending && (
         <div className="mt-4 flex flex-wrap gap-2">
           <Button
-            className="flex-1 min-w-[120px]"
+            className="min-w-[120px] flex-1"
             disabled={isProcessing}
             onClick={() => onConfirm?.(review.id)}
             size="sm"
@@ -131,7 +131,7 @@ export function IntentReviewCard({
             )}
           </Button>
           <Button
-            className="flex-1 min-w-[120px]"
+            className="min-w-[120px] flex-1"
             disabled={isProcessing}
             onClick={() => onCancel?.(review.id)}
             size="sm"
@@ -143,7 +143,7 @@ export function IntentReviewCard({
       )}
 
       <button
-        className="mt-4 flex w-full items-center justify-between rounded-lg border border-border/50 bg-background/40 px-3 py-2 text-xs font-medium text-muted-foreground transition hover:bg-background/70"
+        className="mt-4 flex w-full items-center justify-between rounded-lg border border-border/50 bg-background/40 px-3 py-2 font-medium text-muted-foreground text-xs transition hover:bg-background/70"
         onClick={() => setShowDiagnostics((value) => !value)}
         type="button"
       >
@@ -156,7 +156,7 @@ export function IntentReviewCard({
       </button>
 
       {showDiagnostics && (
-        <pre className="mt-2 max-h-64 overflow-auto rounded-lg bg-black/40 px-3 py-2 text-xs text-muted-foreground">
+        <pre className="mt-2 max-h-64 overflow-auto rounded-lg bg-black/40 px-3 py-2 text-muted-foreground text-xs">
           {JSON.stringify(
             {
               intentId: review.intentId,

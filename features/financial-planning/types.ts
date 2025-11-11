@@ -1,4 +1,4 @@
-import type { Asset, Liability, Income, Expense } from '@/lib/financial';
+import type { Asset, Expense, Income, Liability } from "@/lib/financial";
 
 export interface FinancialPlan {
   assets: Asset[];
@@ -47,6 +47,6 @@ export interface GraphDisplayOptions {
   showNetWorth: boolean;
   showIncome: boolean;
   showExpenses: boolean;
-  timeframe: 'next5years' | 'next10years' | 'untilRetirement' | 'custom';
+  timeframe: "next5years" | "next10years" | "untilRetirement" | "custom";
   customYears?: number;
 }

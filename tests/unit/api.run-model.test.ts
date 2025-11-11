@@ -27,11 +27,11 @@ const basePayload = {
       category: "mortgage",
       currentBalance: 150_000,
       interestRateApr: 0.04,
-      minimumPayment: 2_000,
+      minimumPayment: 2000,
     },
   ],
-  monthlyIncome: 9_500,
-  monthlyExpenses: 4_200,
+  monthlyIncome: 9500,
+  monthlyExpenses: 4200,
   currentAge: 35,
   retirementAge: 60,
   startYear: 2024,
@@ -59,9 +59,9 @@ describe("POST /api/runModel", () => {
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
         monthlyCashFlow: {
-          monthlyIncome: 9_500,
-          monthlyExpenses: 4_200,
-          netMonthly: 5_300,
+          monthlyIncome: 9500,
+          monthlyExpenses: 4200,
+          netMonthly: 5300,
         },
         currentAge: 35,
         retirementAge: 60,
@@ -72,7 +72,7 @@ describe("POST /api/runModel", () => {
   it("returns 400 when payload validation fails", async () => {
     const response = await POST(
       buildRequest({
-        monthlyIncome: 5_000,
+        monthlyIncome: 5000,
         // missing currentAge required by schema
       })
     );
@@ -107,7 +107,7 @@ describe("POST /api/runModel", () => {
         ],
         liabilities: [
           {
-            currentBalance: 2_000,
+            currentBalance: 2000,
           },
         ],
         currentAge: 40,

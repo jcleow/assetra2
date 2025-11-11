@@ -6,12 +6,33 @@ type Entitlements = {
   availableChatModelIds: ChatModel["id"][];
 };
 
+const parseMaxMessages = (value: string | undefined, fallback: number) => {
+  if (!value) {
+    return fallback;
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback;
+  }
+  return Math.floor(parsed);
+};
+
+const guestMaxMessages = parseMaxMessages(
+  process.env.NEXT_PUBLIC_GUEST_MAX_MESSAGES_PER_DAY,
+  100
+);
+
+const regularMaxMessages = parseMaxMessages(
+  process.env.NEXT_PUBLIC_REGULAR_MAX_MESSAGES_PER_DAY,
+  100
+);
+
 export const entitlementsByUserType: Record<UserType, Entitlements> = {
   /*
    * For users without an account
    */
   guest: {
-    maxMessagesPerDay: 1,
+    maxMessagesPerDay: guestMaxMessages,
     availableChatModelIds: ["chat-model", "chat-model-reasoning"],
   },
 
@@ -19,7 +40,7 @@ export const entitlementsByUserType: Record<UserType, Entitlements> = {
    * For users with an account
    */
   regular: {
-    maxMessagesPerDay: 1,
+    maxMessagesPerDay: regularMaxMessages,
     availableChatModelIds: ["chat-model", "chat-model-reasoning"],
   },
 

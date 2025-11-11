@@ -7,8 +7,62 @@ import type {
   IntentResult,
 } from "./types";
 
-export type { IntentVerb, IntentEntity, IntentResult } from "./types";
-export type { IntentAction } from "./types";
+interface FinancialPlanData {
+  assets: Array<{ name: string; currentValue: number }>;
+  liabilities: Array<{ name: string; currentBalance: number }>;
+  incomes: Array<{ source: string; amount: number }>;
+  expenses: Array<{ payee: string; amount: number }>;
+}
+
+async function fetchFinancialContext(): Promise<string> {
+  try {
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    const response = await fetch(`${baseUrl}/api/financial-plan?mock=true`);
+
+    if (!response.ok) {
+      console.warn("Failed to fetch financial context, proceeding without context");
+      return "";
+    }
+
+    const data: FinancialPlanData = await response.json();
+
+    return formatFinancialContext(data);
+  } catch (error) {
+    console.warn("Error fetching financial context:", error);
+    return "";
+  }
+}
+
+function formatFinancialContext(data: FinancialPlanData): string {
+  const assets = data.assets
+    .map(a => `${a.name}: $${a.currentValue.toLocaleString()}`)
+    .join(", ");
+
+  const liabilities = data.liabilities
+    .map(l => `${l.name}: $${l.currentBalance.toLocaleString()}`)
+    .join(", ");
+
+  const incomes = data.incomes
+    .map(i => `${i.source}: $${i.amount.toLocaleString()}/month`)
+    .join(", ");
+
+  const expenses = data.expenses
+    .map(e => `${e.payee}: $${e.amount.toLocaleString()}/month`)
+    .join(", ");
+
+  return `\
+Assets: ${assets || "None"}
+Liabilities: ${liabilities || "None"}
+Income: ${incomes || "None"}
+Expenses: ${expenses || "None"}`;
+}
+
+export type {
+  IntentAction,
+  IntentEntity,
+  IntentResult,
+  IntentVerb,
+} from "./types";
 
 export class IntentParseError extends Error {
   constructor(message: string) {
@@ -25,7 +79,10 @@ export async function parseIntent(message: string): Promise<IntentResult> {
   }
 
   try {
-    const llmActions = await inferIntentActions(trimmed);
+    // Fetch current financial context for context-aware parsing
+    const financialContext = await fetchFinancialContext();
+
+    const llmActions = await inferIntentActions(trimmed, financialContext);
     const actions = llmActions.map((action) =>
       normalizeAction(action, trimmed)
     );

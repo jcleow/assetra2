@@ -1,8 +1,8 @@
-import { create } from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
-import type { FinancialPlanPayload } from '@/app/api/financial-plan/route';
-import type { NetWorthPoint } from '@/lib/financial';
-import { requestRunModel } from '@/lib/financial/run-model-client';
+import { create } from "zustand";
+import { devtools, persist } from "zustand/middleware";
+import type { FinancialPlanPayload } from "@/app/api/financial-plan/route";
+import type { NetWorthPoint } from "@/lib/financial";
+import { requestRunModel } from "@/lib/financial/run-model-client";
 
 export interface NetWorthTimelinePoint {
   age: number;
@@ -29,7 +29,7 @@ export interface GraphDisplayOptions {
   showNetWorth: boolean;
   showIncome: boolean;
   showExpenses: boolean;
-  timeframe: 'next5years' | 'next10years' | 'untilRetirement' | 'custom';
+  timeframe: "next5years" | "next10years" | "untilRetirement" | "custom";
   customYears?: number;
 }
 
@@ -81,7 +81,7 @@ const DEFAULT_DISPLAY_OPTIONS: GraphDisplayOptions = {
   showNetWorth: true,
   showIncome: false,
   showExpenses: false,
-  timeframe: 'untilRetirement',
+  timeframe: "untilRetirement",
 };
 
 export const useFinancialPlanningStore = create<FinancialPlanningState>()(
@@ -109,11 +109,13 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
               error: null,
             },
             false,
-            'setFinancialPlan'
+            "setFinancialPlan"
           );
           // Auto-generate timeline when new data is set
           get().generateTimeline();
-          void get().runProjection().catch(() => {});
+          void get()
+            .runProjection()
+            .catch(() => {});
         },
 
         updateProjectionSettings: (settings) => {
@@ -122,11 +124,13 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
               projectionSettings: { ...state.projectionSettings, ...settings },
             }),
             false,
-            'updateProjectionSettings'
+            "updateProjectionSettings"
           );
           // Regenerate timeline with new settings
           get().generateTimeline();
-          void get().runProjection().catch(() => {});
+          void get()
+            .runProjection()
+            .catch(() => {});
         },
 
         updateDisplayOptions: (options) => {
@@ -135,7 +139,7 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
               displayOptions: { ...state.displayOptions, ...options },
             }),
             false,
-            'updateDisplayOptions'
+            "updateDisplayOptions"
           );
         },
 
@@ -143,7 +147,7 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
           const { financialPlan, projectionSettings } = get();
 
           if (!financialPlan) {
-            set({ timeline: [] }, false, 'generateTimeline');
+            set({ timeline: [] }, false, "generateTimeline");
             return;
           }
 
@@ -175,7 +179,11 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
           let monthlyExpenses = financialPlan.summary.monthlyExpenses;
           let savingsForGrowth = monthlyIncome - monthlyExpenses;
 
-          for (let year = 0; year <= projectionSettings.projectionYears; year++) {
+          for (
+            let year = 0;
+            year <= projectionSettings.projectionYears;
+            year++
+          ) {
             if (year > 0) {
               const yearlySavings = savingsForGrowth * 12;
               unassignedAssets += yearlySavings;
@@ -218,7 +226,7 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
             });
           }
 
-          set({ timeline }, false, 'generateTimeline');
+          set({ timeline }, false, "generateTimeline");
         },
 
         runProjection: async () => {
@@ -233,7 +241,7 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
               projectionError: null,
             },
             false,
-            'runProjection:start'
+            "runProjection:start"
           );
 
           try {
@@ -255,31 +263,31 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
                 projectionError: null,
               },
               false,
-              'runProjection:success'
+              "runProjection:success"
             );
           } catch (error) {
             const message =
               error instanceof Error
                 ? error.message
-                : 'Failed to recompute projections';
+                : "Failed to recompute projections";
             set(
               {
                 projectionError: message,
               },
               false,
-              'runProjection:error'
+              "runProjection:error"
             );
           } finally {
-            set({ isProjecting: false }, false, 'runProjection:finish');
+            set({ isProjecting: false }, false, "runProjection:finish");
           }
         },
 
         setLoading: (loading) => {
-          set({ isLoading: loading }, false, 'setLoading');
+          set({ isLoading: loading }, false, "setLoading");
         },
 
         setError: (error) => {
-          set({ error }, false, 'setError');
+          set({ error }, false, "setError");
         },
 
         clearData: () => {
@@ -291,7 +299,7 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
               lastUpdated: null,
             },
             false,
-            'clearData'
+            "clearData"
           );
         },
 
@@ -304,17 +312,22 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
           try {
             // Force refresh with cache busting
             const timestamp = Date.now();
-            const response = await fetch(`/api/financial-plan?refresh=true&t=${timestamp}`);
+            const response = await fetch(
+              `/api/financial-plan?refresh=true&t=${timestamp}`
+            );
 
             if (!response.ok) {
               const errorData = await response.json();
-              throw new Error(errorData.message || 'Failed to fetch financial plan');
+              throw new Error(
+                errorData.message || "Failed to fetch financial plan"
+              );
             }
 
             const data: FinancialPlanPayload = await response.json();
             setFinancialPlan(data);
           } catch (error) {
-            const message = error instanceof Error ? error.message : 'Unknown error occurred';
+            const message =
+              error instanceof Error ? error.message : "Unknown error occurred";
             setError(message);
           } finally {
             setLoading(false);
@@ -328,7 +341,7 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
         },
       }),
       {
-        name: 'financial-planning-store',
+        name: "financial-planning-store",
         partialize: (state) => ({
           projectionSettings: state.projectionSettings,
           displayOptions: state.displayOptions,
@@ -336,7 +349,7 @@ export const useFinancialPlanningStore = create<FinancialPlanningState>()(
       }
     ),
     {
-      name: 'financial-planning',
+      name: "financial-planning",
     }
   )
 );
@@ -401,7 +414,7 @@ function buildRunModelPayload(
 function mapRunModelTimeline(
   points: NetWorthPoint[],
   projectionSettings: ProjectionSettings,
-  summary: FinancialPlanPayload['summary']
+  summary: FinancialPlanPayload["summary"]
 ): NetWorthTimelinePoint[] {
   return points.map((point, index) => ({
     age: projectionSettings.currentAge + index,
