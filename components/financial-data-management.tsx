@@ -22,6 +22,7 @@ import {
 import { useFinancialPlanningStore } from "@/features/financial-planning";
 import { financialClient } from "@/lib/financial/client";
 import { FinancialFormModal } from "./financial-form-modal";
+import { CPFBalanceForm } from "./cpf-balance-form";
 
 interface FinancialItem {
   id: string;
@@ -44,6 +45,7 @@ interface CategoryConfig {
 export function FinancialDataManagement() {
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [showGrowthSettings, setShowGrowthSettings] = useState(false);
+  const [showCPFForm, setShowCPFForm] = useState(false);
 
   // Query data from Go service
   const { data: assets = [], isLoading: assetsLoading } = useQuery({
@@ -72,8 +74,8 @@ export function FinancialDataManagement() {
       name: income.source,
       subtitle: `${income.frequency} • ${income.category || "Income"}`,
       amount: `$${income.amount.toLocaleString()}`,
-      icon: "💼",
-      color: "bg-emerald-500",
+      icon: income.source.includes("CPF") ? "🏦" : "💼",
+      color: income.source.includes("CPF") ? "bg-indigo-500" : "bg-emerald-500",
     }));
   };
 
@@ -83,8 +85,8 @@ export function FinancialDataManagement() {
       name: expense.payee,
       subtitle: `${expense.frequency} • ${expense.category || "Expense"}`,
       amount: `$${expense.amount.toLocaleString()}`,
-      icon: "💰",
-      color: "bg-orange-500",
+      icon: expense.payee.includes("CPF") ? "🏦" : "💰",
+      color: expense.payee.includes("CPF") ? "bg-indigo-500" : "bg-orange-500",
     }));
   };
 
@@ -92,10 +94,10 @@ export function FinancialDataManagement() {
     return assets.map((asset) => ({
       id: asset.id,
       name: asset.name,
-      subtitle: `${asset.category} • ${asset.annualGrowthRate}% growth`,
+      subtitle: `${asset.category} • ${(asset.annualGrowthRate * 100).toFixed(1)}% growth`,
       amount: `$${asset.currentValue.toLocaleString()}`,
-      icon: "📈",
-      color: "bg-blue-500",
+      icon: asset.name.includes("CPF") ? "🏦" : "📈",
+      color: asset.name.includes("CPF") ? "bg-indigo-500" : "bg-blue-500",
     }));
   };
 
@@ -118,6 +120,11 @@ export function FinancialDataManagement() {
   const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
   const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   const savings = totalIncome - totalExpenses;
+
+  // Check if CPF assets exist
+  const hasCPFAssets = assets.some(asset =>
+    asset.name.includes("CPF") || asset.category === "retirement"
+  );
 
   const leftColumnCategories: CategoryConfig[] = [
     {
@@ -180,6 +187,8 @@ export function FinancialDataManagement() {
               onEditItem={(id) => setActiveModal(`${category.modalType}-${id}`)}
               onOpenSettings={category.onOpenSettings}
               title={category.title}
+              showCPFButton={category.title === "Assets" && !hasCPFAssets}
+              onAddCPF={() => setShowCPFForm(true)}
             />
           ))}
 
@@ -209,6 +218,7 @@ export function FinancialDataManagement() {
               onEditItem={(id) => setActiveModal(`${category.modalType}-${id}`)}
               onOpenSettings={category.onOpenSettings}
               title={category.title}
+              showCPFButton={false}
             />
           ))}
 
@@ -235,6 +245,10 @@ export function FinancialDataManagement() {
         />
       )}
 
+      {showCPFForm && (
+        <CPFBalanceForm onClose={() => setShowCPFForm(false)} />
+      )}
+
       <GrowthSettingsSheet
         onOpenChange={setShowGrowthSettings}
         open={showGrowthSettings}
@@ -251,6 +265,8 @@ interface FinancialCardProps {
   onAddItem: () => void;
   onEditItem: (id: string) => void;
   onOpenSettings?: () => void;
+  onAddCPF?: () => void;
+  showCPFButton?: boolean;
 }
 
 function FinancialCard({
@@ -261,6 +277,8 @@ function FinancialCard({
   onAddItem,
   onEditItem,
   onOpenSettings,
+  onAddCPF,
+  showCPFButton,
 }: FinancialCardProps) {
   const iconColor =
     title === "Income"
@@ -308,6 +326,24 @@ function FinancialCard({
                   </TooltipTrigger>
                   <TooltipContent className="text-xs">
                     Adjust global growth rate
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {showCPFButton && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white transition-colors hover:bg-blue-600"
+                      onClick={onAddCPF}
+                      type="button"
+                    >
+                      🏦
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="text-xs">
+                    Add CPF Balances
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>

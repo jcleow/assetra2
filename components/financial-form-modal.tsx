@@ -16,6 +16,7 @@ import type {
   Liability,
   LiabilityCreatePayload,
 } from "@/lib/financial/types";
+import { createCPFContributions, checkExistingCPFContributions, updateCPFContributions } from "@/lib/cpf/auto-contributions";
 
 interface FinancialFormModalProps {
   type: string;
@@ -174,11 +175,41 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
   });
 
   const createIncomeMutation = useMutation({
-    mutationFn: (data: IncomeCreatePayload) =>
-      financialClient.incomes.create(data),
+    mutationFn: async (data: IncomeCreatePayload) => {
+      // Create the main income
+      const incomeResult = await financialClient.incomes.create(data);
+
+      // Auto-create CPF contributions if this is salary income
+      const isSalaryIncome = data.source.toLowerCase().includes("salary") ||
+                           data.category.toLowerCase().includes("salary") ||
+                           data.category.toLowerCase() === "employment";
+
+      if (isSalaryIncome) {
+        try {
+          // Check if CPF contributions already exist
+          const hasCPFContributions = await checkExistingCPFContributions();
+
+          if (!hasCPFContributions) {
+            console.log("Creating CPF contributions for salary income");
+            await createCPFContributions({
+              monthlySalary: data.amount,
+              age: 32, // Default age - could be made configurable later
+            });
+          } else {
+            console.log("CPF contributions already exist, skipping auto-creation");
+          }
+        } catch (cpfError) {
+          console.warn("Failed to create CPF contributions, but salary income was created:", cpfError);
+          // Don't fail the main operation if CPF creation fails
+        }
+      }
+
+      return incomeResult;
+    },
     onSuccess: () => {
       console.log("Income created successfully");
       queryClient.invalidateQueries({ queryKey: ["incomes"] });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
       invalidateFinancialData();
       onClose();
     },
@@ -189,10 +220,30 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
   });
 
   const updateIncomeMutation = useMutation({
-    mutationFn: (data: { id: string } & IncomeCreatePayload) =>
-      financialClient.incomes.update(data),
+    mutationFn: async (data: { id: string } & IncomeCreatePayload) => {
+      // Update the main income
+      const incomeResult = await financialClient.incomes.update(data);
+
+      // Update CPF contributions if this is salary income
+      const isSalaryIncome = data.source.toLowerCase().includes("salary") ||
+                           data.category.toLowerCase().includes("salary") ||
+                           data.category.toLowerCase() === "employment";
+
+      if (isSalaryIncome) {
+        try {
+          console.log("Updating CPF contributions for changed salary income");
+          await updateCPFContributions(data.amount, 32); // Default age
+        } catch (cpfError) {
+          console.warn("Failed to update CPF contributions, but salary income was updated:", cpfError);
+          // Don't fail the main operation if CPF update fails
+        }
+      }
+
+      return incomeResult;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["incomes"] });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
       invalidateFinancialData();
       onClose();
     },
