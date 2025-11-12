@@ -72,8 +72,8 @@ export function FinancialDataManagement() {
       name: income.source,
       subtitle: `${income.frequency} • ${income.category || "Income"}`,
       amount: `$${income.amount.toLocaleString()}`,
-      icon: "💼",
-      color: "bg-emerald-500",
+      icon: income.source.includes("CPF") ? "🏦" : "💼",
+      color: income.source.includes("CPF") ? "bg-indigo-500" : "bg-emerald-500",
     }));
   };
 
@@ -83,8 +83,8 @@ export function FinancialDataManagement() {
       name: expense.payee,
       subtitle: `${expense.frequency} • ${expense.category || "Expense"}`,
       amount: `$${expense.amount.toLocaleString()}`,
-      icon: "💰",
-      color: "bg-orange-500",
+      icon: expense.payee.includes("CPF") ? "🏦" : "💰",
+      color: expense.payee.includes("CPF") ? "bg-indigo-500" : "bg-orange-500",
     }));
   };
 
