@@ -110,26 +110,19 @@ export function FinancialDataManagement() {
     }));
   };
 
-  const categories: CategoryConfig[] = [
-    {
-      title: "Income",
-      description:
-        "Every source of income you expect to have throughout your life",
-      items: formatIncomeItems(),
-      isLoading: incomesLoading,
-      modalType: "incomes",
-    },
-    {
-      title: "Expenses",
-      description:
-        "All the known expenses likely to occur throughout your life",
-      items: formatExpenseItems(),
-      isLoading: expensesLoading,
-      modalType: "expenses",
-    },
+  // Calculate totals
+  const totalAssets = assets.reduce((sum, asset) => sum + asset.currentValue, 0);
+  const totalLiabilities = liabilities.reduce((sum, liability) => sum + liability.currentBalance, 0);
+  const netWorth = totalAssets - totalLiabilities;
+
+  const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
+  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const savings = totalIncome - totalExpenses;
+
+  const leftColumnCategories: CategoryConfig[] = [
     {
       title: "Assets",
-      description: "Everything you own that has monetary value",
+      description: "",
       items: formatAssetItems(),
       isLoading: assetsLoading,
       modalType: "assets",
@@ -144,6 +137,25 @@ export function FinancialDataManagement() {
     },
   ];
 
+  const rightColumnCategories: CategoryConfig[] = [
+    {
+      title: "Income",
+      description:
+        "",
+      items: formatIncomeItems(),
+      isLoading: incomesLoading,
+      modalType: "incomes",
+    },
+    {
+      title: "Expenses",
+      description:
+        "",
+      items: formatExpenseItems(),
+      isLoading: expensesLoading,
+      modalType: "expenses",
+    },
+  ];
+
   return (
     <div className="h-full w-full overflow-auto bg-gray-900 p-6 text-white">
       <div className="mb-6">
@@ -155,19 +167,64 @@ export function FinancialDataManagement() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {categories.map((category) => (
-          <FinancialCard
-            description={category.description}
-            isLoading={category.isLoading}
-            items={category.items}
-            key={category.title}
-            onAddItem={() => setActiveModal(category.modalType)}
-            onEditItem={(id) => setActiveModal(`${category.modalType}-${id}`)}
-            onOpenSettings={category.onOpenSettings}
-            title={category.title}
-          />
-        ))}
+      <div className="flex flex-col gap-6 lg:flex-row">
+        {/* Left Column - Assets & Liabilities */}
+        <div className="flex flex-1 flex-col space-y-6">
+          {leftColumnCategories.map((category) => (
+            <FinancialCard
+              description={category.description}
+              isLoading={category.isLoading}
+              items={category.items}
+              key={category.title}
+              onAddItem={() => setActiveModal(category.modalType)}
+              onEditItem={(id) => setActiveModal(`${category.modalType}-${id}`)}
+              onOpenSettings={category.onOpenSettings}
+              title={category.title}
+            />
+          ))}
+
+          {/* Net Worth Summary */}
+          <div className="mt-auto rounded-lg border border-gray-700 bg-gray-800 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-white">Net Worth</h3>
+                <p className="text-gray-400 text-sm">Assets minus liabilities</p>
+              </div>
+              <div className={`font-bold text-lg ${netWorth >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                ${netWorth.toLocaleString()}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column - Income & Expenses */}
+        <div className="flex flex-1 flex-col space-y-6">
+          {rightColumnCategories.map((category) => (
+            <FinancialCard
+              description={category.description}
+              isLoading={category.isLoading}
+              items={category.items}
+              key={category.title}
+              onAddItem={() => setActiveModal(category.modalType)}
+              onEditItem={(id) => setActiveModal(`${category.modalType}-${id}`)}
+              onOpenSettings={category.onOpenSettings}
+              title={category.title}
+            />
+          ))}
+
+          {/* Savings Summary */}
+          <div className="mt-auto rounded-lg border border-gray-700 bg-gray-800 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-white">Savings</h3>
+                <p className="text-gray-400 text-sm">Income minus expenses</p>
+              </div>
+              <div className={`font-bold text-lg ${savings >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                ${savings.toLocaleString()}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Modals */}
@@ -215,7 +272,7 @@ function FinancialCard({
           : "text-red-500";
 
   return (
-    <div className="rounded-lg border border-gray-700 bg-gray-800">
+    <div className="flex flex-1 flex-col rounded-lg border border-gray-700 bg-gray-800">
       {/* Header */}
       <div className="border-gray-700 border-b p-4">
         <div className="flex items-center justify-between">
@@ -266,7 +323,7 @@ function FinancialCard({
       </div>
 
       {/* Items */}
-      <div className="p-4">
+      <div className="flex-1 p-4">
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
