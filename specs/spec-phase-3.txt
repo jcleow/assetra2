@@ -1,0 +1,288 @@
+ASSETRA PHASE 3: COMPREHENSIVE SCENARIO PLANNING FOR SINGAPORE SANDWICHED GENERATION
+===================================================================================
+
+USER PERSONA: ALEX CHEN (32, SINGAPORE)
+========================================
+- Mid-level operations manager ("salary man") at a logistics MNC, ~S$9.5k/month base + AWS (~S$120k all-in)
+- Mandatory CPF contributions (20% employee / 17% employer) and a 7% marginal income tax rate reduce take-home cash
+- Single, planning to get married within 2-3 years; partner earns ~S$80k and wants to co-plan finances
+- Supporting elderly parents (S$1,500/month allowance + occasional medical top-ups)
+- Renting a 1-bedroom apartment (S$2,800/month) while waiting for HDB eligibility
+- Holds S$80k liquid savings, S$45k in CPF OA, S$25k in CPF SA, and S$20k already invested in STI ETF + US equities
+- Dreams: Own HDB BTO, get married, afford 1-2 kids, buy a practical car, retire by 60 with 70% income replacement
+- Concerns: Can he afford all his goals while supporting parents and managing CPF/tax obligations? What trade-offs must he make?
+
+PRIMARY USER STORY NARRATIVE
+----------------------------
+"As Alex, a 32-year-old sandwiched generation salary man in Singapore, I need one command center that shows how buying a home, getting married, starting a family, owning a car, investing, and retiring by 60 all fit together given my CPF contributions, taxes, and insurance needs."
+
+Story Beats (time horizons the product must support):
+1. Stabilize Foundations (0-12 months): Track CPF inflows/outflows, income tax, and parental support while sizing an emergency fund and core insurance coverage.
+2. Housing + Marriage (12-36 months): Compare BTO vs resale timelines, assess down payments using CPF OA + cash, and schedule wedding costs without delaying the flat or exceeding TDSR/MSR.
+3. Family Formation (36-60 months): Model childcare expenses, helper costs, and parental leave income gaps to decide if/when to have kids while still servicing the mortgage.
+4. Lifestyle Upgrade Decisions (60-84 months): Evaluate the total cost of owning a car versus reinvesting the money, factoring in COE cycles, childcare logistics, and opportunity cost.
+5. Retirement Glidepath (present-60): Project CPF LIFE payouts, taxable income, and investment growth so that Alex knows the trade-offs between aggressive property usage, stock market investing, and insurance top-ups.
+
+Key Questions the platform must answer for Alex:
+- How do CPF contribution limits, OA usage caps, and income tax reliefs impact his monthly cash flow at each life stage?
+- What is the safest housing path (BTO, resale, or condo) that still lets him fund a wedding and plan for kids?
+- When does it become cash-flow positive to have one or two children while supporting parents and saving for retirement?
+- Can he responsibly own a car without compromising childcare, insurance, and investment goals?
+- What insurance mix (health, term, critical illness, disability) closes downside risks while staying within budget?
+- How much must he invest annually (CPF + cash portfolio) to retire by 60 with desired lifestyle even if markets underperform?
+
+CORE USER JOURNEY & SCENARIOS
+==============================
+
+1. HOUSING PLANNING SCENARIOS
+-----------------------------
+Goal: "I want to buy a 4-room HDB BTO for my future family"
+
+Scenarios to Model:
+- BTO Success (S$450k, 2.6% HDB loan vs bank loan)
+- Resale HDB (S$650k, immediate but expensive)
+- Private condo (S$1.2M, aspirational but risky)
+
+Key Features Needed:
+- CPF OA usage calculator (max 120% of property value)
+- Down payment planning (20% cash + CPF for resale)
+- Monthly payment affordability with marriage/kids
+- HDB eligibility checker (income ceiling, citizenship)
+- Renovation and moving costs estimation
+
+User Stories:
+- "If I get the BTO, when can I afford to get married?"
+- "Should I use all my CPF OA or keep some for retirement?"
+- "Can I still afford a car if I buy resale instead of BTO?"
+
+2. MARRIAGE & FAMILY PLANNING
+-----------------------------
+Goal: "I want to get married and decide if we can afford kids"
+
+Marriage Impact Scenarios:
+- Dual-income household (partner earns S$80k)
+- Combined CPF contributions and housing loan eligibility
+- Wedding costs (S$30-80k range)
+- Shared vs separate finances management
+
+Kids Planning Scenarios:
+- 1 child: Childcare (S$1,200/month), education, insurance
+- 2 children: Exponential cost growth, helper costs
+- No children: More disposable income for other goals
+
+Key Features Needed:
+- Household income combining and tax optimization
+- Childcare cost calculator by age brackets
+- Education savings planning (university costs)
+- Maternity/paternity leave income impact
+- Child insurance and medical costs
+
+User Stories:
+- "If my partner and I combine finances, what's our housing budget?"
+- "Can we afford 2 kids if we buy a resale flat?"
+- "Should we delay having kids to secure housing first?"
+
+3. TRANSPORTATION PLANNING
+--------------------------
+Goal: "I want to own a car but unsure if it's financially wise"
+
+Car Ownership Scenarios:
+- New car (S$120k): COE, loan, insurance, maintenance
+- Used car (S$80k): Higher maintenance, shorter lifespan
+- No car: Continue public transport + occasional Grab
+
+Key Features Needed:
+- COE price forecasting and renewal planning
+- Total cost of ownership calculator (10-year view)
+- Alternative transportation cost comparison
+- Opportunity cost analysis (invest car money instead)
+
+User Stories:
+- "Is it better to buy a car before or after getting married?"
+- "How much would I save for retirement if I skip the car?"
+- "Can I afford a car if I have kids?"
+
+4. CPF & RETIREMENT PLANNING
+----------------------------
+Goal: "I want to retire by 60 with sufficient funds"
+
+CPF Strategy Scenarios:
+- Aggressive OA usage for property vs conservative savings
+- CPF SA top-ups for tax relief and higher returns
+- CPF LIFE payout optimization strategies
+- Early retirement vs working past 65
+
+Key Features Needed:
+- CPF projection calculator with current contribution rates
+- Property vs retirement fund allocation optimization
+- CPF top-up tax benefit calculator
+- Retirement expense estimation tools
+- Healthcare cost inflation modeling
+
+User Stories:
+- "If I use all my CPF OA for housing, can I still retire by 60?"
+- "Should I top up my CPF SA every year for tax savings?"
+- "How much do I need in cash savings vs CPF for early retirement?"
+
+5. INSURANCE & RISK MANAGEMENT
+------------------------------
+Goal: "I want to protect against health and income risks"
+
+Insurance Planning Scenarios:
+- Basic coverage: Medishield Life + basic term life
+- Comprehensive coverage: Private health, disability, critical illness
+- Family protection: Increased coverage after marriage/kids
+- Self-insurance vs insurance products trade-offs
+
+Key Features Needed:
+- Insurance needs analysis based on dependents and debts
+- Cost-benefit analysis of different insurance products
+- Insurance premium impact on monthly cash flow
+- Claims probability and coverage gap analysis
+
+User Stories:
+- "How much life insurance do I need if I have a mortgage and kids?"
+- "Should I get private health insurance or stick with Medishield?"
+- "What happens to my family's finances if I can't work?"
+
+6. INVESTMENT & WEALTH BUILDING
+-------------------------------
+Goal: "I want to grow my wealth through investing"
+
+Investment Scenarios:
+- Conservative: CPF SA + government bonds (4% returns)
+- Moderate: Index funds + REITs (6-7% returns)
+- Aggressive: Individual stocks + growth funds (8-10% returns)
+- Property investment: Rental property for passive income
+
+Key Features Needed:
+- Risk tolerance assessment and portfolio allocation
+- Tax-efficient investing strategies (SRS, CPF top-ups)
+- Property investment vs stock market comparison
+- Emergency fund vs investment balance optimization
+
+User Stories:
+- "Should I invest my excess savings or save for property down payment?"
+- "What's the optimal asset allocation for my age and goals?"
+- "Can property investment help me retire earlier?"
+
+SCENARIO PLANNING FRAMEWORK
+============================
+
+LIFE STAGE SCENARIOS
+--------------------
+1. Single Phase (Current): Focus on savings and career growth
+2. Engagement Phase: Wedding planning and joint financial planning
+3. Newlywed Phase: House hunting and mortgage approval
+4. New Parent Phase: Childcare costs and education planning
+5. Family Growth Phase: Scaling lifestyle and investment growth
+6. Pre-Retirement Phase: Wealth preservation and legacy planning
+
+ECONOMIC SCENARIOS
+------------------
+1. Optimistic: Salary growth 5%/year, market returns 8%/year
+2. Base Case: Salary growth 3%/year, market returns 6%/year
+3. Pessimistic: Salary stagnant, market returns 2%/year, job loss risk
+4. Crisis: Economic downturn, property price crash, health emergency
+
+GOAL PRIORITIZATION MATRIX
+===========================
+High Priority (Must-Have):
+- Emergency fund (6 months expenses)
+- Basic health insurance coverage
+- Housing (HDB BTO if possible)
+- CPF retirement adequacy
+
+Medium Priority (Should-Have):
+- Marriage and wedding funding
+- Transportation solution
+- Additional insurance coverage
+- Investment portfolio building
+
+Low Priority (Nice-to-Have):
+- Private property upgrade
+- Luxury car ownership
+- Premium insurance products
+- Early retirement acceleration
+
+TECHNICAL IMPLEMENTATION PRIORITIES
+====================================
+
+PHASE 3A: SINGAPORE-SPECIFIC FEATURES (8-10 weeks)
+--------------------------------------------------
+1. CPF Calculator Integration
+   - OA/SA/MA projection with current rates
+   - Property purchase CPF usage modeling
+   - Retirement adequacy assessment
+   - Top-up tax benefit calculator
+
+2. HDB Planning Module
+   - BTO vs resale cost comparison
+   - Eligibility checker and timeline
+   - Loan comparison (HDB vs bank)
+   - Renovation and moving cost estimation
+
+3. Singapore Tax Integration
+   - Income tax calculator with reliefs
+   - SRS contribution optimization
+   - CPF top-up tax benefits
+   - Investment tax implications
+
+PHASE 3B: LIFE EVENT PLANNING (6-8 weeks)
+-----------------------------------------
+1. Marriage Planning Module
+   - Joint income and expense modeling
+   - Wedding budget and timeline planning
+   - Combined financial goal setting
+   - Insurance beneficiary updates
+
+2. Family Planning Calculator
+   - Childcare cost estimation by age
+   - Education savings planning
+   - Healthcare cost modeling
+   - Income impact during leave
+
+3. Career Planning Integration
+   - Salary progression modeling
+   - Industry-specific insights
+   - Skills development ROI
+   - Side income opportunities
+
+PHASE 3C: ADVANCED SCENARIO ENGINE (8-10 weeks)
+-----------------------------------------------
+1. Multi-Scenario Comparison Dashboard
+   - Side-by-side goal achievement timelines
+   - Risk-adjusted outcome probability
+   - Sensitivity analysis for key variables
+   - Decision tree for major choices
+
+2. AI-Powered Recommendations
+   - Goal prioritization suggestions
+   - Optimal timing for major decisions
+   - Risk mitigation strategies
+   - Opportunity identification
+
+3. Collaborative Planning
+   - Partner/spouse shared access
+   - Financial advisor integration
+   - Family goal coordination
+   - Progress tracking and alerts
+
+SUCCESS METRICS
+===============
+- Time to first complete scenario plan: < 15 minutes
+- User confidence in financial decisions: > 80% survey score
+- Goal achievement prediction accuracy: > 85%
+- Monthly active scenario adjustments: > 3 per user
+- Recommendation acceptance rate: > 60%
+
+USER EXPERIENCE PRINCIPLES
+===========================
+1. Singapore Context First: All calculations use local rates, rules, and norms
+2. Goal-Oriented: Every feature ties back to specific life goals
+3. Scenario-Driven: Always show multiple paths and trade-offs
+4. Actionable Insights: Provide specific next steps, not just analysis
+5. Cultural Sensitivity: Understand family obligations and social expectations
+6. Regulatory Compliance: Ensure all advice follows MAS guidelines
+
+This specification provides a comprehensive roadmap for building a world-class scenario planning tool specifically designed for Singapore's unique financial landscape and cultural context. The focus on the sandwiched generation user ensures we address the most complex and common financial planning challenges in the market.

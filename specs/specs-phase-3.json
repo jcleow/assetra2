@@ -1,0 +1,325 @@
+{
+  "tickets": [
+    {
+      "title": "CPF Balance Tracking and Storage",
+      "description": "Create foundational CPF account balance tracking system for OA, SA, and MA accounts with data storage and retrieval, integrating as individual asset entries.",
+      "technicalDetails": [
+        "Create CPF account balance data model with OA, SA, and MA account tracking using existing asset structure.",
+        "Implement API endpoints for CPF balance storage and retrieval integrated with existing assets API.",
+        "Add CPF balance input form in frontend allowing users to enter current balances for all three accounts.",
+        "Create 3 separate asset entries when user inputs CPF data: CPF Ordinary Account, CPF Special Account, CPF Medisave Account.",
+        "Use appropriate categorization ('retirement' category) and icons (🏦) for CPF asset entries.",
+        "Ensure CPF accounts appear in Assets section alongside stocks, house, etc. as individual line items."
+      ],
+      "acceptanceCriteria": [
+        "User can input current CPF OA, SA, MA balances through a dedicated form.",
+        "Each CPF account appears as separate asset entry in the Assets section (🏦 CPF Ordinary Account, etc.).",
+        "CPF balances are stored using existing assets API structure and endpoints.",
+        "CPF accounts contribute to Total Assets and Net Worth calculations automatically.",
+        "CPF entries follow existing asset UI patterns (clickable, editable, same styling).",
+        "Balance data persists correctly and displays in the financial dashboard."
+      ],
+      "storyPoints": 3,
+      "difficulty": "low",
+      "tags": ["backend", "frontend", "cpf", "data"],
+      "id": "T17A-FE-BE-CPF-TRACKING",
+      "status": "todo"
+    },
+    {
+      "title": "CPF Contribution Calculator",
+      "description": "Implement CPF contribution calculation engine that auto-populates income and expense entries based on salary, but allows manual editing for flexibility.",
+      "technicalDetails": [
+        "Create CPF contribution rate calculator with current rates (20% employee, 17% employer).",
+        "Implement age-based contribution rate adjustments following CPF guidelines.",
+        "Add salary band logic for contribution calculations with wage ceiling considerations.",
+        "Auto-populate CPF employer contribution in Income section when user enters salary.",
+        "Auto-populate CPF employee contribution in Expenses section when user enters salary.",
+        "Allow manual editing of auto-populated CPF contribution amounts for user flexibility.",
+        "Show calculation basis (e.g., 'Based on $8,000 salary, age 32') in contribution entries.",
+        "Re-calculate when salary changes but preserve manual overrides if user has edited values."
+      ],
+      "acceptanceCriteria": [
+        "When user enters salary, system automatically creates/updates CPF contribution entries in Income and Expenses.",
+        "CPF employer contribution appears as income line item (🏦 CPF employer contribution $1,360).",
+        "CPF employee contribution appears as expense line item (🏦 CPF employee contribution $1,600).",
+        "Contribution calculations follow current CPF rates and age-based adjustments.",
+        "User can manually edit auto-populated CPF amounts if needed.",
+        "Calculation basis is shown to user for transparency.",
+        "Salary changes trigger recalculation but respect manual user overrides.",
+        "CPF contributions integrate into existing Income/Expenses flow and contribute to Savings calculation."
+      ],
+      "storyPoints": 3,
+      "difficulty": "medium",
+      "tags": ["backend", "frontend", "cpf", "calculator", "singapore"],
+      "id": "T17B-BE-CPF-CONTRIBUTIONS",
+      "status": "todo"
+    },
+    {
+      "title": "CPF Interest and Balance Projections",
+      "description": "Build CPF balance projection system with interest calculations and future balance forecasting.",
+      "technicalDetails": [
+        "Integrate CPF interest calculation (2.5% for OA, 4% for SA/MA up to $60k, 5% above).",
+        "Add CPF balance projection calculator showing future balances at retirement age.",
+        "Implement compound interest calculations with monthly contribution additions.",
+        "Create projection timeline showing balance growth over years with contribution and interest components."
+      ],
+      "acceptanceCriteria": [
+        "CPF projection shows realistic balance growth incorporating accurate interest rates.",
+        "Interest calculations properly handle different rates for OA vs SA/MA accounts.",
+        "Future balance projections account for continued contributions and compound growth.",
+        "Projection timeline clearly shows contribution vs interest growth components."
+      ],
+      "storyPoints": 3,
+      "difficulty": "medium",
+      "tags": ["backend", "cpf", "projections", "interest"],
+      "id": "T17C-BE-CPF-PROJECTIONS",
+      "status": "todo"
+    },
+    {
+      "title": "CPF Retirement Adequacy Checker",
+      "description": "Build simple retirement readiness assessment showing whether user is on track for retirement based on CPF projections.",
+      "technicalDetails": [
+        "Create retirement adequacy assessment engine using current CPF minimum sum requirements.",
+        "Implement binary status checker (on track / not on track) based on projected balances.",
+        "Add retirement age consideration (55, 62, 65) for different withdrawal scenarios.",
+        "Build simple dashboard indicator showing retirement readiness status with explanatory messaging."
+      ],
+      "acceptanceCriteria": [
+        "User sees clear indication if current trajectory leads to retirement adequacy.",
+        "Assessment uses current CPF minimum sum requirements accurate as of 2024.",
+        "Retirement readiness status is clearly communicated with actionable insights.",
+        "Assessment considers different retirement age scenarios and withdrawal options."
+      ],
+      "storyPoints": 3,
+      "difficulty": "medium",
+      "tags": ["backend", "frontend", "cpf", "retirement", "assessment"],
+      "id": "T17D-FE-BE-CPF-ADEQUACY",
+      "status": "todo"
+    },
+    {
+      "title": "HDB Housing Planner - Core Module",
+      "description": "Enable Singapore users to compare housing options and plan down payments using CPF and cash, focusing on BTO vs resale decisions.",
+      "technicalDetails": [
+        "Create HDB property comparison engine supporting BTO (new) vs resale options with realistic pricing.",
+        "Implement CPF OA usage calculator for property purchases (max 120% of property value for private, 100% + accrued interest for HDB).",
+        "Build down payment calculator factoring CPF OA available balance vs cash requirement (minimum 5% cash for HDB).",
+        "Add monthly mortgage affordability checker using MSR (30% for HDB loans) and TDSR (60% total debt) ratios.",
+        "Integrate HDB loan (2.6%) vs bank loan comparison with interest rate differential calculations.",
+        "Create property timeline planner showing BTO balloting to key collection timeline vs immediate resale purchase."
+      ],
+      "acceptanceCriteria": [
+        "User can input target property price and see breakdown of CPF vs cash needed for down payment.",
+        "System accurately calculates maximum affordable property price based on income and existing debts.",
+        "BTO vs resale comparison shows total costs, timeline differences, and funding requirements.",
+        "Monthly mortgage payment calculation accounts for HDB vs bank loan options with current rates.",
+        "CPF OA usage scenarios show impact on retirement savings when used for property.",
+        "All calculations comply with current HDB and MAS regulations for property financing."
+      ],
+      "storyPoints": 10,
+      "difficulty": "medium-high",
+      "tags": ["frontend", "backend", "housing", "singapore", "cpf"],
+      "id": "T18-FE-BE-HDB-PLANNER",
+      "status": "todo"
+    },
+    {
+      "title": "Basic Scenario Planning Engine",
+      "description": "Create simple life stage scenario planning allowing users to model major life events and their financial impact over time.",
+      "technicalDetails": [
+        "Design scenario template system with 3 key life stages: Single, Married, Family (with kids).",
+        "Create goal timeline visualization showing major milestones: housing, marriage, children, car, retirement.",
+        "Implement basic what-if calculator for major expense impact on savings and cash flow.",
+        "Build scenario comparison view showing side-by-side financial projections for different paths.",
+        "Add simple goal prioritization matrix (must-have, should-have, nice-to-have) based on financial capacity.",
+        "Create milestone tracking system showing progress toward each goal with target dates."
+      ],
+      "acceptanceCriteria": [
+        "User can select life stage templates and see relevant financial goals automatically populated.",
+        "Goal timeline shows realistic target dates based on current financial position and savings rate.",
+        "What-if scenarios show impact of major purchases (house, car, wedding) on other financial goals.",
+        "User can adjust goal priorities and see updated timeline and required savings rates.",
+        "Scenario comparison clearly shows trade-offs between different life choices.",
+        "All scenarios factor in Singapore-specific costs (HDB, CPF, wedding costs, childcare)."
+      ],
+      "storyPoints": 12,
+      "difficulty": "medium-high",
+      "tags": ["frontend", "backend", "scenarios", "planning"],
+      "id": "T19-FE-BE-SCENARIO-ENGINE",
+      "status": "todo"
+    },
+    {
+      "title": "Singapore Tax Calculator Integration",
+      "description": "Build comprehensive Singapore income tax calculator showing impact on take-home pay and optimization opportunities.",
+      "technicalDetails": [
+        "Implement Singapore income tax calculation with progressive rates and standard reliefs (spouse, child, parent, etc.).",
+        "Create take-home pay calculator factoring CPF contributions (employee portion) and income tax.",
+        "Add tax relief optimizer suggesting maximum claimable reliefs for life insurance, CPF top-ups, course fees.",
+        "Build monthly cash flow projector showing net income after CPF and tax deductions.",
+        "Integrate with CPF module to show tax benefits of voluntary SA/MA top-ups.",
+        "Create year-end tax planning recommendations based on current income and relief claims."
+      ],
+      "acceptanceCriteria": [
+        "Tax calculator accurately computes Singapore income tax using current rates and bands.",
+        "Take-home pay calculation matches official CPF and IRAS computation methods.",
+        "User sees optimization suggestions for tax reliefs based on their life situation (married, kids, elderly parents).",
+        "Monthly cash flow projections accurately reflect tax and CPF impact on disposable income.",
+        "CPF top-up tax benefits are clearly quantified and recommended where beneficial.",
+        "All tax calculations comply with current IRAS regulations and relief caps."
+      ],
+      "storyPoints": 6,
+      "difficulty": "medium",
+      "tags": ["backend", "tax", "singapore", "optimization"],
+      "id": "T20-BE-TAX-CALCULATOR",
+      "status": "todo"
+    },
+    {
+      "title": "Enhanced CPF Optimization Module",
+      "description": "Advanced CPF planning features for property vs retirement optimization, top-up strategies, and LIFE payout projections.",
+      "technicalDetails": [
+        "Build CPF top-up tax benefit calculator with optimal timing recommendations (age-based).",
+        "Create property vs retirement allocation analyzer showing impact of using CPF OA for housing on retirement adequacy.",
+        "Implement CPF LIFE payout projector with inflation adjustment and different payout schemes.",
+        "Add SA top-up recommendation engine based on tax situation and retirement timeline.",
+        "Build CPF withdrawal strategy planner for retirement incorporating property pledge and cash top-ups.",
+        "Create CPF optimization dashboard showing multiple strategies with risk-return profiles."
+      ],
+      "acceptanceCriteria": [
+        "User receives personalized CPF top-up recommendations based on age, income, and tax situation.",
+        "Property purchase impact analysis shows specific reduction in retirement income from CPF OA usage.",
+        "CPF LIFE projections show realistic monthly payouts under different inflation scenarios.",
+        "SA top-up optimizer maximizes tax benefits while ensuring adequate OA for housing needs.",
+        "Withdrawal strategy planner provides clear roadmap for CPF optimization in retirement years.",
+        "All recommendations comply with CPF withdrawal rules and minimum sum requirements."
+      ],
+      "storyPoints": 10,
+      "difficulty": "high",
+      "tags": ["backend", "cpf", "optimization", "retirement"],
+      "id": "T21-BE-CPF-ADVANCED",
+      "status": "enhancement"
+    },
+    {
+      "title": "Transportation Planning Module",
+      "description": "Comprehensive car ownership analysis including COE costs, total cost of ownership, and opportunity cost modeling.",
+      "technicalDetails": [
+        "Integrate real-time COE price data and historical trends for car purchase timing optimization.",
+        "Build total cost of ownership calculator including purchase price, COE, insurance, maintenance, depreciation over 10 years.",
+        "Create opportunity cost analyzer showing investment returns if car money invested in portfolios instead.",
+        "Add car vs public transport cost comparison factoring in convenience, time, and lifestyle factors.",
+        "Implement COE renewal vs replacement decision tree for existing car owners.",
+        "Build family transportation planner showing cost impact of car ownership with children."
+      ],
+      "acceptanceCriteria": [
+        "COE price integration provides current and projected costs for car purchase planning.",
+        "Total ownership cost calculator provides realistic 10-year projection including all major expenses.",
+        "Opportunity cost analysis clearly shows potential wealth difference between car ownership and investing.",
+        "Transportation comparison accounts for Singapore-specific costs (ERP, parking, petrol).",
+        "COE renewal analysis helps existing owners optimize replacement timing.",
+        "Family scenarios show transportation cost scaling with children and childcare logistics."
+      ],
+      "storyPoints": 8,
+      "difficulty": "medium-high",
+      "tags": ["frontend", "backend", "transportation", "singapore"],
+      "id": "T22-FE-BE-TRANSPORT-PLANNER",
+      "status": "enhancement"
+    },
+    {
+      "title": "Family Planning Financial Calculator",
+      "description": "Comprehensive family cost modeling including childcare, education, healthcare, and income impact during parental leave.",
+      "technicalDetails": [
+        "Create childcare cost calculator with age-based pricing (infant care, childcare, student care) and subsidy calculations.",
+        "Build education savings planner incorporating local vs international school costs and university planning.",
+        "Add maternity/paternity leave income impact calculator showing temporary income reduction and benefits.",
+        "Implement child healthcare cost estimator including insurance, medical, and developmental expenses.",
+        "Create family size optimizer showing cost scaling from 1 to 2+ children and break-even analysis.",
+        "Build child benefit and subsidy tracker for government schemes (Baby Bonus, Child Development Account)."
+      ],
+      "acceptanceCriteria": [
+        "Childcare calculator accurately reflects Singapore pricing with income-based subsidy calculations.",
+        "Education planner provides realistic cost projections for different schooling paths.",
+        "Leave impact calculator shows accurate temporary income reduction and available benefits.",
+        "Healthcare cost estimates include both routine and emergency medical expenses for children.",
+        "Family size analysis shows realistic cost progression and economies of scale.",
+        "Government benefit tracking ensures users maximize available subsidies and schemes."
+      ],
+      "storyPoints": 12,
+      "difficulty": "high",
+      "tags": ["backend", "family", "singapore", "childcare"],
+      "id": "T23-BE-FAMILY-PLANNER",
+      "status": "enhancement"
+    },
+    {
+      "title": "Investment Portfolio Integration",
+      "description": "Singapore-focused investment planning with SRS optimization, risk assessment, and tax-efficient portfolio construction.",
+      "technicalDetails": [
+        "Create risk tolerance assessment questionnaire with Singapore-appropriate investment options.",
+        "Implement SRS contribution optimizer showing tax benefits vs liquidity trade-offs.",
+        "Build Singapore-focused portfolio allocator with local options (SSBs, REITs, STI ETF, CPF instruments).",
+        "Add emergency fund vs investment balance optimizer based on life stage and risk profile.",
+        "Create property investment analyzer for rental property vs REITs comparison.",
+        "Implement tax-efficient investment strategy recommendations using SRS, CPF-IS, and cash accounts."
+      ],
+      "acceptanceCriteria": [
+        "Risk assessment produces appropriate asset allocation recommendations for Singapore investors.",
+        "SRS optimizer maximizes tax benefits while considering withdrawal timing and penalties.",
+        "Portfolio recommendations focus on Singapore-accessible and tax-efficient investment vehicles.",
+        "Emergency fund calculator balances liquidity needs with investment growth opportunities.",
+        "Property investment analysis includes realistic rental yields, maintenance costs, and tax implications.",
+        "Investment strategy integrates with CPF and SRS for holistic tax optimization."
+      ],
+      "storyPoints": 14,
+      "difficulty": "high",
+      "tags": ["backend", "investments", "singapore", "srs"],
+      "id": "T24-BE-INVESTMENT-OPTIMIZER",
+      "status": "enhancement"
+    },
+    {
+      "title": "Advanced Scenario Comparison Dashboard",
+      "description": "Multi-scenario analysis with risk modeling, sensitivity analysis, and AI-powered decision recommendations.",
+      "technicalDetails": [
+        "Build side-by-side scenario comparison with up to 4 different life path projections.",
+        "Implement Monte Carlo simulation for outcome probability distribution under market volatility.",
+        "Create sensitivity analysis showing impact of key variable changes (salary growth, market returns, property prices).",
+        "Add decision tree visualization for major choice points (BTO vs resale, 1 vs 2 kids, car vs no car).",
+        "Implement AI recommendation engine suggesting optimal timing for major financial decisions.",
+        "Build risk-adjusted scenario ranking showing probability of goal achievement."
+      ],
+      "acceptanceCriteria": [
+        "Scenario comparison clearly shows trade-offs between different life choices with quantified outcomes.",
+        "Monte Carlo simulation provides realistic probability ranges for financial goal achievement.",
+        "Sensitivity analysis identifies which variables most impact financial success.",
+        "Decision trees provide clear guidance on optimal timing for major life decisions.",
+        "AI recommendations are explainable and based on user's specific financial situation and goals.",
+        "Risk-adjusted rankings help users make informed decisions considering uncertainty."
+      ],
+      "storyPoints": 16,
+      "difficulty": "high",
+      "tags": ["frontend", "backend", "ai", "analytics"],
+      "id": "T25-FE-BE-ADVANCED-SCENARIOS",
+      "status": "enhancement"
+    },
+    {
+      "title": "Collaborative Planning Platform",
+      "description": "Multi-user financial planning with partner integration, progress tracking, and milestone management.",
+      "technicalDetails": [
+        "Create shared financial plan access with permission levels (view, edit, admin) for partners.",
+        "Build joint goal setting interface allowing couples to align on priorities and timelines.",
+        "Implement progress tracking dashboard with milestone notifications and achievement celebrations.",
+        "Add financial advisor integration portal for professional guidance and plan review.",
+        "Create family financial coordination system for tracking shared expenses and individual contributions.",
+        "Build automated progress alerts and recommendations based on goal achievement patterns."
+      ],
+      "acceptanceCriteria": [
+        "Partners can jointly access and modify shared financial plans with appropriate permissions.",
+        "Joint goal setting produces aligned timelines and responsibility allocation.",
+        "Progress tracking provides clear visibility into goal achievement and required actions.",
+        "Financial advisor integration enables professional oversight while maintaining user control.",
+        "Family coordination tracks both individual and shared financial responsibilities.",
+        "Automated alerts keep users engaged and on track toward their financial goals."
+      ],
+      "storyPoints": 18,
+      "difficulty": "high",
+      "tags": ["frontend", "backend", "collaboration", "sharing"],
+      "id": "T26-FE-BE-COLLABORATION",
+      "status": "enhancement"
+    }
+  ]
+}
