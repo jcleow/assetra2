@@ -15,6 +15,38 @@ export interface CPFRates {
   totalRate: number;
 }
 
+interface CPFSalaryCeilingRule {
+  ceiling: number;
+  effectiveDate: Date;
+}
+
+const CPF_SALARY_CEILING_SCHEDULE: CPFSalaryCeilingRule[] = [
+  {
+    ceiling: 8000,
+    effectiveDate: new Date("2026-01-01T00:00:00+08:00"),
+  },
+  {
+    ceiling: 7400,
+    effectiveDate: new Date("2025-01-01T00:00:00+08:00"),
+  },
+];
+
+const CPF_SALARY_CEILING_DEFAULT = 6000;
+
+/**
+ * Determine applicable CPF salary ceiling based on the reference date.
+ * Reflects CPF's phased ceiling increases (S$7,400 in 2025, S$8,000 in 2026).
+ */
+export function getCPFSalaryCeiling(referenceDate: Date = new Date()): number {
+  for (const rule of CPF_SALARY_CEILING_SCHEDULE) {
+    if (referenceDate >= rule.effectiveDate) {
+      return rule.ceiling;
+    }
+  }
+
+  return CPF_SALARY_CEILING_DEFAULT;
+}
+
 /**
  * Get CPF contribution rates based on age
  * Reference: CPF official rates as of 2024
@@ -78,12 +110,12 @@ export function getCPFRates(age: number): CPFRates {
  */
 export function calculateCPFContribution(
   monthlySalary: number,
-  age: number = 32 // Default age if not provided
+  age: number = 32, // Default age if not provided
+  referenceDate: Date = new Date()
 ): CPFContribution {
   const rates = getCPFRates(age);
 
-  // CPF salary ceiling is $6,000 per month as of 2024
-  const CPF_SALARY_CEILING = 6000;
+  const CPF_SALARY_CEILING = getCPFSalaryCeiling(referenceDate);
   const contributableWage = Math.min(monthlySalary, CPF_SALARY_CEILING);
 
   const employeeAmount = Math.round(contributableWage * rates.employeeRate);
@@ -102,14 +134,14 @@ export function calculateCPFContribution(
  */
 export function getCPFContributionDescription(
   monthlySalary: number,
-  age: number = 32
+  age: number = 32,
+  referenceDate: Date = new Date()
 ): string {
-  const rates = getCPFRates(age);
-  const CPF_SALARY_CEILING = 6000;
+  const CPF_SALARY_CEILING = getCPFSalaryCeiling(referenceDate);
   const contributableWage = Math.min(monthlySalary, CPF_SALARY_CEILING);
 
   if (monthlySalary > CPF_SALARY_CEILING) {
-    return `Based on $${contributableWage.toLocaleString()} contributable wage (capped), age ${age}`;
+    return `Based on $${contributableWage.toLocaleString()} contributable wage (CPF salary ceiling), age ${age}`;
   }
 
   return `Based on $${contributableWage.toLocaleString()} salary, age ${age}`;

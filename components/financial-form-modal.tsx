@@ -17,6 +17,14 @@ import type {
   LiabilityCreatePayload,
 } from "@/lib/financial/types";
 import { createCPFContributions, checkExistingCPFContributions, updateCPFContributions } from "@/lib/cpf/auto-contributions";
+import {
+  DEFAULT_SALARY_AGE,
+  decodeCPFSalaryMetadata,
+  encodeCPFSalaryMetadata,
+  isSalaryIncomeRecord,
+  normalizeSalaryAmount,
+  type CPFSalaryInputType,
+} from "@/lib/cpf/salary";
 
 interface FinancialFormModalProps {
   type: string;
@@ -60,7 +68,13 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
     annualGrowthRate: "7.0",
     interestRateApr: "4.5",
     minimumPayment: "",
+    notes: "",
+    salaryInputType: "gross" as CPFSalaryInputType,
   });
+
+  const isSalaryIncomeForm =
+    normalizedCategory === "incomes" &&
+    isSalaryIncomeRecord(formData.name, formData.category);
 
   // Load existing data for edit mode
   useEffect(() => {
@@ -80,6 +94,8 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
                 frequency: "monthly",
                 interestRateApr: "4.5",
                 minimumPayment: "",
+                notes: "",
+                salaryInputType: "gross",
               });
               break;
             case "liabilities":
@@ -92,18 +108,26 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
                 minimumPayment: data.minimumPayment.toString(),
                 frequency: "monthly",
                 annualGrowthRate: "7.0",
+                notes: "",
+                salaryInputType: "gross",
               });
               break;
             case "incomes":
               data = await financialClient.incomes.get(itemId);
+              const salaryMetadata = decodeCPFSalaryMetadata(data.notes);
               setFormData({
                 name: data.source,
-                amount: data.amount.toString(),
+                amount: (salaryMetadata && salaryMetadata.inputType === "net"
+                  ? salaryMetadata.netAmount
+                  : data.amount
+                ).toString(),
                 frequency: data.frequency,
                 category: data.category,
                 annualGrowthRate: "7.0",
                 interestRateApr: "4.5",
                 minimumPayment: "",
+                notes: data.notes ?? "",
+                salaryInputType: salaryMetadata?.inputType ?? "gross",
               });
               break;
             case "expenses":
@@ -116,6 +140,8 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
                 annualGrowthRate: "7.0",
                 interestRateApr: "4.5",
                 minimumPayment: "",
+                notes: "",
+                salaryInputType: "gross",
               });
               break;
           }
@@ -180,9 +206,7 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
       const incomeResult = await financialClient.incomes.create(data);
 
       // Auto-create CPF contributions if this is salary income
-      const isSalaryIncome = data.source.toLowerCase().includes("salary") ||
-                           data.category.toLowerCase().includes("salary") ||
-                           data.category.toLowerCase() === "employment";
+      const isSalaryIncome = isSalaryIncomeRecord(data.source, data.category);
 
       if (isSalaryIncome) {
         try {
@@ -193,7 +217,7 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
             console.log("Creating CPF contributions for salary income");
             await createCPFContributions({
               monthlySalary: data.amount,
-              age: 32, // Default age - could be made configurable later
+              age: DEFAULT_SALARY_AGE,
             });
           } else {
             console.log("CPF contributions already exist, skipping auto-creation");
@@ -209,7 +233,6 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
     onSuccess: () => {
       console.log("Income created successfully");
       queryClient.invalidateQueries({ queryKey: ["incomes"] });
-      queryClient.invalidateQueries({ queryKey: ["expenses"] });
       invalidateFinancialData();
       onClose();
     },
@@ -225,14 +248,12 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
       const incomeResult = await financialClient.incomes.update(data);
 
       // Update CPF contributions if this is salary income
-      const isSalaryIncome = data.source.toLowerCase().includes("salary") ||
-                           data.category.toLowerCase().includes("salary") ||
-                           data.category.toLowerCase() === "employment";
+      const isSalaryIncome = isSalaryIncomeRecord(data.source, data.category);
 
       if (isSalaryIncome) {
         try {
           console.log("Updating CPF contributions for changed salary income");
-          await updateCPFContributions(data.amount, 32); // Default age
+          await updateCPFContributions(data.amount, DEFAULT_SALARY_AGE);
         } catch (cpfError) {
           console.warn("Failed to update CPF contributions, but salary income was updated:", cpfError);
           // Don't fail the main operation if CPF update fails
@@ -361,13 +382,40 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
         }
 
         case "incomes": {
-          const incomeData = {
+          const baseIncomeData = {
             source: baseData.name,
             amount: baseData.amount,
             frequency: formData.frequency as any,
             startDate: new Date().toISOString(),
             category: baseData.category,
           };
+
+          let incomeData = { ...baseIncomeData } as IncomeCreatePayload;
+          const salaryInputType: CPFSalaryInputType = formData.salaryInputType ?? "gross";
+          if (isSalaryIncomeRecord(baseIncomeData.source, baseIncomeData.category)) {
+            const { grossSalary, netSalary, cpfContribution } = normalizeSalaryAmount(
+              baseIncomeData.amount,
+              salaryInputType,
+              DEFAULT_SALARY_AGE
+            );
+            incomeData = {
+              ...incomeData,
+              amount: grossSalary,
+              notes: encodeCPFSalaryMetadata({
+                inputType: salaryInputType,
+                grossAmount: grossSalary,
+                netAmount: netSalary,
+                cpfEmployeeAmount: cpfContribution.employeeAmount,
+                cpfEmployerAmount: cpfContribution.employerAmount,
+                updatedAt: new Date().toISOString(),
+              }),
+            };
+          } else if (formData.notes) {
+            incomeData = {
+              ...incomeData,
+              notes: formData.notes,
+            };
+          }
 
           console.log("Creating income with data:", incomeData);
 
@@ -566,6 +614,29 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
                   <option value="quarterly">Quarterly</option>
                   <option value="yearly">Yearly</option>
                 </select>
+              </div>
+            )}
+
+            {isSalaryIncomeForm && normalizedCategory === "incomes" && (
+              <div className="col-span-2">
+                <label className="flex items-center gap-2 text-gray-300 text-sm">
+                  <input
+                    checked={formData.salaryInputType === "net"}
+                    className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-emerald-500 focus:ring-emerald-500"
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        salaryInputType: event.target.checked ? "net" : "gross",
+                      }))
+                    }
+                    type="checkbox"
+                  />
+                  Treat amount as net salary (after CPF)
+                </label>
+                <p className="mt-1 text-gray-400 text-xs">
+                  We will convert this to a gross amount so CPF contributions and
+                  auto-calculated employer amounts stay accurate.
+                </p>
               </div>
             )}
 

@@ -1,5 +1,13 @@
 import { financialClient } from "@/lib/financial/client";
-import type { ExpenseCreatePayload, IncomeCreatePayload } from "@/lib/financial/types";
+import type { Expense, IncomeCreatePayload } from "@/lib/financial/types";
+import {
+  CPF_EMPLOYEE_CONTRIBUTION_CATEGORY,
+  CPF_EMPLOYEE_CONTRIBUTION_SOURCE,
+  CPF_EMPLOYER_CONTRIBUTION_CATEGORY,
+  CPF_EMPLOYER_CONTRIBUTION_SOURCE,
+  isCPFEmployeeContributionName,
+  isCPFEmployerContributionName,
+} from "./constants";
 import { calculateCPFContribution, getCPFContributionDescription } from "./calculator";
 
 interface CPFAutoContributionParams {
@@ -9,7 +17,7 @@ interface CPFAutoContributionParams {
 }
 
 /**
- * Auto-create CPF contribution income and expense entries
+ * Auto-create CPF contribution income entries
  * when a salary income is added
  */
 export async function createCPFContributions({
@@ -21,20 +29,21 @@ export async function createCPFContributions({
 
   // Create CPF employer contribution as income
   const employerContribution: IncomeCreatePayload = {
-    source: "CPF Employer Contribution",
+    source: CPF_EMPLOYER_CONTRIBUTION_SOURCE,
     amount: cpfCalculation.employerAmount,
     frequency: "monthly",
     startDate: new Date().toISOString(),
-    category: "government_benefit",
+    category: CPF_EMPLOYER_CONTRIBUTION_CATEGORY,
     notes: description,
   };
 
-  // Create CPF employee contribution as expense
-  const employeeContribution: ExpenseCreatePayload = {
-    payee: "CPF Employee Contribution",
+  // Create CPF employee contribution as income (treated as forced savings)
+  const employeeContribution: IncomeCreatePayload = {
+    source: CPF_EMPLOYEE_CONTRIBUTION_SOURCE,
     amount: cpfCalculation.employeeAmount,
     frequency: "monthly",
-    category: "tax_deduction",
+    startDate: new Date().toISOString(),
+    category: CPF_EMPLOYEE_CONTRIBUTION_CATEGORY,
     notes: description,
   };
 
@@ -42,7 +51,7 @@ export async function createCPFContributions({
     // Create both contributions in parallel
     const [employerResult, employeeResult] = await Promise.all([
       financialClient.incomes.create(employerContribution),
-      financialClient.expenses.create(employeeContribution),
+      financialClient.incomes.create(employeeContribution),
     ]);
 
     console.log("CPF contributions created:", {
@@ -66,20 +75,17 @@ export async function createCPFContributions({
  */
 export async function checkExistingCPFContributions(): Promise<boolean> {
   try {
-    const [incomes, expenses] = await Promise.all([
-      financialClient.incomes.list(),
-      financialClient.expenses.list(),
-    ]);
+    const incomes = await financialClient.incomes.list();
 
-    const hasCPFIncome = incomes.some(income =>
-      income.source.toLowerCase().includes("cpf")
+    const hasCPFEmployerIncome = incomes.some((income) =>
+      isCPFEmployerContributionName(income.source)
     );
 
-    const hasCPFExpense = expenses.some(expense =>
-      expense.payee.toLowerCase().includes("cpf")
+    const hasCPFEmployeeIncome = incomes.some((income) =>
+      isCPFEmployeeContributionName(income.source)
     );
 
-    return hasCPFIncome || hasCPFExpense;
+    return hasCPFEmployerIncome || hasCPFEmployeeIncome;
   } catch (error) {
     console.error("Failed to check existing CPF contributions:", error);
     return false;
@@ -103,13 +109,13 @@ export async function updateCPFContributions(
     const description = getCPFContributionDescription(newMonthlySalary, age);
 
     // Find and update CPF income
-    const cpfIncome = incomes.find(income =>
-      income.source.toLowerCase().includes("cpf")
+    const cpfIncome = incomes.find((income) =>
+      isCPFEmployerContributionName(income.source)
     );
 
-    // Find and update CPF expense
-    const cpfExpense = expenses.find(expense =>
-      expense.payee.toLowerCase().includes("cpf")
+    // Find and update CPF employee income
+    const cpfEmployeeIncome = incomes.find((income) =>
+      isCPFEmployeeContributionName(income.source)
     );
 
     const updatePromises = [];
@@ -118,26 +124,37 @@ export async function updateCPFContributions(
       updatePromises.push(
         financialClient.incomes.update({
           id: cpfIncome.id,
-          source: "CPF Employer Contribution",
+          source: CPF_EMPLOYER_CONTRIBUTION_SOURCE,
           amount: cpfCalculation.employerAmount,
           frequency: "monthly",
           startDate: cpfIncome.startDate,
-          category: "government_benefit",
+          category: CPF_EMPLOYER_CONTRIBUTION_CATEGORY,
           notes: description,
         })
       );
     }
 
-    if (cpfExpense) {
+    if (cpfEmployeeIncome) {
       updatePromises.push(
-        financialClient.expenses.update({
-          id: cpfExpense.id,
-          payee: "CPF Employee Contribution",
+        financialClient.incomes.update({
+          id: cpfEmployeeIncome.id,
+          source: CPF_EMPLOYEE_CONTRIBUTION_SOURCE,
           amount: cpfCalculation.employeeAmount,
           frequency: "monthly",
-          category: "tax_deduction",
+          startDate: cpfEmployeeIncome.startDate,
+          category: CPF_EMPLOYEE_CONTRIBUTION_CATEGORY,
           notes: description,
         })
+      );
+    }
+
+    // Clean up any legacy CPF expense entries from previous versions
+    const legacyExpenses = expenses.filter((expense: Expense) =>
+      isCPFEmployeeContributionName(expense.payee)
+    );
+    if (legacyExpenses.length > 0) {
+      legacyExpenses.forEach((expense) =>
+        updatePromises.push(financialClient.expenses.delete(expense.id))
       );
     }
 

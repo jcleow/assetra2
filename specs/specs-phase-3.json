@@ -31,7 +31,7 @@
       "technicalDetails": [
         "Create CPF contribution rate calculator with current rates (20% employee, 17% employer).",
         "Implement age-based contribution rate adjustments following CPF guidelines.",
-        "Add salary band logic for contribution calculations with wage ceiling considerations.",
+        "Add salary band logic for contribution calculations with wage ceiling considerations (S$7,400 cap from Jan 1 2025, rising to S$8,000 on Jan 1 2026).",
         "Auto-populate CPF employer contribution in Income section when user enters salary.",
         "Auto-populate CPF employee contribution in Expenses section when user enters salary.",
         "Allow manual editing of auto-populated CPF contribution amounts for user flexibility.",
@@ -40,8 +40,8 @@
       ],
       "acceptanceCriteria": [
         "When user enters salary, system automatically creates/updates CPF contribution entries in Income and Expenses.",
-        "CPF employer contribution appears as income line item (🏦 CPF employer contribution $1,360).",
-        "CPF employee contribution appears as expense line item (🏦 CPF employee contribution $1,600).",
+        "CPF employer contribution appears as income line item (🏦 CPF employer contribution $1,258 based on the $7,400 ceiling, adjusting automatically when CPF raises the cap).",
+        "CPF employee contribution appears as expense line item (🏦 CPF employee contribution $1,480 based on the $7,400 ceiling, adjusting automatically when CPF raises the cap).",
         "Contribution calculations follow current CPF rates and age-based adjustments.",
         "User can manually edit auto-populated CPF amounts if needed.",
         "Calculation basis is shown to user for transparency.",
@@ -52,7 +52,7 @@
       "difficulty": "medium",
       "tags": ["backend", "frontend", "cpf", "calculator", "singapore"],
       "id": "T17B-BE-CPF-CONTRIBUTIONS",
-      "status": "todo"
+      "status": "done"
     },
     {
       "title": "CPF Interest and Balance Projections",
