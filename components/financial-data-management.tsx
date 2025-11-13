@@ -21,6 +21,16 @@ import {
 } from "@/components/ui/tooltip";
 import { useFinancialPlanningStore } from "@/features/financial-planning";
 import { financialClient } from "@/lib/financial/client";
+import {
+  CPF_EMPLOYEE_CONTRIBUTION_SOURCE,
+  CPF_EMPLOYER_CONTRIBUTION_SOURCE,
+  isCPFEmployeeContributionName,
+  isCPFEmployerContributionName,
+} from "@/lib/cpf/constants";
+import {
+  decodeCPFSalaryMetadata,
+  isSalaryIncomeRecord,
+} from "@/lib/cpf/salary";
 import { FinancialFormModal } from "./financial-form-modal";
 import { CPFBalanceForm } from "./cpf-balance-form";
 
@@ -69,25 +79,65 @@ export function FinancialDataManagement() {
   });
 
   const formatIncomeItems = (): FinancialItem[] => {
-    return incomes.map((income) => ({
-      id: income.id,
-      name: income.source,
-      subtitle: `${income.frequency} • ${income.category || "Income"}`,
-      amount: `$${income.amount.toLocaleString()}`,
-      icon: income.source.includes("CPF") ? "🏦" : "💼",
-      color: income.source.includes("CPF") ? "bg-indigo-500" : "bg-emerald-500",
-    }));
+    return incomes.map((income) => {
+      if (isCPFEmployerContributionName(income.source)) {
+        return {
+          id: income.id,
+          name: CPF_EMPLOYER_CONTRIBUTION_SOURCE,
+          subtitle: `${income.frequency} • Auto-saved to CPF`,
+          amount: `$${income.amount.toLocaleString()}`,
+          icon: "🏦",
+          color: "bg-indigo-500",
+        };
+      }
+
+      if (isCPFEmployeeContributionName(income.source)) {
+        return {
+          id: income.id,
+          name: CPF_EMPLOYEE_CONTRIBUTION_SOURCE,
+          subtitle: `${income.frequency} • Mandatory CPF savings`,
+          amount: `$${income.amount.toLocaleString()}`,
+          icon: "🏦",
+          color: "bg-indigo-500",
+        };
+      }
+
+      if (isSalaryIncomeRecord(income.source, income.category)) {
+        const salaryMetadata = decodeCPFSalaryMetadata(income.notes);
+        const netAmount = salaryMetadata?.netAmount ?? income.amount;
+        const grossAmount = salaryMetadata?.grossAmount ?? income.amount;
+        return {
+          id: income.id,
+          name: "Net Salary (after CPF)",
+          subtitle: `${income.frequency} • Gross $${grossAmount.toLocaleString()}`,
+          amount: `$${netAmount.toLocaleString()}`,
+          icon: "💼",
+          color: "bg-emerald-500",
+        };
+      }
+
+      return {
+        id: income.id,
+        name: income.source,
+        subtitle: `${income.frequency} • ${income.category || "Income"}`,
+        amount: `$${income.amount.toLocaleString()}`,
+        icon: "💼",
+        color: "bg-emerald-500",
+      };
+    });
   };
 
   const formatExpenseItems = (): FinancialItem[] => {
-    return expenses.map((expense) => ({
-      id: expense.id,
-      name: expense.payee,
-      subtitle: `${expense.frequency} • ${expense.category || "Expense"}`,
-      amount: `$${expense.amount.toLocaleString()}`,
-      icon: expense.payee.includes("CPF") ? "🏦" : "💰",
-      color: expense.payee.includes("CPF") ? "bg-indigo-500" : "bg-orange-500",
-    }));
+    return expenses
+      .filter((expense) => !isCPFEmployeeContributionName(expense.payee))
+      .map((expense) => ({
+        id: expense.id,
+        name: expense.payee,
+        subtitle: `${expense.frequency} • ${expense.category || "Expense"}`,
+        amount: `$${expense.amount.toLocaleString()}`,
+        icon: "💰",
+        color: "bg-orange-500",
+      }));
   };
 
   const formatAssetItems = (): FinancialItem[] => {
@@ -117,9 +167,30 @@ export function FinancialDataManagement() {
   const totalLiabilities = liabilities.reduce((sum, liability) => sum + liability.currentBalance, 0);
   const netWorth = totalAssets - totalLiabilities;
 
-  const totalIncome = incomes.reduce((sum, income) => sum + income.amount, 0);
-  const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-  const savings = totalIncome - totalExpenses;
+  const incomeTotals = incomes.reduce(
+    (totals, income) => {
+      totals.total += income.amount;
+      if (isCPFEmployerContributionName(income.source)) {
+        totals.cpfEmployer += income.amount;
+      }
+      if (isCPFEmployeeContributionName(income.source)) {
+        totals.cpfEmployee += income.amount;
+      }
+      return totals;
+    },
+    { total: 0, cpfEmployer: 0, cpfEmployee: 0 }
+  );
+
+  const totalExpenses = expenses.reduce((sum, expense) => {
+    if (isCPFEmployeeContributionName(expense.payee)) {
+      return sum;
+    }
+    return sum + expense.amount;
+  }, 0);
+
+  const cashflowIncome =
+    incomeTotals.total - incomeTotals.cpfEmployer - incomeTotals.cpfEmployee;
+  const savings = cashflowIncome - totalExpenses;
 
   // Check if CPF assets exist
   const hasCPFAssets = assets.some(asset =>
@@ -227,7 +298,9 @@ export function FinancialDataManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-white">Savings</h3>
-                <p className="text-gray-400 text-sm">Income minus expenses</p>
+                <p className="text-gray-400 text-sm">
+                  Income minus expenses (CPF contributions counted as savings)
+                </p>
               </div>
               <div className={`font-bold text-lg ${savings >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                 ${savings.toLocaleString()}

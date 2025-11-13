@@ -16,7 +16,15 @@ import type {
   Liability,
   LiabilityCreatePayload,
 } from "@/lib/financial/types";
-import { createCPFContributions, checkExistingCPFContributions, updateCPFContributions } from "@/lib/cpf/auto-contributions";
+import { updateCPFContributions } from "@/lib/cpf/auto-contributions";
+import {
+  DEFAULT_SALARY_AGE,
+  decodeCPFSalaryMetadata,
+  encodeCPFSalaryMetadata,
+  isSalaryIncomeRecord,
+  normalizeSalaryAmount,
+  type CPFSalaryInputType,
+} from "@/lib/cpf/salary";
 
 interface FinancialFormModalProps {
   type: string;
@@ -60,7 +68,13 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
     annualGrowthRate: "7.0",
     interestRateApr: "4.5",
     minimumPayment: "",
+    notes: "",
+    salaryInputType: "gross" as CPFSalaryInputType,
   });
+
+  const isSalaryIncomeForm =
+    normalizedCategory === "incomes" &&
+    isSalaryIncomeRecord(formData.name, formData.category);
 
   // Load existing data for edit mode
   useEffect(() => {
@@ -80,6 +94,8 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
                 frequency: "monthly",
                 interestRateApr: "4.5",
                 minimumPayment: "",
+                notes: data.notes ?? "",
+                salaryInputType: "gross",
               });
               break;
             case "liabilities":
@@ -92,18 +108,26 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
                 minimumPayment: data.minimumPayment.toString(),
                 frequency: "monthly",
                 annualGrowthRate: "7.0",
+                notes: data.notes ?? "",
+                salaryInputType: "gross",
               });
               break;
             case "incomes":
               data = await financialClient.incomes.get(itemId);
+              const salaryMetadata = decodeCPFSalaryMetadata(data.notes);
               setFormData({
                 name: data.source,
-                amount: data.amount.toString(),
+                amount: (salaryMetadata && salaryMetadata.inputType === "net"
+                  ? salaryMetadata.netAmount
+                  : data.amount
+                ).toString(),
                 frequency: data.frequency,
                 category: data.category,
                 annualGrowthRate: "7.0",
                 interestRateApr: "4.5",
                 minimumPayment: "",
+                notes: data.notes ?? "",
+                salaryInputType: salaryMetadata?.inputType ?? "gross",
               });
               break;
             case "expenses":
@@ -116,6 +140,8 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
                 annualGrowthRate: "7.0",
                 interestRateApr: "4.5",
                 minimumPayment: "",
+                notes: data.notes ?? "",
+                salaryInputType: "gross",
               });
               break;
           }
@@ -180,27 +206,13 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
       const incomeResult = await financialClient.incomes.create(data);
 
       // Auto-create CPF contributions if this is salary income
-      const isSalaryIncome = data.source.toLowerCase().includes("salary") ||
-                           data.category.toLowerCase().includes("salary") ||
-                           data.category.toLowerCase() === "employment";
+      const isSalaryIncome = isSalaryIncomeRecord(data.source, data.category);
 
       if (isSalaryIncome) {
         try {
-          // Check if CPF contributions already exist
-          const hasCPFContributions = await checkExistingCPFContributions();
-
-          if (!hasCPFContributions) {
-            console.log("Creating CPF contributions for salary income");
-            await createCPFContributions({
-              monthlySalary: data.amount,
-              age: 32, // Default age - could be made configurable later
-            });
-          } else {
-            console.log("CPF contributions already exist, skipping auto-creation");
-          }
+          await updateCPFContributions(data.amount, DEFAULT_SALARY_AGE);
         } catch (cpfError) {
-          console.warn("Failed to create CPF contributions, but salary income was created:", cpfError);
-          // Don't fail the main operation if CPF creation fails
+          console.warn("Failed to sync CPF contributions, but salary income was created:", cpfError);
         }
       }
 
@@ -209,7 +221,6 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
     onSuccess: () => {
       console.log("Income created successfully");
       queryClient.invalidateQueries({ queryKey: ["incomes"] });
-      queryClient.invalidateQueries({ queryKey: ["expenses"] });
       invalidateFinancialData();
       onClose();
     },
@@ -225,14 +236,12 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
       const incomeResult = await financialClient.incomes.update(data);
 
       // Update CPF contributions if this is salary income
-      const isSalaryIncome = data.source.toLowerCase().includes("salary") ||
-                           data.category.toLowerCase().includes("salary") ||
-                           data.category.toLowerCase() === "employment";
+      const isSalaryIncome = isSalaryIncomeRecord(data.source, data.category);
 
       if (isSalaryIncome) {
         try {
           console.log("Updating CPF contributions for changed salary income");
-          await updateCPFContributions(data.amount, 32); // Default age
+          await updateCPFContributions(data.amount, DEFAULT_SALARY_AGE);
         } catch (cpfError) {
           console.warn("Failed to update CPF contributions, but salary income was updated:", cpfError);
           // Don't fail the main operation if CPF update fails
@@ -243,7 +252,6 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["incomes"] });
-      queryClient.invalidateQueries({ queryKey: ["expenses"] });
       invalidateFinancialData();
       onClose();
     },
@@ -320,6 +328,7 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
       name: formData.name.trim(),
       amount: Number.parseFloat(formData.amount) || 0,
       category: formData.category.trim() || "other",
+      notes: formData.notes.trim(),
     };
 
     console.log("Processed base data:", baseData);
@@ -333,6 +342,7 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
             currentValue: baseData.amount,
             annualGrowthRate:
               Number.parseFloat(formData.annualGrowthRate) / 100,
+            ...(baseData.notes ? { notes: baseData.notes } : {}),
           };
 
           if (isEdit && itemId) {
@@ -350,6 +360,7 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
             currentBalance: baseData.amount,
             interestRateApr: Number.parseFloat(formData.interestRateApr) / 100,
             minimumPayment: Number.parseFloat(formData.minimumPayment) || 0,
+            ...(baseData.notes ? { notes: baseData.notes } : {}),
           };
 
           if (isEdit && itemId) {
@@ -361,13 +372,40 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
         }
 
         case "incomes": {
-          const incomeData = {
+          const baseIncomeData = {
             source: baseData.name,
             amount: baseData.amount,
             frequency: formData.frequency as any,
             startDate: new Date().toISOString(),
             category: baseData.category,
           };
+
+          let incomeData = { ...baseIncomeData } as IncomeCreatePayload;
+          if (isSalaryIncomeRecord(baseIncomeData.source, baseIncomeData.category)) {
+            const salaryInputType: CPFSalaryInputType = formData.salaryInputType ?? "gross";
+            const { grossSalary, netSalary, cpfContribution } = normalizeSalaryAmount(
+              baseIncomeData.amount,
+              salaryInputType,
+              DEFAULT_SALARY_AGE
+            );
+            incomeData = {
+              ...incomeData,
+              amount: grossSalary,
+              notes: encodeCPFSalaryMetadata({
+                inputType: salaryInputType,
+                grossAmount: grossSalary,
+                netAmount: netSalary,
+                cpfEmployeeAmount: cpfContribution.employeeAmount,
+                cpfEmployerAmount: cpfContribution.employerAmount,
+                updatedAt: new Date().toISOString(),
+              }),
+            };
+          } else if (baseData.notes) {
+            incomeData = {
+              ...incomeData,
+              notes: baseData.notes,
+            };
+          }
 
           console.log("Creating income with data:", incomeData);
 
@@ -385,6 +423,7 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
             amount: baseData.amount,
             frequency: formData.frequency as any,
             category: baseData.category,
+            ...(baseData.notes ? { notes: baseData.notes } : {}),
           };
 
           if (isEdit && itemId) {
@@ -488,6 +527,7 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
                 <Trash2 className="h-4 w-4" />
               </button>
             )}
+
             <button
               className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-700 hover:text-white"
               disabled={isLoading}
@@ -543,7 +583,6 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
                 value={formData.amount}
               />
             </div>
-
             {(normalizedCategory === "incomes" ||
               normalizedCategory === "expenses") && (
               <div>
@@ -566,6 +605,28 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
                   <option value="quarterly">Quarterly</option>
                   <option value="yearly">Yearly</option>
                 </select>
+              </div>
+            )}
+
+            {isSalaryIncomeForm && normalizedCategory === "incomes" && (
+              <div className="col-span-2 space-y-1 rounded-md border border-gray-700 bg-gray-800/80 p-3">
+                <label className="flex items-center gap-2 text-gray-300 text-sm">
+                  <input
+                    checked={formData.salaryInputType === "net"}
+                    className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-emerald-500 focus:ring-emerald-500"
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        salaryInputType: event.target.checked ? "net" : "gross",
+                      }))
+                    }
+                    type="checkbox"
+                  />
+                  Treat amount as net salary (after CPF)
+                </label>
+                <p className="text-gray-400 text-xs">
+                  We convert this take-home amount back to gross so CPF auto-calcs stay accurate.
+                </p>
               </div>
             )}
 
@@ -645,6 +706,21 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
               placeholder="e.g., salary, retirement, mortgage"
               type="text"
               value={formData.category}
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block font-medium text-gray-300 text-sm">
+              Notes (optional)
+            </label>
+            <textarea
+              className="w-full rounded-lg border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:border-emerald-500 focus:outline-none"
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, notes: e.target.value }))
+              }
+              placeholder="Add additional details"
+              rows={3}
+              value={formData.notes}
             />
           </div>
 
