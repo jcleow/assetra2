@@ -233,6 +233,7 @@ export function FinancialFormModal({ type, onClose }: FinancialFormModalProps) {
     onSuccess: () => {
       console.log("Income created successfully");
       queryClient.invalidateQueries({ queryKey: ["incomes"] });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
       invalidateFinancialData();
       onClose();
     },

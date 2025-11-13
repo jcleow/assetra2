@@ -30,6 +30,7 @@ import {
   isSalaryIncomeRecord,
 } from "@/lib/cpf/salary";
 import { FinancialFormModal } from "./financial-form-modal";
+import { CPFBalanceForm } from "./cpf-balance-form";
 
 interface FinancialItem {
   id: string;
@@ -52,6 +53,7 @@ interface CategoryConfig {
 export function FinancialDataManagement() {
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [showGrowthSettings, setShowGrowthSettings] = useState(false);
+  const [showCPFForm, setShowCPFForm] = useState(false);
 
   // Query data from Go service
   const { data: assets = [], isLoading: assetsLoading } = useQuery({
@@ -143,8 +145,8 @@ export function FinancialDataManagement() {
       name: asset.name,
       subtitle: `${asset.category} • ${asset.annualGrowthRate * 100}% growth p.a`,
       amount: `$${asset.currentValue.toLocaleString()}`,
-      icon: "📈",
-      color: "bg-blue-500",
+      icon: asset.name.includes("CPF") ? "🏦" : "📈",
+      color: asset.name.includes("CPF") ? "bg-indigo-500" : "bg-blue-500",
     }));
   };
 
@@ -189,6 +191,11 @@ export function FinancialDataManagement() {
     incomeTotals.total - incomeTotals.cpfEmployer - incomeTotals.cpfEmployee;
   const cashflowExpenses = totalExpenses;
   const savings = cashflowIncome - cashflowExpenses;
+
+  // Check if CPF assets exist
+  const hasCPFAssets = assets.some(asset =>
+    asset.name.includes("CPF") || asset.category === "retirement"
+  );
 
   const leftColumnCategories: CategoryConfig[] = [
     {
@@ -251,6 +258,8 @@ export function FinancialDataManagement() {
               onEditItem={(id) => setActiveModal(`${category.modalType}-${id}`)}
               onOpenSettings={category.onOpenSettings}
               title={category.title}
+              showCPFButton={category.title === "Assets" && !hasCPFAssets}
+              onAddCPF={() => setShowCPFForm(true)}
             />
           ))}
 
@@ -280,6 +289,7 @@ export function FinancialDataManagement() {
               onEditItem={(id) => setActiveModal(`${category.modalType}-${id}`)}
               onOpenSettings={category.onOpenSettings}
               title={category.title}
+              showCPFButton={false}
             />
           ))}
 
@@ -308,6 +318,10 @@ export function FinancialDataManagement() {
         />
       )}
 
+      {showCPFForm && (
+        <CPFBalanceForm onClose={() => setShowCPFForm(false)} />
+      )}
+
       <GrowthSettingsSheet
         onOpenChange={setShowGrowthSettings}
         open={showGrowthSettings}
@@ -324,6 +338,8 @@ interface FinancialCardProps {
   onAddItem: () => void;
   onEditItem: (id: string) => void;
   onOpenSettings?: () => void;
+  onAddCPF?: () => void;
+  showCPFButton?: boolean;
 }
 
 function FinancialCard({
@@ -334,6 +350,8 @@ function FinancialCard({
   onAddItem,
   onEditItem,
   onOpenSettings,
+  onAddCPF,
+  showCPFButton,
 }: FinancialCardProps) {
   const iconColor =
     title === "Income"
@@ -381,6 +399,24 @@ function FinancialCard({
                   </TooltipTrigger>
                   <TooltipContent className="text-xs">
                     Adjust global growth rate
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {showCPFButton && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white transition-colors hover:bg-blue-600"
+                      onClick={onAddCPF}
+                      type="button"
+                    >
+                      🏦
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="text-xs">
+                    Add CPF Balances
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
