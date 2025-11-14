@@ -45,7 +45,7 @@ export function PropertyPlannerShell({
     if (!hasFetched) {
       return;
     }
-    void saveScenario({
+    void saveScenario(activeType, {
       ...scenario,
       type: activeType,
       headline: nextHeadline,
@@ -84,7 +84,7 @@ export function PropertyPlannerShell({
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Button
+              {/* <Button
                 className="border-white/30 text-gray-200"
                 disabled
                 title="Available after backend wiring"
@@ -93,8 +93,8 @@ export function PropertyPlannerShell({
               >
                 <Lock className="h-4 w-4" />
                 Save Draft
-              </Button>
-              <Button
+              </Button> */}
+              {/* <Button
                 className="bg-blue-500 text-white hover:bg-blue-400"
                 disabled
                 title="Apply to plan once calculator APIs are live"
@@ -102,7 +102,7 @@ export function PropertyPlannerShell({
               >
                 <Loader2 className="h-4 w-4" />
                 Apply to Plan
-              </Button>
+              </Button> */}
             </div>
           </div>
         </header>

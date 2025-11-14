@@ -45,7 +45,32 @@
       "difficulty": "medium",
       "tags": ["property", "backend", "persistence", "go"],
       "id": "T30B-BE-PROPERTY-PERSISTENCE",
-      "status": "todo"
+      "status": "done"
+    },
+    {
+      "title": "Property Planner Save/Apply Actions",
+      "description": "Wire the Save Draft and Apply to Plan buttons so users control when planner scenarios persist and when data syncs into the financial plan.",
+      "technicalDetails": [
+        "Only persist scenario changes to `/property-planner` APIs when the Save Draft button is pressed; live typing should stay local until saved.",
+        "Apply to Plan should take the current mortgage snapshot and write/update a matching liability entry plus a recurring income/expense entry reflecting the monthly repayment.",
+        "Expose a dedicated backend endpoint (or flag on existing planner API) that performs the liability + cashflow mutations atomically.",
+        "Update the Zustand store/UI to show loading/confirmation states for both buttons.",
+        "Persist last-saved timestamps so the UI can show when the draft was stored.",
+        "When liabilities/expenses are created from Apply to Plan, include a small icon/button on those cards that reopens the property planner modal for quick edits." 
+      ],
+      "acceptanceCriteria": [
+        "Autosave is disabled; planner inputs only hit the backend when Save Draft is pressed.",
+        "Save Draft stores the scenario and shows a success indicator; dismissing/reopening reflects the saved values.",
+        "Apply to Plan creates/updates the mortgage liability and adds the mortgage repayment to the net worth/ cashflow cards.",
+        "API operations are transactional—either both liability + repayment entries succeed or the UI rolls back with an error message.",
+        "Buttons handle concurrent presses gracefully (debounce + disabled state).",
+        "Liability and cashflow entries created by Apply to Plan display a planner icon that opens the Property Planner modal when clicked."
+      ],
+      "storyPoints": 5,
+      "difficulty": "medium",
+      "tags": ["property", "backend", "frontend"],
+      "id": "T30B-FE-BE-PROPERTY-SAVE-ACTIONS",
+      "status": "done"
     },
     {
       "title": "Chat-Controlled Property Planner CRUD",
@@ -73,3 +98,4 @@
     }
   ]
 }
+

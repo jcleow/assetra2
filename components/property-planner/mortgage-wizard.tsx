@@ -2,12 +2,14 @@
 
 import {
   Calendar,
+  Loader2,
   Percent,
   PiggyBank,
   TrendingDown,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useDebounceCallback, useWindowSize } from "usehooks-ts";
+import { useWindowSize } from "usehooks-ts";
+import { formatDistanceToNow } from "date-fns";
 import {
   formatCurrency,
   formatPercentage,
@@ -36,6 +38,8 @@ import type {
   MortgageInputs,
   PropertyPlannerScenario,
 } from "@/lib/financial/types";
+import { toast } from "@/components/toast";
+import { usePropertyPlannerModalStore } from "@/features/property-planner/modal-store";
 
 const MIN_CHART_HEIGHT_RATIO = 0.28;
 const MIN_CHART_HEIGHT_PX = 280;
@@ -68,7 +72,6 @@ export function MortgageWizard({ activeType }: MortgageWizardProps) {
     (state) => state.scenarios[activeType]
   );
   const saveScenario = usePropertyPlannerStore((state) => state.saveScenario);
-  const hasFetched = usePropertyPlannerStore((state) => state.hasFetched);
   const scenario = scenarioFromStore ?? PROPERTY_PLANNER_MOCKS[activeType];
   const [propertyCategory, setPropertyCategory] = useState<"hdb" | "private">(
     activeType === "hdb" ? "hdb" : "private"
@@ -77,11 +80,17 @@ export function MortgageWizard({ activeType }: MortgageWizardProps) {
     cloneInputs(scenario.inputs)
   );
   const isOverviewComplete = usePropertyPlannerStore(
-    (state) => state.isOverviewComplete
+    (state) => state.overviewComplete[activeType] ?? false
   );
   const setOverviewComplete = usePropertyPlannerStore(
     (state) => state.setOverviewComplete
   );
+  const lastSavedAt = usePropertyPlannerStore(
+    (state) => state.lastSavedAt[activeType] ?? scenario.updatedAt
+  );
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [isApplyingPlan, setIsApplyingPlan] = useState(false);
+  const closePlannerModal = usePropertyPlannerModalStore((state) => state.close);
 
   useEffect(() => {
     setIsComplete(isOverviewComplete);
@@ -113,6 +122,78 @@ export function MortgageWizard({ activeType }: MortgageWizardProps) {
   const snapshot = calculation.snapshot;
   const { monthlyPayment, totalInterest, loanEndDate, msrRatio } = snapshot;
 
+  const buildScenarioPayload = (): PropertyPlannerScenario => ({
+    ...scenario,
+    type: activeType,
+    inputs,
+    amortization: amortizationData,
+    snapshot,
+    updatedAt: new Date().toISOString(),
+    lastRefreshed: new Date().toISOString(),
+  });
+
+  const handleSaveDraft = async () => {
+    if (!hasUnsavedChanges && scenario.id) {
+      toast({
+        type: "info",
+        description: "No changes to save.",
+      });
+      return scenario;
+    }
+    setIsSavingDraft(true);
+    try {
+      const payload = buildScenarioPayload();
+      const saved = await saveScenario(activeType, payload);
+      toast({ type: "success", description: "Draft saved." });
+      return saved;
+    } catch (error) {
+      toast({
+        type: "error",
+        description: "Failed to save draft. Please try again.",
+      });
+      return null;
+    } finally {
+      setIsSavingDraft(false);
+    }
+  };
+
+  const handleApplyPlan = async () => {
+    let latestScenario = scenario;
+    if (hasUnsavedChanges || !scenario.id) {
+      const saved = await handleSaveDraft();
+      if (!saved) {
+        return;
+      }
+      latestScenario = saved;
+    }
+    setIsApplyingPlan(true);
+    try {
+      const response = await fetch("/api/property-planner/apply", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ scenarioId: latestScenario.id }),
+      });
+      if (!response.ok) {
+        throw new Error("Failed to apply scenario");
+      }
+      toast({
+        type: "success",
+        description: "Planner data applied to your financial plan.",
+      });
+      closePlannerModal();
+    } catch (error) {
+      console.error(error);
+      toast({
+        type: "error",
+        description: "Could not apply scenario. Please try again.",
+      });
+    } finally {
+      setIsApplyingPlan(false);
+    }
+  };
+
   const updateInputs = (changes: Partial<MortgageInputs>) =>
     setInputs((prev) => ({ ...prev, ...changes }));
 
@@ -128,46 +209,16 @@ export function MortgageWizard({ activeType }: MortgageWizardProps) {
     otherDebt,
   } = inputs;
 
-  const debouncedPersistScenario = useDebounceCallback(
-    (nextScenario: PropertyPlannerScenario) => {
-      saveScenario(nextScenario).catch(() => {});
-    },
-    800
-  );
-
-  useEffect(() => {
-    if (!hasFetched) return;
-    if (inputsEqual(inputs, scenario.inputs)) {
-      return;
-    }
-    const payload: PropertyPlannerScenario = {
-      ...scenario,
-      type: activeType,
-      inputs,
-      amortization: amortizationData,
-      snapshot,
-      updatedAt: new Date().toISOString(),
-      lastRefreshed: new Date().toISOString(),
-    };
-    debouncedPersistScenario(payload);
-  }, [
-    activeType,
-    amortizationData,
-    debouncedPersistScenario,
-    hasFetched,
-    inputs,
-    scenario,
-    snapshot,
-  ]);
+  const hasUnsavedChanges = !inputsEqual(inputs, scenario.inputs);
 
   const handleSubmit = () => {
     setIsComplete(true);
-    setOverviewComplete(true);
+    setOverviewComplete(activeType, true);
   };
 
   const handleEdit = () => {
     setIsComplete(false);
-    setOverviewComplete(false);
+    setOverviewComplete(activeType, false);
   };
 
   return (
@@ -230,21 +281,36 @@ export function MortgageWizard({ activeType }: MortgageWizardProps) {
             />
 
             <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-              <button
-                className="rounded-full border border-white/15 px-4 py-2 text-sm text-gray-300"
-                disabled
-                title="Saving drafts requires backend integration"
-                type="button"
-              >
-                Save for Later
-              </button>
-              <button
-                className="rounded-full bg-blue-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-400 disabled:opacity-50"
-                onClick={handleSubmit}
-                type="button"
-              >
-                Generate Overview
-              </button>
+              <div className="text-xs text-gray-400">
+                {lastSavedAt
+                  ? `Last saved ${formatDistanceToNow(new Date(lastSavedAt), {
+                      addSuffix: true,
+                    })}`
+                  : "Draft not saved yet"}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  className="rounded-full border border-white/15 px-4 py-2 text-sm text-gray-300 disabled:opacity-50"
+                  disabled={isSavingDraft || !hasUnsavedChanges}
+                  onClick={handleSaveDraft}
+                  type="button"
+                >
+                  {isSavingDraft ? (
+                    <span className="flex items-center gap-2 text-white">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Saving...
+                    </span>
+                  ) : (
+                    "Save Draft"
+                  )}
+                </button>
+                <button
+                  className="rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-400 disabled:opacity-50"
+                  onClick={handleSubmit}
+                  type="button"
+                >
+                  Generate Overview
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -260,6 +326,9 @@ export function MortgageWizard({ activeType }: MortgageWizardProps) {
           amortizationData={amortizationData}
           onEdit={handleEdit}
           totalInterest={totalInterest}
+          onApplyPlan={handleApplyPlan}
+          canApply={Boolean(scenario.id) && !hasUnsavedChanges}
+          isApplying={isApplyingPlan}
         />
       ) : null}
     </div>
@@ -294,7 +363,7 @@ function StepOne({
   return (
     <div className="space-y-6">
       <header>
-        <h3 className="text-lg font-semibold text-white">Step 1 — Loan Basics</h3>
+        <h3 className="text-lg font-semibold text-white">Loan Basics</h3>
         <p className="text-sm text-gray-400">
           Tell us about your mortgage requirements.
         </p>
@@ -512,6 +581,9 @@ interface MortgageOverviewProps {
   loanAmount: number;
   loanTermYears: number;
   amortizationData: MortgageAmortization;
+  onApplyPlan: () => Promise<void> | void;
+  canApply: boolean;
+  isApplying: boolean;
 }
 
 function MortgageOverview({
@@ -523,6 +595,9 @@ function MortgageOverview({
   loanAmount,
   loanTermYears,
   amortizationData,
+  onApplyPlan,
+  canApply,
+  isApplying,
 }: MortgageOverviewProps) {
   const { height: viewportHeight } = useWindowSize();
   const chartHeight = useMemo(() => {
@@ -553,25 +628,16 @@ function MortgageOverview({
   ];
   return (
     <section className="rounded-3xl border border-white/10 bg-gray-900 p-6 text-white shadow-xl">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-xs uppercase tracking-[0.18em] text-gray-500">
-            Mortgage Overview
-          </p>
-          <h3 className="text-2xl font-semibold text-white">
-            Mortgage Overview
-          </h3>
-          <p className="text-sm text-gray-400">
-            Your complete mortgage summary and projections.
-          </p>
-        </div>
-        <button
-          className="rounded-full border border-white/20 px-4 py-2 text-sm text-gray-200"
-          onClick={onEdit}
-          type="button"
-        >
-          Adjust inputs
-        </button>
+      <div className="mb-6">
+        <p className="text-xs uppercase tracking-[0.18em] text-gray-500">
+          Mortgage Overview
+        </p>
+        <h3 className="text-2xl font-semibold text-white">
+          Mortgage Overview
+        </h3>
+        <p className="text-sm text-gray-400">
+          Your complete mortgage summary and projections.
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -789,6 +855,30 @@ function MortgageOverview({
           </div>
         ))}
       </div>
+
+      <div className="mt-6 flex justify-end gap-3">
+        <button
+          className="rounded-full border border-white/20 px-4 py-2 text-sm text-gray-200"
+          onClick={onEdit}
+          type="button"
+        >
+          Adjust inputs
+        </button>
+        <button
+          className="rounded-full bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-400 disabled:opacity-50"
+          disabled={isApplying}
+          onClick={onApplyPlan}
+          type="button"
+        >
+          {isApplying ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" /> Applying...
+            </span>
+          ) : (
+            "Apply to Plan"
+          )}
+        </button>
+      </div>
     </section>
   );
 }
@@ -809,6 +899,39 @@ function InterestSection({
   onFixedRateChange,
   onFloatingRateChange,
 }: InterestSectionProps) {
+  const cards = [
+    {
+      label: "Fixed Window",
+      helper: "Bank committed period",
+      value: fixedYears,
+      min: 1,
+      max: 10,
+      step: 1,
+      suffix: "years",
+      onChange: onFixedYearsChange,
+    },
+    {
+      label: "Current Rate",
+      helper: "Applied to amortisation",
+      value: fixedRate,
+      min: 0,
+      max: 6,
+      step: 0.1,
+      suffix: "%",
+      onChange: onFixedRateChange,
+    },
+    {
+      label: "Next Expected Rate",
+      helper: "Post lock-in assumption",
+      value: floatingRate,
+      min: 0,
+      max: 7,
+      step: 0.1,
+      suffix: "%",
+      onChange: onFloatingRateChange,
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <header>
@@ -819,75 +942,26 @@ function InterestSection({
       </header>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <label className="text-sm font-medium text-gray-300">
-          Fixed Period (Years)
-          <input
-            className="mt-1 w-full rounded-2xl border border-white/15 bg-gray-900 px-4 py-2 text-white focus:border-blue-400 focus:outline-none"
-            max={10}
-            min={1}
-            onChange={(event) =>
-              onFixedYearsChange(Number(event.target.value) || 1)
-            }
-            type="number"
-            value={fixedYears}
-          />
-        </label>
-        <label className="text-sm font-medium text-gray-300">
-          Fixed Rate (% p.a.)
-          <input
-            className="mt-1 w-full rounded-2xl border border-white/15 bg-gray-900 px-4 py-2 text-white focus:border-blue-400 focus:outline-none"
-            max={6}
-            min={1}
-            onChange={(event) =>
-              onFixedRateChange(Number(event.target.value) || 0)
-            }
-            step={0.1}
-            type="number"
-            value={fixedRate}
-          />
-        </label>
-        <label className="text-sm font-medium text-gray-300">
-          Floating Rate (% p.a.)
-          <input
-            className="mt-1 w-full rounded-2xl border border-white/15 bg-gray-900 px-4 py-2 text-white focus:border-blue-400 focus:outline-none"
-            max={7}
-            min={1}
-            onChange={(event) =>
-              onFloatingRateChange(Number(event.target.value) || 0)
-            }
-            step={0.1}
-            type="number"
-            value={floatingRate}
-          />
-        </label>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        {[
-          {
-            label: "Fixed Window",
-            helper: "Bank committed period",
-            value: `${fixedYears} years`,
-          },
-          {
-            label: "Current Rate",
-            helper: "Applied to amortisation",
-            value: `${fixedRate.toFixed(2)}%`,
-          },
-          {
-            label: "Next Expected Rate",
-            helper: "Post lock-in assumption",
-            value: `${floatingRate.toFixed(2)}%`,
-          },
-        ].map((card) => (
+        {cards.map((card) => (
           <div
-            className="rounded-2xl border border-white/10 bg-white/5 p-4"
+            className="space-y-2 rounded-2xl border border-white/10 bg-white/5 p-4"
             key={card.label}
           >
             <p className="text-xs uppercase text-gray-400">{card.label}</p>
-            <p className="mt-2 text-xl font-semibold text-white">
-              {card.value}
-            </p>
+            <div className="flex items-baseline gap-2">
+              <input
+                className="w-full bg-transparent text-2xl font-semibold text-white focus:outline-none"
+                type="number"
+                value={card.value}
+                min={card.min}
+                max={card.max}
+                step={card.step}
+                onChange={(event) =>
+                  card.onChange(Number(event.target.value) || 0)
+                }
+              />
+              <span className="text-sm text-gray-400">{card.suffix}</span>
+            </div>
             <p className="text-xs text-gray-400">{card.helper}</p>
           </div>
         ))}
@@ -979,8 +1053,7 @@ function IncomeSection({
             : "border-amber-400/40 bg-amber-500/10"
         }`}
       >
-        <div className="flex items-center gap-3">
-          <Percent className="h-5 w-5 text-white" />
+        <div className="flex items-center gap-3 pl-1">
           <div>
             <p className="text-xs uppercase tracking-wide text-white/70">
               Estimated MSR
