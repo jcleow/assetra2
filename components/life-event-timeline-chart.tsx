@@ -135,7 +135,7 @@ export function LifeEventTimelineChart() {
   const filteredTimeline = timeline.filter((point, index) => index <= 20); // Next 20 years
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-[40vh] flex-col">
       <div className="mb-4 flex flex-shrink-0 items-center justify-between">
         <div>
           <h3 className="mb-1 font-semibold text-lg text-white">
