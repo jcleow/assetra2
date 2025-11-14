@@ -16,7 +16,10 @@ import {
   useFinancialPlanningStore,
 } from "@/features/financial-planning";
 import { usePropertyPlannerStore } from "@/features/property-planner/store";
-import { usePropertyPlannerModalStore } from "@/features/property-planner/modal-store";
+const usePropertyPlannerModalStore = dynamic(
+  () => import("@/features/property-planner/modal-store").then((mod) => mod.usePropertyPlannerModalStore),
+  { ssr: false }
+);
 import {
   PROPERTY_PLANNER_MOCKS,
   PropertyPlannerType,
