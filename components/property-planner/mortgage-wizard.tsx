@@ -308,22 +308,6 @@ export function MortgageWizard({ activeType }: MortgageWizardProps) {
                   )}
                 </button>
                 <button
-                  className="rounded-full bg-blue-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-blue-400 disabled:opacity-50"
-                  disabled={
-                    isApplyingPlan || hasUnsavedChanges || !scenario.id
-                  }
-                  onClick={handleApplyPlan}
-                  type="button"
-                >
-                  {isApplyingPlan ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Applying...
-                    </span>
-                  ) : (
-                    "Apply to Plan"
-                  )}
-                </button>
-                <button
                   className="rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-white transition hover:bg-emerald-400 disabled:opacity-50"
                   onClick={handleSubmit}
                   type="button"
@@ -346,6 +330,9 @@ export function MortgageWizard({ activeType }: MortgageWizardProps) {
           amortizationData={amortizationData}
           onEdit={handleEdit}
           totalInterest={totalInterest}
+          onApplyPlan={handleApplyPlan}
+          canApply={Boolean(scenario.id) && !hasUnsavedChanges}
+          isApplying={isApplyingPlan}
         />
       ) : null}
     </div>
@@ -380,7 +367,7 @@ function StepOne({
   return (
     <div className="space-y-6">
       <header>
-        <h3 className="text-lg font-semibold text-white">Step 1 — Loan Basics</h3>
+        <h3 className="text-lg font-semibold text-white">Loan Basics</h3>
         <p className="text-sm text-gray-400">
           Tell us about your mortgage requirements.
         </p>
@@ -598,6 +585,9 @@ interface MortgageOverviewProps {
   loanAmount: number;
   loanTermYears: number;
   amortizationData: MortgageAmortization;
+  onApplyPlan: () => Promise<void> | void;
+  canApply: boolean;
+  isApplying: boolean;
 }
 
 function MortgageOverview({
@@ -609,6 +599,9 @@ function MortgageOverview({
   loanAmount,
   loanTermYears,
   amortizationData,
+  onApplyPlan,
+  canApply,
+  isApplying,
 }: MortgageOverviewProps) {
   const { height: viewportHeight } = useWindowSize();
   const chartHeight = useMemo(() => {
@@ -657,6 +650,20 @@ function MortgageOverview({
           type="button"
         >
           Adjust inputs
+        </button>
+        <button
+          className="rounded-full bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-400 disabled:opacity-50"
+          disabled={!canApply || isApplying}
+          onClick={onApplyPlan}
+          type="button"
+        >
+          {isApplying ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" /> Applying...
+            </span>
+          ) : (
+            "Apply to Plan"
+          )}
         </button>
       </div>
 

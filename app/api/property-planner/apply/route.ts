@@ -45,7 +45,6 @@ export async function POST(request: Request) {
     const liabilities = await financialClient.liabilities.list();
     const existingLiability = liabilities.find((item) => item.notes === note);
     const liabilityPayload = {
-      id: existingLiability?.id,
       name: `${scenario.headline} Mortgage`,
       category: "mortgage",
       currentBalance: scenario.inputs.loanAmount,
@@ -56,7 +55,7 @@ export async function POST(request: Request) {
 
     const liabilityResult = existingLiability
       ? await financialClient.liabilities.update({
-          ...existingLiability,
+          id: existingLiability.id,
           ...liabilityPayload,
         })
       : await financialClient.liabilities.create(liabilityPayload);
@@ -64,7 +63,6 @@ export async function POST(request: Request) {
     const expenses = await financialClient.expenses.list();
     const existingExpense = expenses.find((expense) => expense.notes === note);
     const expensePayload = {
-      id: existingExpense?.id,
       payee: `${scenario.headline} Mortgage Payment`,
       amount: scenario.snapshot.monthlyPayment,
       frequency: "monthly" as const,
@@ -74,7 +72,7 @@ export async function POST(request: Request) {
 
     const expenseResult = existingExpense
       ? await financialClient.expenses.update({
-          ...existingExpense,
+          id: existingExpense.id,
           ...expensePayload,
         })
       : await financialClient.expenses.create(expensePayload);

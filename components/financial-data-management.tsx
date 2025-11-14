@@ -85,6 +85,17 @@ export function FinancialDataManagement() {
     queryFn: () => financialClient.expenses.list(),
   });
 
+  const openPlannerModal = usePropertyPlannerModalStore(
+    (state) => state.openWithType
+  );
+
+  const handlePlannerLink = (meta: {
+    scenarioId: string;
+    scenarioType: PropertyPlannerType;
+  }) => {
+    openPlannerModal(meta.scenarioType);
+  };
+
   const formatIncomeItems = (): FinancialItem[] => {
     return incomes.map((income) => {
       if (isCPFEmployerContributionName(income.source)) {
@@ -632,13 +643,3 @@ function GrowthSettingsSheet({ open, onOpenChange }: GrowthSettingsSheetProps) {
     </Sheet>
   );
 }
-  const openPlannerModal = usePropertyPlannerModalStore(
-    (state) => state.openWithType
-  );
-
-  const handlePlannerLink = (meta: {
-    scenarioId: string;
-    scenarioType: PropertyPlannerType;
-  }) => {
-    openPlannerModal(meta.scenarioType);
-  };
