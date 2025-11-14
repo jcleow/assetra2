@@ -57,7 +57,7 @@ export function CPFBalanceForm({ onClose }: CPFBalanceFormProps) {
       ];
 
       // Create all CPF assets
-      const promises = cpfAssets.map(asset =>
+      const promises = cpfAssets.map((asset) =>
         financialClient.assets.create(asset)
       );
 
@@ -106,91 +106,106 @@ export function CPFBalanceForm({ onClose }: CPFBalanceFormProps) {
   };
 
   const handleInputChange = (field: keyof CPFBalances, value: string) => {
-    setBalances(prev => ({ ...prev, [field]: value }));
+    setBalances((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="w-full max-w-md rounded-lg bg-gray-800 p-6 text-white">
-        <h2 className="mb-4 text-lg font-semibold">Add CPF Balances</h2>
-        <p className="mb-6 text-sm text-gray-400">
-          Enter your current CPF account balances. These will be added as assets to track your retirement savings.
+        <h2 className="mb-4 font-semibold text-lg">Add CPF Balances</h2>
+        <p className="mb-6 text-gray-400 text-sm">
+          Enter your current CPF account balances. These will be added as assets
+          to track your retirement savings.
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <Label htmlFor="oa-balance" className="text-gray-200">
+            <Label className="text-gray-200" htmlFor="oa-balance">
               Ordinary Account (OA) Balance
             </Label>
             <Input
-              id="oa-balance"
-              type="number"
-              step="0.01"
-              placeholder="45000.00"
-              value={balances.ordinaryAccount}
-              onChange={(e) => handleInputChange("ordinaryAccount", e.target.value)}
               className="mt-1 border-gray-700 bg-gray-900 text-white"
+              id="oa-balance"
+              onChange={(e) =>
+                handleInputChange("ordinaryAccount", e.target.value)
+              }
+              placeholder="45000.00"
+              step="0.01"
+              type="number"
+              value={balances.ordinaryAccount}
             />
             {errors.ordinaryAccount && (
-              <p className="mt-1 text-sm text-red-400">{errors.ordinaryAccount}</p>
+              <p className="mt-1 text-red-400 text-sm">
+                {errors.ordinaryAccount}
+              </p>
             )}
           </div>
 
           <div>
-            <Label htmlFor="sa-balance" className="text-gray-200">
+            <Label className="text-gray-200" htmlFor="sa-balance">
               Special Account (SA) Balance
             </Label>
             <Input
-              id="sa-balance"
-              type="number"
-              step="0.01"
-              placeholder="25000.00"
-              value={balances.specialAccount}
-              onChange={(e) => handleInputChange("specialAccount", e.target.value)}
               className="mt-1 border-gray-700 bg-gray-900 text-white"
+              id="sa-balance"
+              onChange={(e) =>
+                handleInputChange("specialAccount", e.target.value)
+              }
+              placeholder="25000.00"
+              step="0.01"
+              type="number"
+              value={balances.specialAccount}
             />
             {errors.specialAccount && (
-              <p className="mt-1 text-sm text-red-400">{errors.specialAccount}</p>
+              <p className="mt-1 text-red-400 text-sm">
+                {errors.specialAccount}
+              </p>
             )}
           </div>
 
           <div>
-            <Label htmlFor="ma-balance" className="text-gray-200">
+            <Label className="text-gray-200" htmlFor="ma-balance">
               Medisave Account (MA) Balance
             </Label>
             <Input
-              id="ma-balance"
-              type="number"
-              step="0.01"
-              placeholder="15000.00"
-              value={balances.medisaveAccount}
-              onChange={(e) => handleInputChange("medisaveAccount", e.target.value)}
               className="mt-1 border-gray-700 bg-gray-900 text-white"
+              id="ma-balance"
+              onChange={(e) =>
+                handleInputChange("medisaveAccount", e.target.value)
+              }
+              placeholder="15000.00"
+              step="0.01"
+              type="number"
+              value={balances.medisaveAccount}
             />
             {errors.medisaveAccount && (
-              <p className="mt-1 text-sm text-red-400">{errors.medisaveAccount}</p>
+              <p className="mt-1 text-red-400 text-sm">
+                {errors.medisaveAccount}
+              </p>
             )}
           </div>
 
           <div className="flex gap-3 pt-4">
             <Button
+              className="flex-1 border-gray-700 text-gray-300 hover:bg-gray-700"
+              onClick={onClose}
               type="button"
               variant="outline"
-              onClick={onClose}
-              className="flex-1 border-gray-700 text-gray-300 hover:bg-gray-700"
             >
               Cancel
             </Button>
             <Button
-              type="submit"
-              disabled={createCPFAssetsMutation.isPending}
               className="flex-1 bg-emerald-500 hover:bg-emerald-600"
+              disabled={createCPFAssetsMutation.isPending}
+              type="submit"
             >
-              {createCPFAssetsMutation.isPending ? "Adding..." : "Add CPF Balances"}
+              {createCPFAssetsMutation.isPending
+                ? "Adding..."
+                : "Add CPF Balances"}
             </Button>
           </div>
         </form>

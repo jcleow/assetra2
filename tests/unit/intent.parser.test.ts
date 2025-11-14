@@ -8,8 +8,8 @@ vi.stubGlobal(
     json: async () => ({
       assets: [{ name: "house", currentValue: 500_000 }],
       liabilities: [{ name: "mortgage", currentBalance: 350_000 }],
-      incomes: [{ source: "salary", amount: 8_500 }],
-      expenses: [{ payee: "rent", amount: 2_500 }],
+      incomes: [{ source: "salary", amount: 8500 }],
+      expenses: [{ payee: "rent", amount: 2500 }],
     }),
   })
 );

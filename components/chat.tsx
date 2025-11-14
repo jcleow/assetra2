@@ -176,15 +176,15 @@ export function Chat({
   );
 
   const dispatchMessage = useCallback(
-    ({ message, attachments }: SubmitPayload) => {
-      if (!message.trim() && attachments.length === 0) {
+    ({ message, attachments: submittedAttachments }: SubmitPayload) => {
+      if (!message.trim() && submittedAttachments.length === 0) {
         return;
       }
 
       sendMessage({
         role: "user",
         parts: [
-          ...attachments.map((attachment) => ({
+          ...submittedAttachments.map((attachment) => ({
             type: "file" as const,
             url: attachment.url,
             name: attachment.name,
@@ -205,7 +205,7 @@ export function Chat({
   );
 
   const handleIntentSubmit = useCallback(
-    async ({ message, attachments }: SubmitPayload) => {
+    async ({ message, attachments: submittedAttachments }: SubmitPayload) => {
       const trimmed = message.trim();
       if (!trimmed) {
         return false;
@@ -253,7 +253,7 @@ export function Chat({
             id: generateUUID(),
             role: "user",
             parts: [
-              ...attachments.map((attachment) => ({
+              ...submittedAttachments.map((attachment) => ({
                 type: "file" as const,
                 url: attachment.url,
                 name: attachment.name,
@@ -278,7 +278,7 @@ export function Chat({
             raw: payload.raw ?? trimmed,
             actions: payload.actions,
             status: "pending",
-            attachments,
+            attachments: submittedAttachments,
             createdAt: Date.now(),
           },
         ]);
