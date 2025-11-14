@@ -1,10 +1,10 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Chat } from "@/components/chat";
+import { ChatFloatingLauncher } from "@/components/chat-floating-launcher";
 import { DataStreamHandler } from "@/components/data-stream-handler";
 import { FinancialDataManagement } from "@/components/financial-data-management";
 import { FinancialWorkspace } from "@/components/financial-workspace";
-import { PropertyPlannerLauncher } from "@/components/property-planner/property-planner-launcher";
 import { DEFAULT_CHAT_MODEL } from "@/lib/ai/models";
 import { generateUUID } from "@/lib/utils";
 import { auth } from "../(auth)/auth";
@@ -25,11 +25,8 @@ export default async function Page() {
 
   return (
     <>
-      <div className="flex min-h-dvh flex-col gap-6 p-4 lg:flex-row lg:items-stretch">
-        <div className="flex items-center justify-center lg:hidden">
-          <PropertyPlannerLauncher />
-        </div>
-        <div className="w-full shrink-0 lg:h-full lg:w-[420px] lg:max-w-[520px] lg:overflow-hidden">
+      <div className="flex min-h-dvh w-full flex-col gap-6 p-4 lg:flex-row lg:items-stretch">
+        <div className="hidden w-full shrink-0 lg:flex lg:h-full lg:w-[420px] lg:max-w-[520px] lg:overflow-hidden">
           <div className="flex h-full min-h-[70vh] min-w-0 flex-col rounded-3xl border border-white/5 bg-background/90 shadow-[0_30px_80px_rgba(3,3,4,0.45)]">
             <Chat
               autoResume={false}
@@ -43,15 +40,18 @@ export default async function Page() {
             />
           </div>
         </div>
-        <div className="hidden flex-1 gap-6 lg:flex lg:flex-col">
-          <div className="flex min-h-[320px] flex-col overflow-hidden rounded-3xl border border-gray-700 bg-gray-900 shadow-[0_30px_80px_rgba(3,3,4,0.45)]">
+        <div className="flex w-full flex-col gap-6 lg:min-w-0 lg:flex-1">
+          <div className="flex min-h-[320px] min-w-0 flex-col overflow-hidden rounded-3xl border border-gray-700 bg-gray-900 shadow-[0_30px_80px_rgba(3,3,4,0.45)]">
             <FinancialWorkspace />
           </div>
 
-          <div className="flex-1 overflow-hidden rounded-3xl border border-gray-700 bg-gray-900 shadow-[0_30px_80px_rgba(3,3,4,0.45)]">
+          <div className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-3xl border border-gray-700 bg-gray-900 shadow-[0_30px_80px_rgba(3,3,4,0.45)]">
             <FinancialDataManagement />
           </div>
         </div>
+      </div>
+      <div className="lg:hidden">
+        <ChatFloatingLauncher chatId={id} initialModel={initialModel} />
       </div>
       <DataStreamHandler />
     </>

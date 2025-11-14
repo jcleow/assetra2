@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Plus, SlidersHorizontal, Sparkles } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
+import type { PropertyPlannerType } from "@/components/property-planner/mock-data";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,7 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useFinancialPlanningStore } from "@/features/financial-planning";
-import { financialClient } from "@/lib/financial/client";
+import { usePropertyPlannerModalStore } from "@/features/property-planner/modal-store";
 import {
   CPF_EMPLOYEE_CONTRIBUTION_SOURCE,
   CPF_EMPLOYER_CONTRIBUTION_SOURCE,
@@ -31,13 +32,12 @@ import {
   decodeCPFSalaryMetadata,
   isSalaryIncomeRecord,
 } from "@/lib/cpf/salary";
-import { FinancialFormModal } from "./financial-form-modal";
-import { CPFBalanceForm } from "./cpf-balance-form";
+import { financialClient } from "@/lib/financial/client";
 import { parsePlannerNote } from "@/lib/property-planner/constants";
-import type { PropertyPlannerType } from "@/components/property-planner/mock-data";
-import { usePropertyPlannerModalStore } from "@/features/property-planner/modal-store";
+import { CPFBalanceForm } from "./cpf-balance-form";
+import { FinancialFormModal } from "./financial-form-modal";
 
-interface FinancialItem {
+type FinancialItem = {
   id: string;
   name: string;
   subtitle: string;
@@ -48,16 +48,16 @@ interface FinancialItem {
     scenarioId: string;
     scenarioType: PropertyPlannerType;
   } | null;
-}
+};
 
-interface CategoryConfig {
+type CategoryConfig = {
   title: string;
   description: string;
   items: FinancialItem[];
   isLoading: boolean;
   modalType: string;
   onOpenSettings?: () => void;
-}
+};
 
 export function FinancialDataManagement() {
   const [activeModal, setActiveModal] = useState<string | null>(null);
@@ -199,8 +199,14 @@ export function FinancialDataManagement() {
   };
 
   // Calculate totals
-  const totalAssets = assets.reduce((sum, asset) => sum + asset.currentValue, 0);
-  const totalLiabilities = liabilities.reduce((sum, liability) => sum + liability.currentBalance, 0);
+  const totalAssets = assets.reduce(
+    (sum, asset) => sum + asset.currentValue,
+    0
+  );
+  const totalLiabilities = liabilities.reduce(
+    (sum, liability) => sum + liability.currentBalance,
+    0
+  );
   const netWorth = totalAssets - totalLiabilities;
 
   const incomeTotals = incomes.reduce(
@@ -229,8 +235,8 @@ export function FinancialDataManagement() {
   const savings = cashflowIncome - totalExpenses;
 
   // Check if CPF assets exist
-  const hasCPFAssets = assets.some(asset =>
-    asset.name.includes("CPF") || asset.category === "retirement"
+  const hasCPFAssets = assets.some(
+    (asset) => asset.name.includes("CPF") || asset.category === "retirement"
   );
 
   const leftColumnCategories: CategoryConfig[] = [
@@ -254,16 +260,14 @@ export function FinancialDataManagement() {
   const rightColumnCategories: CategoryConfig[] = [
     {
       title: "Income",
-      description:
-        "",
+      description: "",
       items: formatIncomeItems(),
       isLoading: incomesLoading,
       modalType: "incomes",
     },
     {
       title: "Expenses",
-      description:
-        "",
+      description: "",
       items: formatExpenseItems(),
       isLoading: expensesLoading,
       modalType: "expenses",
@@ -281,22 +285,22 @@ export function FinancialDataManagement() {
         </p>
       </div>
 
-      <div className="flex flex-col gap-6 lg:flex-row">
+      <div className="flex flex-col gap-6 lg:min-w-0 lg:flex-row">
         {/* Left Column - Assets & Liabilities */}
-        <div className="flex flex-1 flex-col space-y-6">
+        <div className="flex min-w-0 flex-1 flex-col space-y-6">
           {leftColumnCategories.map((category) => (
             <FinancialCard
               description={category.description}
               isLoading={category.isLoading}
               items={category.items}
               key={category.title}
+              onAddCPF={() => setShowCPFForm(true)}
               onAddItem={() => setActiveModal(category.modalType)}
               onEditItem={(id) => setActiveModal(`${category.modalType}-${id}`)}
-              onOpenSettings={category.onOpenSettings}
-              title={category.title}
-              showCPFButton={category.title === "Assets" && !hasCPFAssets}
-              onAddCPF={() => setShowCPFForm(true)}
               onOpenPlanner={handlePlannerLink}
+              onOpenSettings={category.onOpenSettings}
+              showCPFButton={category.title === "Assets" && !hasCPFAssets}
+              title={category.title}
             />
           ))}
 
@@ -305,9 +309,13 @@ export function FinancialDataManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-white">Net Worth</h3>
-                <p className="text-gray-400 text-sm">Assets minus liabilities</p>
+                <p className="text-gray-400 text-sm">
+                  Assets minus liabilities
+                </p>
               </div>
-              <div className={`font-bold text-lg ${netWorth >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              <div
+                className={`font-bold text-lg ${netWorth >= 0 ? "text-emerald-400" : "text-red-400"}`}
+              >
                 ${netWorth.toLocaleString()}
               </div>
             </div>
@@ -315,7 +323,7 @@ export function FinancialDataManagement() {
         </div>
 
         {/* Right Column - Income & Expenses */}
-        <div className="flex flex-1 flex-col space-y-6">
+        <div className="flex min-w-0 flex-1 flex-col space-y-6">
           {rightColumnCategories.map((category) => (
             <FinancialCard
               description={category.description}
@@ -324,10 +332,10 @@ export function FinancialDataManagement() {
               key={category.title}
               onAddItem={() => setActiveModal(category.modalType)}
               onEditItem={(id) => setActiveModal(`${category.modalType}-${id}`)}
-              onOpenSettings={category.onOpenSettings}
-              title={category.title}
-              showCPFButton={false}
               onOpenPlanner={handlePlannerLink}
+              onOpenSettings={category.onOpenSettings}
+              showCPFButton={false}
+              title={category.title}
             />
           ))}
 
@@ -340,7 +348,9 @@ export function FinancialDataManagement() {
                   Income minus expenses (CPF contributions counted as savings)
                 </p>
               </div>
-              <div className={`font-bold text-lg ${savings >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              <div
+                className={`font-bold text-lg ${savings >= 0 ? "text-emerald-400" : "text-red-400"}`}
+              >
                 ${savings.toLocaleString()}
               </div>
             </div>
@@ -356,9 +366,7 @@ export function FinancialDataManagement() {
         />
       )}
 
-      {showCPFForm && (
-        <CPFBalanceForm onClose={() => setShowCPFForm(false)} />
-      )}
+      {showCPFForm && <CPFBalanceForm onClose={() => setShowCPFForm(false)} />}
 
       <GrowthSettingsSheet
         onOpenChange={setShowGrowthSettings}
@@ -368,7 +376,7 @@ export function FinancialDataManagement() {
   );
 }
 
-interface FinancialCardProps {
+type FinancialCardProps = {
   title: string;
   description: string;
   items: FinancialItem[];
@@ -378,13 +386,11 @@ interface FinancialCardProps {
   onOpenSettings?: () => void;
   onAddCPF?: () => void;
   showCPFButton?: boolean;
-  onOpenPlanner?: (
-    meta: {
-      scenarioId: string;
-      scenarioType: PropertyPlannerType;
-    }
-  ) => void;
-}
+  onOpenPlanner?: (meta: {
+    scenarioId: string;
+    scenarioType: PropertyPlannerType;
+  }) => void;
+};
 
 function FinancialCard({
   title,
@@ -408,11 +414,11 @@ function FinancialCard({
           : "text-red-500";
 
   return (
-    <div className="flex flex-1 flex-col rounded-lg border border-gray-700 bg-gray-800">
+    <div className="flex w-full min-w-0 flex-col rounded-lg border border-gray-700 bg-gray-800">
       {/* Header */}
       <div className="border-gray-700 border-b p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <div
               className={`flex h-8 w-8 items-center justify-center rounded-full bg-gray-700 ${iconColor}`}
             >
@@ -424,12 +430,12 @@ function FinancialCard({
                     ? "📈"
                     : "💳"}
             </div>
-            <div>
-              <h3 className="font-semibold text-white">{title}</h3>
+            <div className="min-w-0">
+              <h3 className="truncate font-semibold text-white">{title}</h3>
               <p className="text-gray-400 text-sm">{description}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-shrink-0 items-center gap-2">
             {onOpenSettings && (
               <TooltipProvider>
                 <Tooltip>
@@ -469,6 +475,7 @@ function FinancialCard({
             <button
               className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 transition-colors hover:bg-emerald-600"
               onClick={onAddItem}
+              type="button"
             >
               <Plus className="h-4 w-4 text-white" />
             </button>
@@ -495,43 +502,48 @@ function FinancialCard({
           </div>
         ) : items.length > 0 ? (
           <div className="space-y-3">
-            {items.map((item) => (
-              <div
-                className="flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors hover:bg-gray-700"
-                key={item.id}
-                onClick={() => onEditItem(item.id)}
-              >
+            {items.map((item) => {
+              const plannerMeta = item.plannerMeta;
+              return (
                 <div
-                  className={`flex h-10 w-10 items-center justify-center rounded-full ${item.color}`}
+                  className="flex w-full flex-wrap items-start gap-3 rounded-lg p-3 transition-colors hover:bg-gray-700 sm:flex-nowrap sm:items-center"
+                  key={item.id}
                 >
-                  <span className="text-lg text-white">{item.icon}</span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium text-white">
-                    {item.name}
-                  </div>
-                  <div className="truncate text-gray-400 text-sm">
-                    {item.subtitle}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {item.plannerMeta && onOpenPlanner ? (
+                  <button
+                    className="flex w-full flex-1 flex-wrap items-start gap-3 text-left sm:flex-nowrap sm:items-center"
+                    onClick={() => onEditItem(item.id)}
+                    type="button"
+                  >
+                    <div
+                      className={`flex h-10 w-10 items-center justify-center rounded-full ${item.color}`}
+                    >
+                      <span className="text-lg text-white">{item.icon}</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-medium text-white">
+                        {item.name}
+                      </div>
+                      <div className="truncate text-gray-400 text-sm">
+                        {item.subtitle}
+                      </div>
+                    </div>
+                    <div className="mt-3 w-full font-semibold text-white sm:mt-0 sm:w-auto sm:text-right">
+                      {item.amount}
+                    </div>
+                  </button>
+                  {plannerMeta && onOpenPlanner ? (
                     <button
                       className="rounded-full border border-emerald-400/30 bg-emerald-400/10 p-2 text-emerald-200 transition hover:bg-emerald-400/20"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onOpenPlanner(item.plannerMeta!);
-                      }}
+                      onClick={() => onOpenPlanner(plannerMeta)}
                       title="Open in Property Planner"
                       type="button"
                     >
                       <Sparkles className="h-3.5 w-3.5" />
                     </button>
                   ) : null}
-                  <div className="font-semibold text-white">{item.amount}</div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="py-8 text-center text-gray-500">
@@ -546,10 +558,10 @@ function FinancialCard({
   );
 }
 
-interface GrowthSettingsSheetProps {
+type GrowthSettingsSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-}
+};
 
 function GrowthSettingsSheet({ open, onOpenChange }: GrowthSettingsSheetProps) {
   const averageReturnRate = useFinancialPlanningStore(
