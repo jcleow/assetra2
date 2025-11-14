@@ -1,15 +1,38 @@
 import { describe, expect, it, vi } from "vitest";
 
-// Mock fetch at the top level
-vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-  ok: true,
-  json: async () => ({
-    assets: [{ name: "house", currentValue: 500000 }],
-    liabilities: [{ name: "mortgage", currentBalance: 350000 }],
-    incomes: [{ source: "salary", amount: 8500 }],
-    expenses: [{ payee: "rent", amount: 2500 }]
-  })
-}));
+const mockParseIntent = vi.fn().mockResolvedValue({
+  actions: [
+    {
+      id: "intent-action-1",
+      verb: "add-item",
+      entity: "asset",
+      target: "savings",
+      amount: 500,
+      currency: "USD",
+      raw: "Add $500 to savings",
+    },
+    {
+      id: "intent-action-2",
+      verb: "remove-item",
+      entity: "liability",
+      target: "debt",
+      amount: null,
+      currency: null,
+      raw: "remove 100 from debt",
+    },
+  ],
+  raw: "Add $500 to savings and remove 100 from debt",
+});
+
+vi.mock("@/lib/intent/parser", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/intent/parser")>(
+    "@/lib/intent/parser"
+  );
+  return {
+    ...actual,
+    parseIntent: mockParseIntent,
+  };
+});
 
 import { POST } from "@/app/api/intent/route";
 
@@ -26,6 +49,9 @@ describe("POST /api/intent", () => {
       buildRequest({ message: "Add $500 to savings and remove 100 from debt" })
     );
     expect(response.status).toBe(200);
+    expect(mockParseIntent).toHaveBeenCalledWith(
+      "Add $500 to savings and remove 100 from debt"
+    );
     const payload = await response.json();
     expect(payload.actions).toHaveLength(2);
     expect(payload.intentId).toBeDefined();

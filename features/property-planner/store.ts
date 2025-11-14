@@ -23,6 +23,7 @@ interface PropertyPlannerState {
     type: PropertyPlannerType,
     scenario: PropertyPlannerScenario
   ) => Promise<void>;
+  deleteScenario: (type: PropertyPlannerType) => Promise<void>;
   setOverviewComplete: (type: PropertyPlannerType, complete: boolean) => void;
 }
 
@@ -100,6 +101,40 @@ export const usePropertyPlannerStore = create<PropertyPlannerState>(
           type: "error",
           description:
             "Unable to save your mortgage planner changes. Please try again.",
+        });
+        throw error;
+      }
+    },
+    deleteScenario: async (type) => {
+      const current = get().scenarios[type];
+      set((state) => {
+        const nextScenarios = { ...state.scenarios };
+        delete nextScenarios[type];
+        const nextLastSaved = { ...state.lastSavedAt };
+        delete nextLastSaved[type];
+        const nextOverview = { ...state.overviewComplete };
+        delete nextOverview[type];
+        return {
+          scenarios: nextScenarios,
+          lastSavedAt: nextLastSaved,
+          overviewComplete: nextOverview,
+        };
+      });
+      try {
+        if (current?.id) {
+          await financialClient.propertyPlanner.delete(current.id);
+        }
+      } catch (error) {
+        console.error("Failed to delete property planner scenario", error);
+        set((state) => ({
+          scenarios: current
+            ? { ...state.scenarios, [type]: current }
+            : state.scenarios,
+        }));
+        toast({
+          type: "error",
+          description:
+            "Unable to delete your planner scenario. Please try again.",
         });
         throw error;
       }
