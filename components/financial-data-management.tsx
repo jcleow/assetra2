@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Plus, SlidersHorizontal } from "lucide-react";
+import { Plus, SlidersHorizontal, Sparkles } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,9 @@ import {
 } from "@/lib/cpf/salary";
 import { FinancialFormModal } from "./financial-form-modal";
 import { CPFBalanceForm } from "./cpf-balance-form";
+import { parsePlannerNote } from "@/lib/property-planner/constants";
+import type { PropertyPlannerType } from "@/components/property-planner/mock-data";
+import { usePropertyPlannerModalStore } from "@/features/property-planner/modal-store";
 
 interface FinancialItem {
   id: string;
@@ -41,6 +44,10 @@ interface FinancialItem {
   amount: string;
   icon: string;
   color: string;
+  plannerMeta?: {
+    scenarioId: string;
+    scenarioType: PropertyPlannerType;
+  } | null;
 }
 
 interface CategoryConfig {
@@ -130,14 +137,23 @@ export function FinancialDataManagement() {
   const formatExpenseItems = (): FinancialItem[] => {
     return expenses
       .filter((expense) => !isCPFEmployeeContributionName(expense.payee))
-      .map((expense) => ({
-        id: expense.id,
-        name: expense.payee,
-        subtitle: `${expense.frequency} • ${expense.category || "Expense"}`,
-        amount: `$${expense.amount.toLocaleString()}`,
-        icon: "💰",
-        color: "bg-orange-500",
-      }));
+      .map((expense) => {
+        const plannerMeta = parsePlannerNote(expense.notes);
+        return {
+          id: expense.id,
+          name: expense.payee,
+          subtitle: `${expense.frequency} • ${expense.category || "Expense"}`,
+          amount: `$${expense.amount.toLocaleString()}`,
+          icon: "💰",
+          color: "bg-orange-500",
+          plannerMeta: plannerMeta
+            ? {
+                scenarioId: plannerMeta.scenarioId,
+                scenarioType: plannerMeta.scenarioType as PropertyPlannerType,
+              }
+            : null,
+        };
+      });
   };
 
   const formatAssetItems = (): FinancialItem[] => {
@@ -152,14 +168,23 @@ export function FinancialDataManagement() {
   };
 
   const formatLiabilityItems = (): FinancialItem[] => {
-    return liabilities.map((liability) => ({
-      id: liability.id,
-      name: liability.name,
-      subtitle: `${liability.category} • ${liability.interestRateApr}% APR`,
-      amount: `$${liability.currentBalance.toLocaleString()}`,
-      icon: "💳",
-      color: "bg-red-500",
-    }));
+    return liabilities.map((liability) => {
+      const plannerMeta = parsePlannerNote(liability.notes);
+      return {
+        id: liability.id,
+        name: liability.name,
+        subtitle: `${liability.category} • ${liability.interestRateApr}% APR`,
+        amount: `$${liability.currentBalance.toLocaleString()}`,
+        icon: "💳",
+        color: "bg-red-500",
+        plannerMeta: plannerMeta
+          ? {
+              scenarioId: plannerMeta.scenarioId,
+              scenarioType: plannerMeta.scenarioType as PropertyPlannerType,
+            }
+          : null,
+      };
+    });
   };
 
   // Calculate totals
@@ -260,6 +285,7 @@ export function FinancialDataManagement() {
               title={category.title}
               showCPFButton={category.title === "Assets" && !hasCPFAssets}
               onAddCPF={() => setShowCPFForm(true)}
+              onOpenPlanner={handlePlannerLink}
             />
           ))}
 
@@ -290,6 +316,7 @@ export function FinancialDataManagement() {
               onOpenSettings={category.onOpenSettings}
               title={category.title}
               showCPFButton={false}
+              onOpenPlanner={handlePlannerLink}
             />
           ))}
 
@@ -340,6 +367,12 @@ interface FinancialCardProps {
   onOpenSettings?: () => void;
   onAddCPF?: () => void;
   showCPFButton?: boolean;
+  onOpenPlanner?: (
+    meta: {
+      scenarioId: string;
+      scenarioType: PropertyPlannerType;
+    }
+  ) => void;
 }
 
 function FinancialCard({
@@ -352,6 +385,7 @@ function FinancialCard({
   onOpenSettings,
   onAddCPF,
   showCPFButton,
+  onOpenPlanner,
 }: FinancialCardProps) {
   const iconColor =
     title === "Income"
@@ -469,7 +503,22 @@ function FinancialCard({
                     {item.subtitle}
                   </div>
                 </div>
-                <div className="font-semibold text-white">{item.amount}</div>
+                <div className="flex items-center gap-2">
+                  {item.plannerMeta && onOpenPlanner ? (
+                    <button
+                      className="rounded-full border border-emerald-400/30 bg-emerald-400/10 p-2 text-emerald-200 transition hover:bg-emerald-400/20"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onOpenPlanner(item.plannerMeta!);
+                      }}
+                      title="Open in Property Planner"
+                      type="button"
+                    >
+                      <Sparkles className="h-3.5 w-3.5" />
+                    </button>
+                  ) : null}
+                  <div className="font-semibold text-white">{item.amount}</div>
+                </div>
               </div>
             ))}
           </div>
@@ -583,3 +632,13 @@ function GrowthSettingsSheet({ open, onOpenChange }: GrowthSettingsSheetProps) {
     </Sheet>
   );
 }
+  const openPlannerModal = usePropertyPlannerModalStore(
+    (state) => state.openWithType
+  );
+
+  const handlePlannerLink = (meta: {
+    scenarioId: string;
+    scenarioType: PropertyPlannerType;
+  }) => {
+    openPlannerModal(meta.scenarioType);
+  };

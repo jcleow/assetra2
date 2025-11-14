@@ -2,7 +2,7 @@
 
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { Building2, Sparkles, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   PropertyPlannerType,
@@ -10,10 +10,16 @@ import {
 } from "./mock-data";
 import { PropertyPlannerShell } from "./property-planner-shell";
 import { usePropertyPlannerStore } from "@/features/property-planner/store";
+import { usePropertyPlannerModalStore } from "@/features/property-planner/modal-store";
 
 export function PropertyPlannerLauncher() {
-  const [open, setOpen] = useState(false);
-  const [activeType, setActiveType] = useState<PropertyPlannerType>("hdb");
+  const isOpen = usePropertyPlannerModalStore((state) => state.isOpen);
+  const openModal = usePropertyPlannerModalStore((state) => state.open);
+  const closeModal = usePropertyPlannerModalStore((state) => state.close);
+  const activeType = usePropertyPlannerModalStore((state) => state.activeType);
+  const setActiveType = usePropertyPlannerModalStore(
+    (state) => state.setActiveType
+  );
   const fetchScenarios = usePropertyPlannerStore((state) => state.fetch);
 
   useEffect(() => {
@@ -24,7 +30,10 @@ export function PropertyPlannerLauncher() {
     PROPERTY_TYPES.find((type) => type.id === activeType)?.label ?? "HDB";
 
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
+    <DialogPrimitive.Root
+      open={isOpen}
+      onOpenChange={(next) => (next ? openModal() : closeModal())}
+    >
       <DialogPrimitive.Trigger asChild>
         <Button
           className="border border-white/10 bg-white/10 text-white hover:bg-white/20"

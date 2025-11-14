@@ -45,7 +45,7 @@ export function PropertyPlannerShell({
     if (!hasFetched) {
       return;
     }
-    void saveScenario({
+    void saveScenario(activeType, {
       ...scenario,
       type: activeType,
       headline: nextHeadline,

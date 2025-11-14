@@ -16,10 +16,14 @@ interface PropertyPlannerState {
   isLoading: boolean;
   hasFetched: boolean;
   error: string | null;
+  overviewComplete: Partial<Record<PropertyPlannerType, boolean>>;
+  lastSavedAt: Partial<Record<PropertyPlannerType, string>>;
   fetch: () => Promise<void>;
-  saveScenario: (scenario: PropertyPlannerScenario) => Promise<void>;
-  isOverviewComplete: boolean;
-  setOverviewComplete: (complete: boolean) => void;
+  saveScenario: (
+    type: PropertyPlannerType,
+    scenario: PropertyPlannerScenario
+  ) => Promise<void>;
+  setOverviewComplete: (type: PropertyPlannerType, complete: boolean) => void;
 }
 
 export const usePropertyPlannerStore = create<PropertyPlannerState>(
@@ -28,7 +32,8 @@ export const usePropertyPlannerStore = create<PropertyPlannerState>(
     isLoading: false,
     hasFetched: false,
     error: null,
-    isOverviewComplete: false,
+    overviewComplete: {},
+    lastSavedAt: {},
     fetch: async () => {
       if (get().isLoading || get().hasFetched) {
         return;
@@ -45,6 +50,15 @@ export const usePropertyPlannerStore = create<PropertyPlannerState>(
           scenarios: { ...state.scenarios, ...map },
           isLoading: false,
           hasFetched: true,
+          lastSavedAt: {
+            ...state.lastSavedAt,
+            ...Object.fromEntries(
+              Object.entries(map).map(([type, scenario]) => [
+                type,
+                scenario?.updatedAt ?? new Date().toISOString(),
+              ])
+            ),
+          },
         }));
       } catch (error) {
         console.error("Failed to load property planner scenarios", error);
@@ -54,29 +68,27 @@ export const usePropertyPlannerStore = create<PropertyPlannerState>(
         });
       }
     },
-    saveScenario: async (scenario) => {
-      const type = scenario.type as PropertyPlannerType;
+    saveScenario: async (type, scenario) => {
       const previous = get().scenarios[type];
       set((state) => ({
         scenarios: { ...state.scenarios, [type]: scenario },
       }));
 
       try {
-        const payload =
-          scenario.id?.length ?? 0 > 0
-            ? stripServerFields(
-                scenario
-              ) as PropertyPlannerScenarioUpdatePayload
-            : stripServerFields(
-                scenario
-              ) as PropertyPlannerScenarioCreatePayload;
+        const payload = stripServerFields(scenario);
         const saved =
           scenario.id && scenario.id.length > 0
-            ? await financialClient.propertyPlanner.update(payload)
-            : await financialClient.propertyPlanner.create(payload);
+            ? await financialClient.propertyPlanner.update(
+                payload as PropertyPlannerScenarioUpdatePayload
+              )
+            : await financialClient.propertyPlanner.create(
+                payload as PropertyPlannerScenarioCreatePayload
+              );
         set((state) => ({
           scenarios: { ...state.scenarios, [type]: saved },
+          lastSavedAt: { ...state.lastSavedAt, [type]: saved.updatedAt },
         }));
+        return saved;
       } catch (error) {
         console.error("Failed to save property planner scenario", error);
         set((state) => ({
@@ -89,9 +101,13 @@ export const usePropertyPlannerStore = create<PropertyPlannerState>(
           description:
             "Unable to save your mortgage planner changes. Please try again.",
         });
+        throw error;
       }
     },
-    setOverviewComplete: (complete) => set({ isOverviewComplete: complete }),
+    setOverviewComplete: (type, complete) =>
+      set((state) => ({
+        overviewComplete: { ...state.overviewComplete, [type]: complete },
+      })),
   })
 );
 
