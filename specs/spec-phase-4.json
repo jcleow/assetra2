@@ -1,0 +1,442 @@
+{
+  "title": "ASSETRA PHASE 4: CPF FINANCIAL PLANNING MODULE",
+  "description": "Comprehensive CPF planning as a separate module integrating with existing financial planning system",
+  "userPersona": {
+    "name": "Alex Chen",
+    "age": 32,
+    "location": "Singapore",
+    "profile": "Mid-level operations manager earning S$120k annually with CPF obligations",
+    "keyNeeds": [
+      "CPF contribution tracking and optimization",
+      "Housing affordability with CPF usage",
+      "Retirement planning with CPF LIFE projections",
+      "Tax relief optimization through CPF top-ups",
+      "Integration with existing property and financial planning"
+    ]
+  },
+  "implementationPhases": [
+    {
+      "phase": "Phase 1: Core CPF Infrastructure",
+      "duration": "3-4 weeks",
+      "tickets": [
+        {
+          "id": "CPF-001",
+          "title": "CPF Account Models & Types",
+          "description": "Create CPF-specific schemas in lib/financial/types.ts",
+          "tasks": [
+            "CPF account types (OA, SA, MA) with growth rates and contribution limits",
+            "CPF contribution calculator with age-based rates",
+            "CPF withdrawal rules and limits",
+            "CPF scenario input validation schemas"
+          ],
+          "acceptanceCriteria": [
+            "All CPF account types properly typed with Zod schemas",
+            "Age-based contribution rates accurately implemented",
+            "Withdrawal limits and rules enforced",
+            "Type safety maintained across CPF calculations"
+          ]
+        },
+        {
+          "id": "CPF-002",
+          "title": "CPF Backend Repository Layer",
+          "description": "Extend internal/repository/repository.go with CPF methods",
+          "tasks": [
+            "Add CPF tables to database schema (internal/migrations/sql/)",
+            "Implement CRUD operations for CPF scenarios and projections",
+            "Create CPF calculation service methods",
+            "Add database indexes for CPF queries"
+          ],
+          "acceptanceCriteria": [
+            "CPF scenarios can be stored and retrieved from database",
+            "Migration scripts execute successfully",
+            "Repository methods follow existing patterns",
+            "Database performance optimized for CPF calculations"
+          ]
+        },
+        {
+          "id": "CPF-003",
+          "title": "CPF API Endpoints",
+          "description": "Create app/api/cpf-planner/ route handlers",
+          "tasks": [
+            "Implement GET/POST/PUT endpoints for CPF scenarios",
+            "Add CPF calculation service endpoints",
+            "Create scenario comparison endpoints",
+            "Add error handling and validation"
+          ],
+          "acceptanceCriteria": [
+            "RESTful API endpoints follow existing patterns",
+            "Proper error handling and HTTP status codes",
+            "Request/response validation implemented",
+            "API documentation available"
+          ]
+        },
+        {
+          "id": "CPF-004",
+          "title": "CPF Planning Store",
+          "description": "Create features/cpf-planner/store.ts following property-planner pattern",
+          "tasks": [
+            "State management for CPF scenarios and calculations",
+            "Integration with financial client",
+            "Optimistic updates and error handling",
+            "Cache management for CPF data"
+          ],
+          "acceptanceCriteria": [
+            "Zustand store follows established patterns",
+            "State updates are reactive and consistent",
+            "Error states properly managed",
+            "Performance optimized with caching"
+          ]
+        },
+        {
+          "id": "CPF-005",
+          "title": "CPF Calculator Components",
+          "description": "Base CPF calculator component infrastructure",
+          "tasks": [
+            "Base CPF calculator component",
+            "CPF contribution input forms",
+            "Account balance displays with projections",
+            "Mobile-responsive design"
+          ],
+          "acceptanceCriteria": [
+            "Components follow existing design system",
+            "Form validation and user feedback",
+            "Real-time calculation updates",
+            "Accessible and mobile-friendly"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "Phase 2: CPF Scenarios & Planning",
+      "duration": "4-5 weeks",
+      "tickets": [
+        {
+          "id": "CPF-006",
+          "title": "Housing CPF Usage Calculator",
+          "description": "CPF OA usage for property transactions",
+          "tasks": [
+            "CPF OA usage for property down payment calculations",
+            "Maximum CPF usage limits (120% property value)",
+            "Monthly CPF mortgage payments calculator",
+            "Accrued interest calculations on CPF usage"
+          ],
+          "acceptanceCriteria": [
+            "Accurate CPF usage calculations for housing",
+            "Proper handling of CPF limits and restrictions",
+            "Accrued interest properly calculated and displayed",
+            "Integration with existing property planner"
+          ]
+        },
+        {
+          "id": "CPF-007",
+          "title": "Retirement CPF Projections",
+          "description": "CPF LIFE and retirement adequacy calculations",
+          "tasks": [
+            "CPF LIFE payout calculator with different schemes",
+            "Basic vs Full vs Enhanced Retirement Sum calculations",
+            "CPF SA top-up tax benefits calculator",
+            "Retirement adequacy assessment tools"
+          ],
+          "acceptanceCriteria": [
+            "CPF LIFE payouts calculated accurately",
+            "Retirement sum options properly presented",
+            "Tax benefits correctly computed",
+            "Retirement readiness score provided"
+          ]
+        },
+        {
+          "id": "CPF-008",
+          "title": "CPF Top-up Optimizer",
+          "description": "Tax relief optimization for CPF contributions",
+          "tasks": [
+            "Tax relief optimization for CPF SA top-ups",
+            "Cash vs CPF allocation strategies",
+            "Annual top-up limits and benefits calculator",
+            "Multi-year top-up strategy planning"
+          ],
+          "acceptanceCriteria": [
+            "Optimal top-up amounts calculated",
+            "Tax savings properly quantified",
+            "Multi-year strategies presented",
+            "Trade-offs clearly explained"
+          ]
+        },
+        {
+          "id": "CPF-009",
+          "title": "Multi-Scenario CPF Planning",
+          "description": "Generate and compare multiple CPF strategies",
+          "tasks": [
+            "Conservative vs aggressive CPF usage strategies",
+            "Housing vs retirement fund allocation scenarios",
+            "Early retirement planning with CPF",
+            "Scenario comparison dashboard"
+          ],
+          "acceptanceCriteria": [
+            "Multiple scenarios generated automatically",
+            "Clear comparison between strategies",
+            "Visual representation of trade-offs",
+            "Actionable recommendations provided"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "Phase 3: Integration & Advanced Features",
+      "duration": "3-4 weeks",
+      "tickets": [
+        {
+          "id": "CPF-010",
+          "title": "Property-CPF Integration",
+          "description": "Connect CPF calculator with existing property planner",
+          "tasks": [
+            "Unified housing affordability with CPF considerations",
+            "Cross-module data sharing",
+            "Enhanced mortgage calculations with CPF usage",
+            "Real-time updates between modules"
+          ],
+          "acceptanceCriteria": [
+            "Property planner reflects CPF usage accurately",
+            "Data consistency maintained across modules",
+            "User experience seamless between features",
+            "Performance impact minimized"
+          ]
+        },
+        {
+          "id": "CPF-011",
+          "title": "Life Event CPF Planning",
+          "description": "CPF planning for major life events",
+          "tasks": [
+            "Marriage impact on CPF planning and joint scenarios",
+            "Children's education funding with CPF considerations",
+            "Parent support and CPF withdrawal planning",
+            "Healthcare cost projections with Medisave"
+          ],
+          "acceptanceCriteria": [
+            "Life events properly modeled in CPF projections",
+            "Joint planning scenarios for couples",
+            "Education and healthcare costs integrated",
+            "Family financial goals coordinated"
+          ]
+        },
+        {
+          "id": "CPF-012",
+          "title": "CPF Investment Scheme (CPFIS) Planning",
+          "description": "Advanced CPF investment options",
+          "tasks": [
+            "CPFIS investment allocation calculator",
+            "Risk-return analysis for CPF investments",
+            "OA vs SA investment strategies",
+            "Investment performance tracking"
+          ],
+          "acceptanceCriteria": [
+            "CPFIS options properly presented",
+            "Risk analysis tools available",
+            "Investment strategies compared",
+            "Performance tracking integrated"
+          ]
+        },
+        {
+          "id": "CPF-013",
+          "title": "Healthcare CPF Planning",
+          "description": "Medisave and healthcare cost planning",
+          "tasks": [
+            "Medisave usage planning and projections",
+            "Insurance integration with Medisave",
+            "Healthcare cost inflation modeling",
+            "Critical illness and long-term care planning"
+          ],
+          "acceptanceCriteria": [
+            "Medisave projections accurate",
+            "Healthcare costs properly modeled",
+            "Insurance gaps identified",
+            "Long-term care scenarios planned"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "Phase 4: UI/UX & Optimization",
+      "duration": "2-3 weeks",
+      "tickets": [
+        {
+          "id": "CPF-014",
+          "title": "CPF Dashboard Components",
+          "description": "Comprehensive CPF overview interface",
+          "tasks": [
+            "CPF overview dashboard with key metrics",
+            "Visual projections and interactive charts",
+            "Scenario comparison interface",
+            "Progress tracking and milestone indicators"
+          ],
+          "acceptanceCriteria": [
+            "Dashboard provides clear CPF overview",
+            "Charts are interactive and informative",
+            "Scenarios easily compared side-by-side",
+            "Progress clearly visualized"
+          ]
+        },
+        {
+          "id": "CPF-015",
+          "title": "Mobile-Responsive CPF Interface",
+          "description": "Optimize CPF features for mobile devices",
+          "tasks": [
+            "Responsive design for CPF calculator",
+            "Touch-friendly input controls",
+            "Progressive disclosure for complex calculations",
+            "Mobile-optimized charts and visualizations"
+          ],
+          "acceptanceCriteria": [
+            "Full functionality available on mobile",
+            "Intuitive touch interactions",
+            "Performance optimized for mobile",
+            "Visual hierarchy maintained"
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "Phase 5: Testing & Documentation",
+      "duration": "1-2 weeks",
+      "tickets": [
+        {
+          "id": "CPF-016",
+          "title": "CPF Calculator Testing",
+          "description": "Comprehensive testing suite for CPF features",
+          "tasks": [
+            "Unit tests for CPF calculation logic",
+            "Integration tests for API endpoints",
+            "E2E tests for user workflows",
+            "Performance testing for complex calculations"
+          ],
+          "acceptanceCriteria": [
+            "95%+ test coverage for CPF calculations",
+            "All API endpoints properly tested",
+            "Critical user workflows covered by E2E tests",
+            "Performance benchmarks met"
+          ]
+        },
+        {
+          "id": "CPF-017",
+          "title": "CPF Planning Documentation",
+          "description": "User guides and technical documentation",
+          "tasks": [
+            "User guides for CPF features",
+            "API documentation for developers",
+            "Calculation methodology documentation",
+            "Troubleshooting and FAQ content"
+          ],
+          "acceptanceCriteria": [
+            "Complete user documentation available",
+            "API documentation accurate and up-to-date",
+            "Calculation methods clearly explained",
+            "Common issues documented with solutions"
+          ]
+        }
+      ]
+    }
+  ],
+  "technicalArchitecture": {
+    "moduleStructure": {
+      "features/cpf-planner/": [
+        "store.ts - Zustand store for CPF state management",
+        "types.ts - CPF-specific TypeScript types",
+        "calculations.ts - Core CPF calculation logic",
+        "constants.ts - CPF rates, limits, and constants",
+        "hooks.ts - React hooks for CPF functionality"
+      ],
+      "components/cpf-planner/": [
+        "cpf-dashboard.tsx - Main CPF overview dashboard",
+        "cpf-calculator.tsx - Interactive CPF calculator",
+        "cpf-scenarios.tsx - Scenario planning interface",
+        "cpf-projections.tsx - Timeline projections display",
+        "cpf-insights.tsx - Recommendations and insights"
+      ],
+      "app/api/cpf-planner/": [
+        "route.ts - Main CRUD endpoints for CPF scenarios",
+        "calculate/route.ts - CPF calculation endpoints",
+        "scenarios/route.ts - Scenario management",
+        "projections/route.ts - Projection calculations"
+      ]
+    },
+    "keyDependencies": [
+      "Extends existing lib/financial/client.ts and types.ts",
+      "Integrates with property-planner for housing calculations",
+      "Uses existing asset/liability system for CPF accounts",
+      "Leverages current database and API patterns"
+    ],
+    "dataModels": {
+      "cpfAccountTypes": ["OA", "SA", "MA"],
+      "contributionRates": "Age-based employee/employer rates",
+      "interestRates": "2.5% OA, 4% SA/MA",
+      "limits": "Wage ceilings, retirement sums, top-up limits",
+      "scenarios": "Conservative, balanced, aggressive strategies"
+    }
+  },
+  "integrationPoints": {
+    "propertyPlanner": {
+      "description": "CPF usage calculations for property purchases",
+      "features": [
+        "Down payment calculations with CPF OA",
+        "Monthly payment affordability with CPF",
+        "Accrued interest tracking on CPF usage",
+        "Housing vs retirement trade-off analysis"
+      ]
+    },
+    "assetTracking": {
+      "description": "CPF accounts as part of overall asset portfolio",
+      "features": [
+        "CPF balances in net worth calculations",
+        "Retirement asset allocation optimization",
+        "Performance tracking vs other investments",
+        "Tax-advantaged account prioritization"
+      ]
+    },
+    "cashFlow": {
+      "description": "CPF contributions in monthly cash flow planning",
+      "features": [
+        "Take-home pay calculations after CPF",
+        "Contribution limits and caps",
+        "Employer contribution tracking",
+        "Tax relief from CPF top-ups"
+      ]
+    }
+  },
+  "userJourneyMapping": {
+    "newUser": [
+      "Enter current CPF balances and monthly income",
+      "Set retirement goals and target age",
+      "Generate multiple planning scenarios",
+      "Compare conservative vs aggressive strategies",
+      "Make informed decisions on CPF usage"
+    ],
+    "existingUser": [
+      "Update CPF balances and income changes",
+      "Adjust scenarios based on life events",
+      "Track progress toward retirement goals",
+      "Optimize tax relief through strategic top-ups",
+      "Coordinate with property and investment planning"
+    ],
+    "advancedUser": [
+      "Model complex family planning scenarios",
+      "Optimize CPFIS investment allocations",
+      "Plan for healthcare and long-term care costs",
+      "Coordinate spouse/partner CPF planning",
+      "Stress-test scenarios under different economic conditions"
+    ]
+  },
+  "successMetrics": [
+    "Time to first complete CPF scenario: < 15 minutes",
+    "User confidence in CPF decisions: > 80% survey score",
+    "CPF calculation accuracy: > 99.5% vs manual calculations",
+    "Monthly active CPF planning sessions: > 3 per user",
+    "Recommendation acceptance rate: > 60%",
+    "Integration usage (property + CPF): > 40% of users"
+  ],
+  "complianceRequirements": [
+    "CPF Board rate accuracy and updates",
+    "MAS regulatory compliance for financial advice",
+    "Data privacy for sensitive financial information",
+    "Calculation methodology transparency",
+    "Disclaimer for planning assumptions and projections"
+  ]
+}

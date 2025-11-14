@@ -70,7 +70,7 @@
       "difficulty": "medium",
       "tags": ["property", "backend", "frontend"],
       "id": "T30B-FE-BE-PROPERTY-SAVE-ACTIONS",
-      "status": "todo"
+      "status": "done"
     },
     {
       "title": "Chat-Controlled Property Planner CRUD",
@@ -98,3 +98,4 @@
     }
   ]
 }
+
