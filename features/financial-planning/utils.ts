@@ -1,4 +1,4 @@
-import type { FinancialPlanPayload } from "@/app/api/financial-plan/route";
+import type { FinancialPlanPayload } from "@/lib/financial/plan-schema";
 import type { NetWorthTimelinePoint, ProjectionSettings } from "./store";
 
 export interface CurrencyFormatOptions {

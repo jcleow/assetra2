@@ -1,6 +1,6 @@
 "use client";
 
-import type { FinancialPlanPayload } from "@/app/api/financial-plan/route";
+import type { FinancialPlanPayload } from "@/lib/financial/plan-schema";
 import { buildMortgageScenario } from "@/components/property-planner/calculations";
 import {
   PROPERTY_PLANNER_MOCKS,

@@ -1,120 +1,16 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
+
 import { FinancialClient } from "@/lib/financial/client";
+import {
+  financialPlanSchema,
+  type FinancialPlanPayload,
+} from "@/lib/financial/plan-schema";
+import { buildDefaultFinancialPlan } from "@/lib/financial/default-plan";
 
 // Create server-side client that calls Go service directly
 const serverFinancialClient = new FinancialClient({
   baseUrl: process.env.GO_SERVICE_URL || "http://localhost:8080",
 });
-
-const financialPlanSchema = z.object({
-  assets: z.array(z.any()),
-  liabilities: z.array(z.any()),
-  incomes: z.array(z.any()),
-  expenses: z.array(z.any()),
-  cashflow: z.object({
-    summary: z.object({
-      monthlyIncome: z.number(),
-      monthlyExpenses: z.number(),
-      netMonthly: z.number(),
-    }),
-    breakdown: z.any(),
-  }),
-  summary: z.object({
-    totalAssets: z.number(),
-    totalLiabilities: z.number(),
-    netWorth: z.number(),
-    monthlyIncome: z.number(),
-    monthlyExpenses: z.number(),
-    monthlySavings: z.number(),
-    savingsRate: z.number(),
-  }),
-  lastUpdated: z.string(),
-});
-
-export type FinancialPlanPayload = z.infer<typeof financialPlanSchema>;
-
-const MOCK_DATA: FinancialPlanPayload = {
-  assets: [
-    {
-      id: "mock-asset-1",
-      name: "Investment Portfolio",
-      category: "brokerage",
-      currentValue: 75_000,
-      annualGrowthRate: 0.07,
-      notes: "401k rollover",
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: "mock-asset-2",
-      name: "Emergency Fund",
-      category: "cash",
-      currentValue: 25_000,
-      annualGrowthRate: 0.02,
-      notes: "High-yield savings",
-      updatedAt: new Date().toISOString(),
-    },
-  ],
-  liabilities: [
-    {
-      id: "mock-liability-1",
-      name: "Mortgage",
-      category: "mortgage",
-      currentBalance: 350_000,
-      interestRateApr: 0.035,
-      minimumPayment: 2200,
-      notes: "30-year fixed",
-      updatedAt: new Date().toISOString(),
-    },
-  ],
-  incomes: [
-    {
-      id: "mock-income-1",
-      source: "Software Engineering",
-      amount: 8500,
-      frequency: "monthly",
-      startDate: new Date().toISOString(),
-      category: "employment",
-      updatedAt: new Date().toISOString(),
-    },
-  ],
-  expenses: [
-    {
-      id: "mock-expense-1",
-      payee: "Rent",
-      amount: 2000,
-      frequency: "monthly",
-      category: "housing",
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: "mock-expense-2",
-      payee: "Groceries",
-      amount: 600,
-      frequency: "monthly",
-      category: "food",
-      updatedAt: new Date().toISOString(),
-    },
-  ],
-  cashflow: {
-    summary: {
-      monthlyIncome: 8500,
-      monthlyExpenses: 2600,
-      netMonthly: 5900,
-    },
-    breakdown: {},
-  },
-  summary: {
-    totalAssets: 100_000,
-    totalLiabilities: 350_000,
-    netWorth: 250_000,
-    monthlyIncome: 8500,
-    monthlyExpenses: 2600,
-    monthlySavings: 5900,
-    savingsRate: 0.694,
-  },
-  lastUpdated: new Date().toISOString(),
-};
 
 type CacheEntry = {
   data: FinancialPlanPayload;
@@ -202,13 +98,9 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    let data: FinancialPlanPayload;
-
-    if (mockMode) {
-      data = MOCK_DATA;
-    } else {
-      data = await aggregateFinancialData();
-    }
+    const data = mockMode
+      ? financialPlanSchema.parse(buildDefaultFinancialPlan())
+      : await aggregateFinancialData();
 
     cache.set(cacheKey, {
       data,
@@ -261,14 +153,24 @@ export function POST(request: NextRequest) {
     cache.delete(cacheKey);
 
     return NextResponse.json(
-      { message: "Cache invalidated successfully" },
-      { status: 200 }
+      {
+        message: "Financial plan cache invalidated. Fresh data will be loaded on next request.",
+      },
+      {
+        status: 202,
+        headers: {
+          "X-Cache-Action": "INVALIDATED",
+        },
+      }
     );
   } catch (error) {
-    console.error("Cache invalidation error:", error);
+    console.error("Failed to invalidate cache:", error);
     return NextResponse.json(
-      { error: "Failed to invalidate cache" },
+      {
+        error: "Failed to invalidate financial plan cache",
+      },
       { status: 500 }
     );
   }
 }
+
