@@ -860,7 +860,7 @@ function MortgageOverview({
         ))}
       </div>
 
-      <div className="mt-6 flex gap-3">
+      <div className="mt-6 flex justify-end gap-3">
         <button
           className="rounded-full border border-white/20 px-4 py-2 text-sm text-gray-200"
           onClick={onEdit}
