@@ -899,6 +899,39 @@ function InterestSection({
   onFixedRateChange,
   onFloatingRateChange,
 }: InterestSectionProps) {
+  const cards = [
+    {
+      label: "Fixed Window",
+      helper: "Bank committed period",
+      value: fixedYears,
+      min: 1,
+      max: 10,
+      step: 1,
+      suffix: "years",
+      onChange: onFixedYearsChange,
+    },
+    {
+      label: "Current Rate",
+      helper: "Applied to amortisation",
+      value: fixedRate,
+      min: 0,
+      max: 6,
+      step: 0.1,
+      suffix: "%",
+      onChange: onFixedRateChange,
+    },
+    {
+      label: "Next Expected Rate",
+      helper: "Post lock-in assumption",
+      value: floatingRate,
+      min: 0,
+      max: 7,
+      step: 0.1,
+      suffix: "%",
+      onChange: onFloatingRateChange,
+    },
+  ];
+
   return (
     <div className="space-y-4">
       <header>
@@ -909,75 +942,26 @@ function InterestSection({
       </header>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <label className="text-sm font-medium text-gray-300">
-          Fixed Period (Years)
-          <input
-            className="mt-1 w-full rounded-2xl border border-white/15 bg-gray-900 px-4 py-2 text-white focus:border-blue-400 focus:outline-none"
-            max={10}
-            min={1}
-            onChange={(event) =>
-              onFixedYearsChange(Number(event.target.value) || 1)
-            }
-            type="number"
-            value={fixedYears}
-          />
-        </label>
-        <label className="text-sm font-medium text-gray-300">
-          Fixed Rate (% p.a.)
-          <input
-            className="mt-1 w-full rounded-2xl border border-white/15 bg-gray-900 px-4 py-2 text-white focus:border-blue-400 focus:outline-none"
-            max={6}
-            min={1}
-            onChange={(event) =>
-              onFixedRateChange(Number(event.target.value) || 0)
-            }
-            step={0.1}
-            type="number"
-            value={fixedRate}
-          />
-        </label>
-        <label className="text-sm font-medium text-gray-300">
-          Floating Rate (% p.a.)
-          <input
-            className="mt-1 w-full rounded-2xl border border-white/15 bg-gray-900 px-4 py-2 text-white focus:border-blue-400 focus:outline-none"
-            max={7}
-            min={1}
-            onChange={(event) =>
-              onFloatingRateChange(Number(event.target.value) || 0)
-            }
-            step={0.1}
-            type="number"
-            value={floatingRate}
-          />
-        </label>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        {[
-          {
-            label: "Fixed Window",
-            helper: "Bank committed period",
-            value: `${fixedYears} years`,
-          },
-          {
-            label: "Current Rate",
-            helper: "Applied to amortisation",
-            value: `${fixedRate.toFixed(2)}%`,
-          },
-          {
-            label: "Next Expected Rate",
-            helper: "Post lock-in assumption",
-            value: `${floatingRate.toFixed(2)}%`,
-          },
-        ].map((card) => (
+        {cards.map((card) => (
           <div
-            className="rounded-2xl border border-white/10 bg-white/5 p-4"
+            className="space-y-2 rounded-2xl border border-white/10 bg-white/5 p-4"
             key={card.label}
           >
             <p className="text-xs uppercase text-gray-400">{card.label}</p>
-            <p className="mt-2 text-xl font-semibold text-white">
-              {card.value}
-            </p>
+            <div className="flex items-baseline gap-2">
+              <input
+                className="w-full bg-transparent text-2xl font-semibold text-white focus:outline-none"
+                type="number"
+                value={card.value}
+                min={card.min}
+                max={card.max}
+                step={card.step}
+                onChange={(event) =>
+                  card.onChange(Number(event.target.value) || 0)
+                }
+              />
+              <span className="text-sm text-gray-400">{card.suffix}</span>
+            </div>
             <p className="text-xs text-gray-400">{card.helper}</p>
           </div>
         ))}
@@ -1069,8 +1053,7 @@ function IncomeSection({
             : "border-amber-400/40 bg-amber-500/10"
         }`}
       >
-        <div className="flex items-center gap-3">
-          <Percent className="h-5 w-5 text-white" />
+        <div className="flex items-center gap-3 pl-1">
           <div>
             <p className="text-xs uppercase tracking-wide text-white/70">
               Estimated MSR
