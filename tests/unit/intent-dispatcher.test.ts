@@ -254,7 +254,7 @@ describe("dispatchIntentActions", () => {
         verb: "update" as const,
         entity: "asset" as const,
         target: "stocks",
-        amount: 15000,
+        amount: 15_000,
         currency: "USD",
         raw: "Add 5k to stocks",
       },

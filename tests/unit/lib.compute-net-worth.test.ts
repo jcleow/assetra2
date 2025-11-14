@@ -162,13 +162,13 @@ describe("computeNetWorth", () => {
       startYear: 2024,
     });
 
-    timeline.forEach((point) => {
+    for (const point of timeline) {
       const reconstructed = Number(
         (point.assetsTotal - point.liabilitiesTotal).toFixed(2)
       );
       expect(Math.abs(point.netWorth - reconstructed)).toBeLessThanOrEqual(
         0.01
       );
-    });
+    }
   });
 });

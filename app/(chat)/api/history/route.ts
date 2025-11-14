@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
  * We don't have user-specific chat persistence yet, so just return an empty array
  * and skip hitting the database. This keeps the UI happy without requiring auth.
  */
-export async function GET(request: NextRequest) {
+export function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const limit = Number.parseInt(searchParams.get("limit") || "10", 10);
   const startingAfter = searchParams.get("starting_after");
@@ -29,6 +29,6 @@ export async function GET(request: NextRequest) {
   });
 }
 
-export async function DELETE() {
+export function DELETE() {
   return Response.json({ deleted: 0 }, { status: 200 });
 }

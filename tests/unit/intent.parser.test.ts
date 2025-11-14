@@ -1,15 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock fetch at the top level
-vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
-  ok: true,
-  json: async () => ({
-    assets: [{ name: "house", currentValue: 500000 }],
-    liabilities: [{ name: "mortgage", currentBalance: 350000 }],
-    incomes: [{ source: "salary", amount: 8500 }],
-    expenses: [{ payee: "rent", amount: 2500 }]
+vi.stubGlobal(
+  "fetch",
+  vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      assets: [{ name: "house", currentValue: 500_000 }],
+      liabilities: [{ name: "mortgage", currentBalance: 350_000 }],
+      incomes: [{ source: "salary", amount: 8500 }],
+      expenses: [{ payee: "rent", amount: 2500 }],
+    }),
   })
-}));
+);
 
 vi.mock("@/lib/intent/llm", () => ({
   inferIntentActions: vi.fn(),
