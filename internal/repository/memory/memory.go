@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"strings"
 	"sync"
 	"time"
 
@@ -14,18 +15,20 @@ import (
 // NewRepository wires an in-memory repository populated with optional seed data.
 func NewRepository(seed finance.SeedData) repository.Repository {
 	return &inMemoryRepository{
-		assets:      newAssetStore(seed.Assets),
-		liabilities: newLiabilityStore(seed.Liabilities),
-		incomes:     newIncomeStore(seed.Incomes),
-		expenses:    newExpenseStore(seed.Expenses),
+		assets:            newAssetStore(seed.Assets),
+		liabilities:       newLiabilityStore(seed.Liabilities),
+		incomes:           newIncomeStore(seed.Incomes),
+		expenses:          newExpenseStore(seed.Expenses),
+		propertyScenarios: newPropertyScenarioStore(seed.PropertyScenarios),
 	}
 }
 
 type inMemoryRepository struct {
-	assets      *assetStore
-	liabilities *liabilityStore
-	incomes     *incomeStore
-	expenses    *expenseStore
+	assets            *assetStore
+	liabilities       *liabilityStore
+	incomes           *incomeStore
+	expenses          *expenseStore
+	propertyScenarios *propertyScenarioStore
 }
 
 func (r *inMemoryRepository) Assets() repository.AssetStore {
@@ -42,6 +45,10 @@ func (r *inMemoryRepository) Incomes() repository.IncomeStore {
 
 func (r *inMemoryRepository) Expenses() repository.ExpenseStore {
 	return r.expenses
+}
+
+func (r *inMemoryRepository) PropertyPlanner() repository.PropertyPlannerStore {
+	return r.propertyScenarios
 }
 
 // --- asset store ---
@@ -354,6 +361,105 @@ func (s *expenseStore) Update(_ context.Context, expense finance.Expense) (finan
 }
 
 func (s *expenseStore) Delete(_ context.Context, id string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, ok := s.items[id]; !ok {
+		return repository.ErrNotFound
+	}
+	delete(s.items, id)
+	return nil
+}
+
+// --- property planner store ---
+
+type propertyScenarioStore struct {
+	mu    sync.RWMutex
+	items map[string]finance.PropertyPlannerScenario
+}
+
+func newPropertyScenarioStore(seed []finance.PropertyPlannerScenario) *propertyScenarioStore {
+	store := &propertyScenarioStore{
+		items: make(map[string]finance.PropertyPlannerScenario),
+	}
+	for _, scenario := range seed {
+		if scenario.ID == "" {
+			scenario.ID = ensureID("")
+		}
+		store.items[scenario.ID] = scenario
+	}
+	return store
+}
+
+func (s *propertyScenarioStore) List(_ context.Context) ([]finance.PropertyPlannerScenario, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	out := make([]finance.PropertyPlannerScenario, 0, len(s.items))
+	for _, scenario := range s.items {
+		out = append(out, scenario)
+	}
+	return out, nil
+}
+
+func (s *propertyScenarioStore) Get(_ context.Context, id string) (finance.PropertyPlannerScenario, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	scenario, ok := s.items[id]
+	if !ok {
+		return finance.PropertyPlannerScenario{}, repository.ErrNotFound
+	}
+	return scenario, nil
+}
+
+func (s *propertyScenarioStore) GetByType(_ context.Context, scenarioType string) (finance.PropertyPlannerScenario, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	for _, scenario := range s.items {
+		if strings.EqualFold(scenario.Type, scenarioType) {
+			return scenario, nil
+		}
+	}
+	return finance.PropertyPlannerScenario{}, repository.ErrNotFound
+}
+
+func (s *propertyScenarioStore) Create(_ context.Context, scenario finance.PropertyPlannerScenario) (finance.PropertyPlannerScenario, error) {
+	if scenario.Type == "" || scenario.Headline == "" {
+		return finance.PropertyPlannerScenario{}, repository.ErrInvalidInput
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	scenario.ID = ensureID(scenario.ID)
+	if scenario.UpdatedAt.IsZero() {
+		scenario.UpdatedAt = time.Now().UTC()
+	}
+	s.items[scenario.ID] = scenario
+	return scenario, nil
+}
+
+func (s *propertyScenarioStore) Update(_ context.Context, scenario finance.PropertyPlannerScenario) (finance.PropertyPlannerScenario, error) {
+	if scenario.ID == "" {
+		return finance.PropertyPlannerScenario{}, repository.ErrInvalidInput
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if _, ok := s.items[scenario.ID]; !ok {
+		return finance.PropertyPlannerScenario{}, repository.ErrNotFound
+	}
+	if scenario.UpdatedAt.IsZero() {
+		scenario.UpdatedAt = time.Now().UTC()
+	}
+	s.items[scenario.ID] = scenario
+	return scenario, nil
+}
+
+func (s *propertyScenarioStore) Delete(_ context.Context, id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

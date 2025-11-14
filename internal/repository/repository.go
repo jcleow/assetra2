@@ -50,10 +50,21 @@ type ExpenseStore interface {
 	Delete(ctx context.Context, id string) error
 }
 
+// PropertyPlannerStore defines CRUD operations for property planner scenarios.
+type PropertyPlannerStore interface {
+	List(ctx context.Context) ([]finance.PropertyPlannerScenario, error)
+	Get(ctx context.Context, id string) (finance.PropertyPlannerScenario, error)
+	GetByType(ctx context.Context, scenarioType string) (finance.PropertyPlannerScenario, error)
+	Create(ctx context.Context, scenario finance.PropertyPlannerScenario) (finance.PropertyPlannerScenario, error)
+	Update(ctx context.Context, scenario finance.PropertyPlannerScenario) (finance.PropertyPlannerScenario, error)
+	Delete(ctx context.Context, id string) error
+}
+
 // Repository aggregates typed stores for easier dependency injection.
 type Repository interface {
 	Assets() AssetStore
 	Liabilities() LiabilityStore
 	Incomes() IncomeStore
 	Expenses() ExpenseStore
+	PropertyPlanner() PropertyPlannerStore
 }

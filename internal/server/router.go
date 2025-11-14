@@ -51,6 +51,8 @@ func newRouter(logger *slog.Logger, repo repository.Repository, hub *events.Hub)
 	mux.HandleFunc("/cashflow/expenses", rt.handleExpensesCollection)
 	mux.HandleFunc("/cashflow/expenses/", rt.handleExpenseItem)
 	mux.HandleFunc("/events", rt.handleEventStream)
+	mux.HandleFunc("/property-planner/scenarios", rt.handlePropertyScenariosCollection)
+	mux.HandleFunc("/property-planner/scenarios/", rt.handlePropertyScenarioItem)
 
 	handler := requestIDMiddleware(loggingMiddleware(corsMiddleware(mux), logger))
 	return handler
@@ -61,7 +63,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (rt *router) handleEventStream(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("handling new connections!");
+	fmt.Println("handling new connections!")
 	if r.Method != http.MethodGet {
 		methodNotAllowed(w)
 		return
@@ -486,6 +488,36 @@ func (rt *router) handleExpenseItem(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (rt *router) handlePropertyScenariosCollection(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		rt.listPropertyScenarios(w, r)
+	case http.MethodPost:
+		rt.createPropertyScenario(w, r)
+	default:
+		methodNotAllowed(w)
+	}
+}
+
+func (rt *router) handlePropertyScenarioItem(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimPrefix(r.URL.Path, "/property-planner/scenarios/")
+	if id == "" {
+		notFound(w)
+		return
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		rt.getPropertyScenario(w, r, id)
+	case http.MethodPut, http.MethodPatch:
+		rt.updatePropertyScenario(w, r, id)
+	case http.MethodDelete:
+		rt.deletePropertyScenario(w, r, id)
+	default:
+		methodNotAllowed(w)
+	}
+}
+
 func (rt *router) listExpenses(w http.ResponseWriter, r *http.Request) {
 	items, err := rt.repo.Expenses().List(r.Context())
 	if err != nil {
@@ -556,6 +588,76 @@ func (rt *router) deleteExpense(w http.ResponseWriter, r *http.Request, id strin
 	rt.publishChange("expense", "delete", id, map[string]string{"id": id})
 }
 
+func (rt *router) listPropertyScenarios(w http.ResponseWriter, r *http.Request) {
+	items, err := rt.repo.PropertyPlanner().List(r.Context())
+	if err != nil {
+		internalError(w)
+		return
+	}
+	writeJSON(w, http.StatusOK, items)
+}
+
+func (rt *router) getPropertyScenario(w http.ResponseWriter, r *http.Request, id string) {
+	item, err := rt.repo.PropertyPlanner().Get(r.Context(), id)
+	if err != nil {
+		handleRepoError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, item)
+}
+
+func (rt *router) createPropertyScenario(w http.ResponseWriter, r *http.Request) {
+	var payload propertyScenarioPayload
+	if err := decodeJSONBody(w, r, &payload); err != nil {
+		badRequest(w, err)
+		return
+	}
+	if err := payload.validate(); err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	entity := payload.toScenario()
+	created, err := rt.repo.PropertyPlanner().Create(r.Context(), entity)
+	if err != nil {
+		handleRepoError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, created)
+	rt.publishChange("propertyScenario", "create", created.ID, created)
+}
+
+func (rt *router) updatePropertyScenario(w http.ResponseWriter, r *http.Request, id string) {
+	var payload propertyScenarioPayload
+	if err := decodeJSONBody(w, r, &payload); err != nil {
+		badRequest(w, err)
+		return
+	}
+	payload.ID = id
+	if err := payload.validate(); err != nil {
+		badRequest(w, err)
+		return
+	}
+
+	entity := payload.toScenario()
+	updated, err := rt.repo.PropertyPlanner().Update(r.Context(), entity)
+	if err != nil {
+		handleRepoError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, updated)
+	rt.publishChange("propertyScenario", "update", updated.ID, updated)
+}
+
+func (rt *router) deletePropertyScenario(w http.ResponseWriter, r *http.Request, id string) {
+	if err := rt.repo.PropertyPlanner().Delete(r.Context(), id); err != nil {
+		handleRepoError(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+	rt.publishChange("propertyScenario", "delete", id, map[string]string{"id": id})
+}
+
 func (rt *router) publishChange(entity, action, id string, payload any) {
 	if rt.events == nil {
 		return
@@ -568,7 +670,7 @@ func (rt *router) publishChange(entity, action, id string, payload any) {
 		Data:       payload,
 	})
 
-	fmt.Printf("finance change for %s %s", entity, action);
+	fmt.Printf("finance change for %s %s", entity, action)
 }
 
 // --- payload helpers ---
@@ -707,6 +809,48 @@ func (p expensePayload) toExpense() finance.Expense {
 		Frequency: p.Frequency,
 		Category:  strings.TrimSpace(p.Category),
 		Notes:     stringOrEmpty(p.Notes),
+	}
+}
+
+type propertyScenarioPayload struct {
+	ID            string                             `json:"id"`
+	Type          string                             `json:"type"`
+	Headline      string                             `json:"headline"`
+	Subheadline   string                             `json:"subheadline"`
+	LastRefreshed string                             `json:"lastRefreshed"`
+	Inputs        finance.MortgageInputs             `json:"inputs"`
+	Amortization  finance.MortgageAmortization       `json:"amortization"`
+	Snapshot      finance.MortgageSnapshot           `json:"snapshot"`
+	Summary       []finance.PropertyPlannerSummary   `json:"summary"`
+	Timeline      []finance.PropertyPlannerTimeline  `json:"timeline"`
+	Milestones    []finance.PropertyPlannerMilestone `json:"milestones"`
+	Insights      []finance.PropertyPlannerInsight   `json:"insights"`
+}
+
+func (p propertyScenarioPayload) validate() error {
+	if strings.TrimSpace(p.Type) == "" {
+		return errors.New("type is required")
+	}
+	if strings.TrimSpace(p.Headline) == "" {
+		return errors.New("headline is required")
+	}
+	return nil
+}
+
+func (p propertyScenarioPayload) toScenario() finance.PropertyPlannerScenario {
+	return finance.PropertyPlannerScenario{
+		ID:            p.ID,
+		Type:          strings.TrimSpace(p.Type),
+		Headline:      strings.TrimSpace(p.Headline),
+		Subheadline:   strings.TrimSpace(p.Subheadline),
+		LastRefreshed: strings.TrimSpace(p.LastRefreshed),
+		Inputs:        p.Inputs,
+		Amortization:  p.Amortization,
+		Snapshot:      p.Snapshot,
+		Summary:       p.Summary,
+		Timeline:      p.Timeline,
+		Milestones:    p.Milestones,
+		Insights:      p.Insights,
 	}
 }
 

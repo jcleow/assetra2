@@ -69,6 +69,120 @@ export const expenseSchema = z.object({
 
 export type Expense = z.infer<typeof expenseSchema>;
 
+export const mortgageInputsSchema = z.object({
+  loanAmount: z.number(),
+  loanTermYears: z.number(),
+  borrowerType: z.string().min(1),
+  loanStartMonth: z.string().min(1),
+  fixedYears: z.number(),
+  fixedRate: z.number(),
+  floatingRate: z.number(),
+  householdIncome: z.number(),
+  otherDebt: z.number(),
+});
+
+export const mortgageBalancePointSchema = z.object({
+  label: z.string().min(1),
+  balance: z.number(),
+  year: z.number().int(),
+  yearIndex: z.number().int(),
+});
+
+export const mortgageCompositionPointSchema = z.object({
+  label: z.string().min(1),
+  interest: z.number(),
+  principal: z.number(),
+  year: z.number().int(),
+  yearIndex: z.number().int(),
+});
+
+export const mortgageAmortizationSchema = z.object({
+  balancePoints: z.array(mortgageBalancePointSchema),
+  composition: z.array(mortgageCompositionPointSchema),
+});
+
+export const mortgageSnapshotSchema = z.object({
+  monthlyPayment: z.number(),
+  totalInterest: z.number(),
+  loanEndDate: z.string().min(1),
+  msrRatio: z.number(),
+});
+
+export const propertyPlannerSummarySchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  value: z.number(),
+  helper: z.string(),
+  emphasis: z.string().optional().nullable(),
+});
+
+export const propertyPlannerTimelinePointSchema = z.object({
+  id: z.string().min(1),
+  year: z.number().int(),
+  label: z.string().min(1),
+  cashOutlay: z.number(),
+  cpfUsage: z.number(),
+  loanBalance: z.number(),
+  valuation: z.number(),
+});
+
+export const propertyPlannerMilestoneSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  timeframe: z.string().min(1),
+  tone: z.string().optional().nullable(),
+});
+
+export const propertyPlannerInsightSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  detail: z.string().min(1),
+  tone: z.string().min(1),
+});
+
+export const propertyPlannerScenarioSchema = z.object({
+  id: z.string(),
+  type: z.string().min(1),
+  headline: z.string().min(1),
+  subheadline: z.string().optional().default(""),
+  lastRefreshed: z.string().optional().default(""),
+  inputs: mortgageInputsSchema,
+  amortization: mortgageAmortizationSchema,
+  snapshot: mortgageSnapshotSchema,
+  summary: z.array(propertyPlannerSummarySchema),
+  timeline: z.array(propertyPlannerTimelinePointSchema),
+  milestones: z.array(propertyPlannerMilestoneSchema),
+  insights: z.array(propertyPlannerInsightSchema),
+  updatedAt: isoDateTime,
+});
+
+export type PropertyPlannerScenario = z.infer<
+  typeof propertyPlannerScenarioSchema
+>;
+
+export type MortgageInputs = z.infer<typeof mortgageInputsSchema>;
+export type MortgageBalancePoint = z.infer<
+  typeof mortgageBalancePointSchema
+>;
+export type MortgageCompositionPoint = z.infer<
+  typeof mortgageCompositionPointSchema
+>;
+export type MortgageAmortization = z.infer<typeof mortgageAmortizationSchema>;
+export type MortgageSnapshot = z.infer<typeof mortgageSnapshotSchema>;
+export type PropertyPlannerSummary = z.infer<
+  typeof propertyPlannerSummarySchema
+>;
+export type PropertyPlannerTimelinePoint = z.infer<
+  typeof propertyPlannerTimelinePointSchema
+>;
+export type PropertyPlannerMilestone = z.infer<
+  typeof propertyPlannerMilestoneSchema
+>;
+export type PropertyPlannerInsight = z.infer<
+  typeof propertyPlannerInsightSchema
+>;
+
 export const monthlyCashFlowSchema = z.object({
   monthlyIncome: z.number(),
   monthlyExpenses: z.number(),
@@ -153,3 +267,12 @@ export type ExpenseCreatePayload = Omit<Expense, "id" | "updatedAt"> & {
   id?: string;
 };
 export type ExpenseUpdatePayload = Omit<Expense, "updatedAt">;
+
+export type PropertyPlannerScenarioCreatePayload = Omit<
+  PropertyPlannerScenario,
+  "id" | "updatedAt"
+> & { id?: string };
+export type PropertyPlannerScenarioUpdatePayload = Omit<
+  PropertyPlannerScenario,
+  "updatedAt"
+>;

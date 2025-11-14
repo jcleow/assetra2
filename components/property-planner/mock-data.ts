@@ -1,40 +1,55 @@
+import { buildMortgageScenario } from "./calculations";
+
+import type {
+  MortgageInputs,
+  PropertyPlannerInsight,
+  PropertyPlannerMilestone,
+  PropertyPlannerScenario,
+  PropertyPlannerSummary,
+  PropertyPlannerTimelinePoint,
+} from "@/lib/financial/types";
+
 export type PropertyPlannerType = "hdb" | "condo" | "landed";
 
-export interface PropertyPlannerSummary {
-  id: string;
-  label: string;
-  value: number;
-  helper: string;
-  emphasis?: string;
-}
+const CURRENT_YEAR = new Date().getFullYear();
 
-export interface PropertyPlannerTimelinePoint {
-  id: string;
-  year: number;
-  label: string;
-  cashOutlay: number;
-  cpfUsage: number;
-  loanBalance: number;
-  valuation: number;
-}
+const DEFAULT_INPUTS: Record<PropertyPlannerType, MortgageInputs> = {
+  hdb: {
+    loanAmount: 750_000,
+    loanTermYears: 25,
+    borrowerType: "single",
+    loanStartMonth: "2025-11",
+    fixedYears: 5,
+    fixedRate: 2.6,
+    floatingRate: 4.1,
+    householdIncome: 10_500,
+    otherDebt: 0,
+  },
+  condo: {
+    loanAmount: 1_050_000,
+    loanTermYears: 30,
+    borrowerType: "couple",
+    loanStartMonth: "2025-07",
+    fixedYears: 2,
+    fixedRate: 3.1,
+    floatingRate: 4.3,
+    householdIncome: 18_000,
+    otherDebt: 500,
+  },
+  landed: {
+    loanAmount: 1_600_000,
+    loanTermYears: 30,
+    borrowerType: "couple",
+    loanStartMonth: "2026-01",
+    fixedYears: 3,
+    fixedRate: 3.4,
+    floatingRate: 4.6,
+    householdIncome: 24_000,
+    otherDebt: 1_800,
+  },
+};
 
-export interface PropertyPlannerMilestone {
-  id: string;
-  title: string;
-  description: string;
-  timeframe: string;
-  tone?: "success" | "warning" | "info";
-}
-
-export interface PropertyPlannerInsight {
-  id: string;
-  title: string;
-  detail: string;
-  tone: "info" | "warning";
-}
-
-export interface PropertyPlannerScenario {
-  type: PropertyPlannerType;
+type ScenarioSeed = {
   headline: string;
   subheadline: string;
   lastRefreshed: string;
@@ -42,9 +57,31 @@ export interface PropertyPlannerScenario {
   timeline: PropertyPlannerTimelinePoint[];
   milestones: PropertyPlannerMilestone[];
   insights: PropertyPlannerInsight[];
-}
+  inputs?: MortgageInputs;
+};
 
-const CURRENT_YEAR = new Date().getFullYear();
+function buildScenario(
+  type: PropertyPlannerType,
+  seed: ScenarioSeed
+): PropertyPlannerScenario {
+  const inputs = seed.inputs ?? DEFAULT_INPUTS[type];
+  const { amortization, snapshot } = buildMortgageScenario(inputs);
+  return {
+    id: "",
+    type,
+    headline: seed.headline,
+    subheadline: seed.subheadline,
+    lastRefreshed: seed.lastRefreshed,
+    inputs,
+    amortization,
+    snapshot,
+    summary: seed.summary,
+    timeline: seed.timeline,
+    milestones: seed.milestones,
+    insights: seed.insights,
+    updatedAt: new Date().toISOString(),
+  };
+}
 
 export const PROPERTY_TYPES: Array<{
   id: PropertyPlannerType;
@@ -76,8 +113,7 @@ export const PROPERTY_PLANNER_MOCKS: Record<
   PropertyPlannerType,
   PropertyPlannerScenario
 > = {
-  hdb: {
-    type: "hdb",
+  hdb: buildScenario("hdb", {
     headline: "4-Room BTO in Tampines North",
     subheadline: "Ballot in 2025, key collection projected for mid-2028",
     lastRefreshed: "Sample data synced 2 days ago",
@@ -85,26 +121,26 @@ export const PROPERTY_PLANNER_MOCKS: Record<
       {
         id: "cash",
         label: "Cash Buffer Needed",
-        value: 58000,
+        value: 58_000,
         helper: "5% minimum cash + legal/renovation buffer",
         emphasis: "Includes S$12K reno reserve",
       },
       {
         id: "cpf",
         label: "CPF OA Utilised",
-        value: 182000,
+        value: 182_000,
         helper: "After Enhanced Housing Grant and AHG",
       },
       {
         id: "loan",
         label: "HDB Loan Amount",
-        value: 480000,
+        value: 480_000,
         helper: "25-year tenure at 2.60% p.a.",
       },
       {
         id: "valuation",
         label: "Year 10 Valuation",
-        value: 620000,
+        value: 620_000,
         helper: "Assumes 2.1% annual appreciation",
       },
     ],
@@ -113,7 +149,7 @@ export const PROPERTY_PLANNER_MOCKS: Record<
         id: "t0",
         year: CURRENT_YEAR,
         label: "Ballot & Option Fee",
-        cashOutlay: 5000,
+        cashOutlay: 5_000,
         cpfUsage: 0,
         loanBalance: 0,
         valuation: 0,
@@ -122,37 +158,37 @@ export const PROPERTY_PLANNER_MOCKS: Record<
         id: "t1",
         year: CURRENT_YEAR + 1,
         label: "Down Payment (5% cash + CPF)",
-        cashOutlay: 23000,
-        cpfUsage: 54000,
-        loanBalance: 480000,
-        valuation: 560000,
+        cashOutlay: 23_000,
+        cpfUsage: 54_000,
+        loanBalance: 480_000,
+        valuation: 560_000,
       },
       {
         id: "t2",
         year: CURRENT_YEAR + 3,
         label: "Progressive Payment & Key Collection",
-        cashOutlay: 18000,
-        cpfUsage: 45000,
-        loanBalance: 462000,
-        valuation: 575000,
+        cashOutlay: 18_000,
+        cpfUsage: 45_000,
+        loanBalance: 462_000,
+        valuation: 575_000,
       },
       {
         id: "t3",
         year: CURRENT_YEAR + 5,
         label: "Stabilised Mortgage Year 2",
-        cashOutlay: 24000,
-        cpfUsage: 12000,
-        loanBalance: 420000,
-        valuation: 598000,
+        cashOutlay: 24_000,
+        cpfUsage: 12_000,
+        loanBalance: 420_000,
+        valuation: 598_000,
       },
       {
         id: "t4",
         year: CURRENT_YEAR + 10,
         label: "Year 10 Outlook",
-        cashOutlay: 24000,
-        cpfUsage: 12000,
-        loanBalance: 325000,
-        valuation: 620000,
+        cashOutlay: 24_000,
+        cpfUsage: 12_000,
+        loanBalance: 325_000,
+        valuation: 620_000,
       },
     ],
     milestones: [
@@ -160,14 +196,14 @@ export const PROPERTY_PLANNER_MOCKS: Record<
         id: "m0",
         title: "Ballot submission",
         description: "Submit BTO ballot with 2-room flexi grant declaration",
-        timeframe: "Q3 " + CURRENT_YEAR,
+        timeframe: `Q3 ${CURRENT_YEAR}`,
         tone: "info",
       },
       {
         id: "m1",
         title: "Key collection buffer",
         description: "Ensure S$30K cash buffer ahead of key collection (2028)",
-        timeframe: "Q2 " + (CURRENT_YEAR + 3),
+        timeframe: `Q2 ${CURRENT_YEAR + 3}`,
         tone: "warning",
       },
       {
@@ -193,243 +229,206 @@ export const PROPERTY_PLANNER_MOCKS: Record<
         tone: "warning",
       },
     ],
-  },
-  condo: {
-    type: "condo",
+  }),
+  condo: buildScenario("condo", {
     headline: "2-Bedroom Condo in Queenstown",
     subheadline: "Immediate resale purchase with bank loan structure",
-    lastRefreshed: "Sample data synced this week",
+    lastRefreshed: "Scenario synced yesterday",
     summary: [
       {
         id: "cash",
-        label: "Cash Needed",
-        value: 168000,
-        helper: "25% down payment + ABSD (0%) + fees",
-        emphasis: "Includes 3% buyer stamp duty",
-      },
-      {
-        id: "cpf",
-        label: "CPF OA Utilised",
-        value: 220000,
-        helper: "After preserving 6 months of mortgage payments",
+        label: "Cash Buffer Needed",
+        value: 120_000,
+        helper: "25% down payment + taxes + reno buffer",
       },
       {
         id: "loan",
         label: "Bank Loan Amount",
-        value: 660000,
-        helper: "30-year tenure, 3.9% floating",
+        value: 1_050_000,
+        helper: "30-year tenure at blended 3.4%",
       },
       {
-        id: "valuation",
-        label: "Year 10 Valuation",
-        value: 900000,
-        helper: "Assumes 2.8% annual appreciation",
+        id: "stamp",
+        label: "Buyer Stamp Duty",
+        value: 52_600,
+        helper: "ABSD exempt (owner-occupied)",
+      },
+      {
+        id: "cashflow",
+        label: "Monthly Cashflow Impact",
+        value: 5_800,
+        helper: "Mortgage + fees after rental offset",
       },
     ],
     timeline: [
       {
-        id: "c0",
+        id: "t0",
         year: CURRENT_YEAR,
-        label: "Option to Purchase",
-        cashOutlay: 10000,
+        label: "Offer Accepted",
+        cashOutlay: 40_000,
+        cpfUsage: 60_000,
+        loanBalance: 0,
+        valuation: 0,
+      },
+      {
+        id: "t1",
+        year: CURRENT_YEAR,
+        label: "Completion",
+        cashOutlay: 80_000,
+        cpfUsage: 120_000,
+        loanBalance: 1_050_000,
+        valuation: 1_200_000,
+      },
+      {
+        id: "t2",
+        year: CURRENT_YEAR + 5,
+        label: "Stabilised Rental Yield",
+        cashOutlay: 20_000,
+        cpfUsage: 24_000,
+        loanBalance: 920_000,
+        valuation: 1_320_000,
+      },
+      {
+        id: "t3",
+        year: CURRENT_YEAR + 10,
+        label: "Year 10 Projection",
+        cashOutlay: 24_000,
+        cpfUsage: 24_000,
+        loanBalance: 770_000,
+        valuation: 1_460_000,
+      },
+    ],
+    milestones: [
+      {
+        id: "m3",
+        title: "ABSD remission filing",
+        description: "Submit within 2 weeks of completion to recover 20%",
+        timeframe: "Within 14 days of completion",
+        tone: "warning",
+      },
+      {
+        id: "m4",
+        title: "Rental onboarding",
+        description: "Line up tenant search 2 months before TOP",
+        timeframe: "Q4 " + CURRENT_YEAR,
+        tone: "info",
+      },
+    ],
+    insights: [
+      {
+        id: "i2",
+        title: "Rental offsets 60% of mortgage",
+        detail: "At $4,500 monthly rent, cashflow impact drops by 60%.",
+        tone: "info",
+      },
+      {
+        id: "i3",
+        title: "Cash buffer tight",
+        detail:
+          "Maintain S$40K reserve post-renovation to handle interest shocks.",
+        tone: "warning",
+      },
+    ],
+  }),
+  landed: buildScenario("landed", {
+    headline: "99-year Terrace in Serangoon",
+    subheadline: "Major renovation to add attic and solar upgrades",
+    lastRefreshed: "Scenario synced last week",
+    summary: [
+      {
+        id: "cash",
+        label: "Cash Needed",
+        value: 300_000,
+        helper: "Includes ABSD, BSD, and renovation tranche",
+      },
+      {
+        id: "reno",
+        label: "Renovation Budget",
+        value: 250_000,
+        helper: "Attic build + solar array installation",
+      },
+      {
+        id: "loan",
+        label: "Bank Loan",
+        value: 1_600_000,
+        helper: "Blended rate assumption at 3.6%",
+      },
+      {
+        id: "maint",
+        label: "Upkeep Allocation",
+        value: 1_200,
+        helper: "Monthly allowance for maintenance fund",
+      },
+    ],
+    timeline: [
+      {
+        id: "t0",
+        year: CURRENT_YEAR,
+        label: "Option Fee",
+        cashOutlay: 60_000,
         cpfUsage: 0,
         loanBalance: 0,
         valuation: 0,
       },
       {
-        id: "c1",
+        id: "t1",
         year: CURRENT_YEAR,
-        label: "Completion & Renovation",
-        cashOutlay: 158000,
-        cpfUsage: 180000,
-        loanBalance: 660000,
-        valuation: 820000,
+        label: "Completion + ABSD",
+        cashOutlay: 220_000,
+        cpfUsage: 120_000,
+        loanBalance: 1_600_000,
+        valuation: 1_950_000,
       },
       {
-        id: "c2",
+        id: "t2",
         year: CURRENT_YEAR + 1,
-        label: "Stabilised Mortgage Year 1",
-        cashOutlay: 42000,
-        cpfUsage: 18000,
-        loanBalance: 645000,
-        valuation: 838000,
+        label: "Renovation drawdown",
+        cashOutlay: 250_000,
+        cpfUsage: 0,
+        loanBalance: 1_650_000,
+        valuation: 2_150_000,
       },
       {
-        id: "c3",
+        id: "t3",
         year: CURRENT_YEAR + 5,
-        label: "Interest Rate Reset",
-        cashOutlay: 45000,
-        cpfUsage: 20000,
-        loanBalance: 575000,
-        valuation: 870000,
-      },
-      {
-        id: "c4",
-        year: CURRENT_YEAR + 10,
-        label: "Year 10 Outlook",
-        cashOutlay: 45000,
-        cpfUsage: 20000,
-        loanBalance: 430000,
-        valuation: 900000,
+        label: "Stabilised Outlook",
+        cashOutlay: 36_000,
+        cpfUsage: 12_000,
+        loanBalance: 1_420_000,
+        valuation: 2_350_000,
       },
     ],
     milestones: [
       {
-        id: "cm0",
-        title: "Loan approval in-principle",
-        description: "Secure IPA before placing OTP to lock 75% LTV.",
-        timeframe: "This month",
-        tone: "info",
-      },
-      {
-        id: "cm1",
-        title: "Refinance checkpoint",
-        description: "Fixed rate ends in Year 3. Plan refinancing to avoid jump.",
-        timeframe: "Year " + (CURRENT_YEAR + 3),
+        id: "m5",
+        title: "ABSD remission",
+        description: "Plan sale of current HDB within 6 months to recover ABSD",
+        timeframe: "6 months",
         tone: "warning",
       },
       {
-        id: "cm2",
-        title: "Rental offset opportunity",
-        description: "Queenstown rent covers ~65% of mortgage at $4.1K/month.",
-        timeframe: "Optional from Year 2",
-        tone: "success",
+        id: "m6",
+        title: "Solar installation",
+        description: "Coordinate SEGS rebate application before Q4",
+        timeframe: "Q4 " + CURRENT_YEAR,
+        tone: "info",
       },
     ],
     insights: [
       {
-        id: "ci0",
-        title: "ABSD neutral",
+        id: "i4",
+        title: "Upkeep buffer crucial",
         detail:
-          "First property purchase keeps ABSD at 0%, freeing cash for reno.",
-        tone: "info",
+          "Set aside at least $1.2k/month for maintenance due to larger footprint.",
+        tone: "warning",
       },
       {
-        id: "ci1",
-        title: "Maintenance sensitivity",
+        id: "i5",
+        title: "Capital appreciation runway",
         detail:
-          "Condo maintenance ($420/month) drives $5K/year cash burn if renting doesn't happen.",
-        tone: "warning",
-      },
-    ],
-  },
-  landed: {
-    type: "landed",
-    headline: "99-year Terrace in Serangoon",
-    subheadline: "Major renovation to add attic and solar upgrades",
-    lastRefreshed: "Sample data synced 5 days ago",
-    summary: [
-      {
-        id: "cash",
-        label: "Cash Needed",
-        value: 420000,
-        helper: "Includes 55% down payment due to 2nd property ABSD",
-        emphasis: "ABSD rebate assumed after selling flat",
-      },
-      {
-        id: "cpf",
-        label: "CPF OA Utilised",
-        value: 300000,
-        helper: "After reserving emergency buffers",
-      },
-      {
-        id: "loan",
-        label: "Bank Loan Amount",
-        value: 780000,
-        helper: "23-year tenure at 4.1% p.a.",
-      },
-      {
-        id: "valuation",
-        label: "Year 10 Valuation",
-        value: 1_650_000,
-        helper: "Assumes 3.2% annual appreciation",
-      },
-    ],
-    timeline: [
-      {
-        id: "l0",
-        year: CURRENT_YEAR,
-        label: "Option & Exercise",
-        cashOutlay: 120000,
-        cpfUsage: 75000,
-        loanBalance: 0,
-        valuation: 0,
-      },
-      {
-        id: "l1",
-        year: CURRENT_YEAR,
-        label: "Completion + Reno Deposit",
-        cashOutlay: 220000,
-        cpfUsage: 150000,
-        loanBalance: 780000,
-        valuation: 1_450_000,
-      },
-      {
-        id: "l2",
-        year: CURRENT_YEAR + 1,
-        label: "Renovation Progress Payments",
-        cashOutlay: 50000,
-        cpfUsage: 20000,
-        loanBalance: 760000,
-        valuation: 1_520_000,
-      },
-      {
-        id: "l3",
-        year: CURRENT_YEAR + 5,
-        label: "Stabilised Mortgage",
-        cashOutlay: 72000,
-        cpfUsage: 24000,
-        loanBalance: 660000,
-        valuation: 1_590_000,
-      },
-      {
-        id: "l4",
-        year: CURRENT_YEAR + 10,
-        label: "Year 10 Outlook",
-        cashOutlay: 72000,
-        cpfUsage: 24000,
-        loanBalance: 520000,
-        valuation: 1_650_000,
-      },
-    ],
-    milestones: [
-      {
-        id: "lm0",
-        title: "Construction drawdown",
-        description:
-          "Ensure cash buffer for stage payments (foundation, structure, finishes).",
-        timeframe: "Next 12 months",
-        tone: "warning",
-      },
-      {
-        id: "lm1",
-        title: "ABSD refund clock",
-        description: "Must sell current HDB within 6 months to reclaim ABSD.",
-        timeframe: "Regulatory",
-        tone: "warning",
-      },
-      {
-        id: "lm2",
-        title: "Solar offset",
-        description: "Solar upgrade expected to shave $250/month off utilities.",
-        timeframe: "After TOP",
-        tone: "success",
-      },
-    ],
-    insights: [
-      {
-        id: "li0",
-        title: "Higher maintenance",
-        detail:
-          "Set aside $12K/year for upkeep (landscaping, facade, repairs).",
-        tone: "warning",
-      },
-      {
-        id: "li1",
-        title: "Equity build-up",
-        detail: "Equity crosses S$550K by Year 5 despite heavy cash usage.",
+          "Projected valuation crosses $2.3M by Year 5 with ongoing reno uplift.",
         tone: "info",
       },
     ],
-  },
+  }),
 };
