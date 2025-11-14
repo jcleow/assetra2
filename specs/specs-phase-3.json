@@ -98,31 +98,6 @@
       "status": "todo"
     },
     {
-      "title": "HDB Housing Planner - Core Module",
-      "description": "Enable Singapore users to compare housing options and plan down payments using CPF and cash, focusing on BTO vs resale decisions.",
-      "technicalDetails": [
-        "Create HDB property comparison engine supporting BTO (new) vs resale options with realistic pricing.",
-        "Implement CPF OA usage calculator for property purchases (max 120% of property value for private, 100% + accrued interest for HDB).",
-        "Build down payment calculator factoring CPF OA available balance vs cash requirement (minimum 5% cash for HDB).",
-        "Add monthly mortgage affordability checker using MSR (30% for HDB loans) and TDSR (60% total debt) ratios.",
-        "Integrate HDB loan (2.6%) vs bank loan comparison with interest rate differential calculations.",
-        "Create property timeline planner showing BTO balloting to key collection timeline vs immediate resale purchase."
-      ],
-      "acceptanceCriteria": [
-        "User can input target property price and see breakdown of CPF vs cash needed for down payment.",
-        "System accurately calculates maximum affordable property price based on income and existing debts.",
-        "BTO vs resale comparison shows total costs, timeline differences, and funding requirements.",
-        "Monthly mortgage payment calculation accounts for HDB vs bank loan options with current rates.",
-        "CPF OA usage scenarios show impact on retirement savings when used for property.",
-        "All calculations comply with current HDB and MAS regulations for property financing."
-      ],
-      "storyPoints": 10,
-      "difficulty": "medium-high",
-      "tags": ["frontend", "backend", "housing", "singapore", "cpf"],
-      "id": "T18-FE-BE-HDB-PLANNER",
-      "status": "todo"
-    },
-    {
       "title": "Basic Scenario Planning Engine",
       "description": "Create simple life stage scenario planning allowing users to model major life events and their financial impact over time.",
       "technicalDetails": [

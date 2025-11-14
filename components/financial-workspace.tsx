@@ -7,6 +7,7 @@ import {
 } from "@/features/financial-planning";
 import { useFinancialEvents } from "@/hooks/use-financial-events";
 import { LifeEventTimelineChart } from "./life-event-timeline-chart";
+import { PropertyPlannerLauncher } from "./property-planner/property-planner-launcher";
 
 export function FinancialWorkspace() {
   const { data, isLoading, error } = useFinancialPlan();
@@ -129,7 +130,19 @@ export function FinancialWorkspace() {
 
   return (
     <div className="flex h-full w-full flex-col bg-gray-900 text-white">
-      {/* Main Chart Area */}
+      <div className="flex flex-col gap-3 border-b border-white/5 px-4 py-3 text-left sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-white">
+            Financial Workspace
+          </p>
+          <p className="text-xs text-gray-400">
+            Track projections and model housing decisions with mock data.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <PropertyPlannerLauncher />
+        </div>
+      </div>
       <div className="min-h-0 flex-1 p-4">
         <LifeEventTimelineChart />
       </div>

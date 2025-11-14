@@ -1,0 +1,188 @@
+{
+  "tickets": [
+    {
+      "title": "Property Planner Shell UI",
+      "description": "Lay down the dedicated property planner workspace UI (launcher, modal/page shell, tabbed navigation) using mocked data so users can evaluate flows before backend integration.",
+      "technicalDetails": [
+        "Add the Property Planner launcher entry point and open a full-screen modal/page with sidebar + header actions.",
+        "Implement segmented controls/tabs for HDB, Condo, Landed calculators that swap their content panes without routing.",
+        "Stub shared scenario summary panels (cash, CPF, loan, valuation) using deterministic mock data file so UI can render realistic cards.",
+        "Provide disabled Apply/Save actions with explanatory tooltips noting backend integration is pending.",
+        "Ensure shell is responsive and accessible (keyboard focus trap inside modal, aria labels)."
+      ],
+      "acceptanceCriteria": [
+        "Users can open/close the planner and switch between property types with instantly updating content panes.",
+        "UI renders placeholder summaries/tables so user testing can cover the full flow even without backend data.",
+        "Apply/Save buttons exist but stay disabled or show a toast explaining backend work is pending.",
+        "No backend/network calls are required; mocks drive all display state.",
+        "Design matches product specs (spacing, typography) and passes accessibility smoke checks."
+      ],
+      "storyPoints": 3,
+      "difficulty": "medium",
+      "tags": ["frontend", "housing", "planning", "ux"],
+      "id": "T18A-FE-PROPERTY-SHELL-UI",
+      "status": "todo"
+    },
+    {
+      "title": "Property Planner Shell Integration",
+      "description": "Connect the property planner shell to real data: shared scenario schema, persistence, and apply-to-plan flows that sync with existing assets/liabilities.",
+      "technicalDetails": [
+        "Define shared scenario interfaces (cash events, CPF events, loan schedule, valuation series) in `financialPlan` types.",
+        "Persist draft scenarios via Zustand + backend endpoints so users can save per property type and reload later.",
+        "Implement Apply/Save actions that call the backend, normalize responses, and merge into assets, liabilities, and cashflow stores.",
+        "Handle reconciliation with existing property assets (update vs create) and re-trigger projection recalculation.",
+        "Add optimistic UI with rollback on failure plus toast/error handling."
+      ],
+      "acceptanceCriteria": [
+        "Scenario drafts survive reloads (local + backend) and are scoped per property type.",
+        "Applying a scenario creates/updates the relevant property asset, loan liability, and cashflow entries in the plan.",
+        "Projection timeline reflects the newly applied scenario without manual refresh.",
+        "Conflicts (e.g., property already in plan) prompt users to overwrite/duplicate before proceeding.",
+        "All API calls are typed, tested, and documented in the specs/go-service guide."
+      ],
+      "storyPoints": 3,
+      "difficulty": "medium",
+      "tags": ["backend", "frontend", "housing", "planning"],
+      "id": "T18A-BE-PROPERTY-SHELL-API",
+      "status": "todo"
+    },
+    {
+      "title": "HDB Calculator UI",
+      "description": "Design the BTO/resale HDB calculator interface (forms, timeline table, warnings) using mock outputs so usability can be validated pre-backend.",
+      "technicalDetails": [
+        "Create multi-step or sectioned form inputs for BTO vs resale (price presets, grants, timeline, financing).",
+        "Render yearly timeline rows/cards showing cash, CPF, loan, valuation using fixture data.",
+        "Add MSR/TDSR visual indicators (badges, meters) based on client-side calculations with stubbed ratios.",
+        "Provide loan toggle UI (HDB vs Bank) that swaps out payment summaries using mock numbers.",
+        "Document all data needs (fields, validation) to guide the backend calculator ticket."
+      ],
+      "acceptanceCriteria": [
+        "Switching between BTO/resale updates visible sections/fields immediately without reload.",
+        "Timeline table/cards show at least 5 years of mock data with the expected columns (cash, CPF, loan balance, valuation).",
+        "Affordability badges update in real time as users change income/debt fields (based on client-side math).",
+        "Loan comparison UI reacts to selections and surfaces a breakdown (principal vs interest, total monthly).",
+        "Developers can demo the full flow end-to-end using mocks, with clear notes on which values are placeholders."
+      ],
+      "storyPoints": 3,
+      "difficulty": "medium",
+      "tags": ["frontend", "housing", "singapore", "cpf"],
+      "id": "T18B-FE-HDB-CALCULATOR-UI",
+      "status": "todo"
+    },
+    {
+      "title": "HDB Calculator Engine & Persistence",
+      "description": "Implement the real HDB calculator logic (grants, CPF usage, MSR/TDSR, amortization) and wire it to the backend so UI outputs replace the mocks.",
+      "technicalDetails": [
+        "Build calculation services covering BTO progressive payments, resale completion timelines, CPF OA usage limits, and grants.",
+        "Implement MSR/TDSR computation using income + debt inputs and return structured warnings for the UI.",
+        "Generate amortization schedules for HDB vs bank loans (principal/interest, insurance/taxes/S&CC) on a yearly basis.",
+        "Emit structured scenario payload (cash events, CPF events, loan schedule, valuation) consistent with shell schema.",
+        "Expose APIs/endpoints plus unit tests to persist and retrieve HDB scenarios."
+      ],
+      "acceptanceCriteria": [
+        "Given realistic inputs, backend returns deterministic yearly rows matching product formulas.",
+        "MSR/TDSR responses include ratio values and severity flags for the frontend to render.",
+        "Scenario payload plugs into the shared Apply flow (assets/liabilities/cashflow updates).",
+        "API validates inputs (price, grants, CPF balances) and returns actionable error messages.",
+        "Automated tests cover BTO vs resale, grant variations, and CPF refund logic on sale."
+      ],
+      "storyPoints": 3,
+      "difficulty": "medium",
+      "tags": ["backend", "housing", "singapore", "cpf"],
+      "id": "T18B-BE-HDB-CALCULATOR-ENGINE",
+      "status": "todo"
+    },
+    {
+      "title": "Condo & Landed Calculator UI",
+      "description": "Create the condo/landed UI forms, maintenance inputs, and timeline tables with mocked numbers so stakeholders can review the experience before backend delivery.",
+      "technicalDetails": [
+        "Provide buyer-profile selector (citizenship, property count) that visually drives ABSD/LTV badges using precomputed values.",
+        "Add sections for loan terms, maintenance costs, rental assumptions, and (for landed) land/reno reserves.",
+        "Display yearly timeline rows/cards with mock data highlighting mortgage paydown, maintenance, and valuation.",
+        "Support rental-income toggles that show offsets in the cash summary using fake data.",
+        "Keep Apply disabled + label to indicate backend dependency, mirroring the shell behavior."
+      ],
+      "acceptanceCriteria": [
+        "Switching between condo and landed tabs changes the form fields and mock timeline data accordingly.",
+        "ABSD/LTV badges update based on buyer profile selections instantly (client-side calculations).",
+        "Timeline includes maintenance and rental rows so testers can understand the eventual breakdown.",
+        "UI handles edge cases like multiple renovation tranches or rental vacancy toggles purely on the frontend.",
+        "Mocks/documentation clearly outline which values will come from the backend later."
+      ],
+      "storyPoints": 3,
+      "difficulty": "medium",
+      "tags": ["frontend", "housing", "singapore"],
+      "id": "T18C-FE-CONDO-LANDED-UI",
+      "status": "todo"
+    },
+    {
+      "title": "Condo & Landed Calculator Engine",
+      "description": "Deliver backend calculators for condo and landed properties (ABSD/LTV logic, amortization, maintenance/reserve scheduling) that feed the shared scenario payload.",
+      "technicalDetails": [
+        "Implement ABSD and LTV computations keyed off citizenship and property-count inputs, returning cash vs CPF splits.",
+        "Support flexible loan terms (fixed/floating, lock-in, refinance) and produce amortization schedules with yearly summaries.",
+        "Model maintenance, sinking fund, property tax, rental income, and vacancy assumptions as recurring cashflow events.",
+        "For landed scenarios, ingest land-size + renovation budgets and emit staged cash events (e.g., foundation, TOP).",
+        "Expose persistence endpoints/tests so condo/landed scenarios can be saved, retrieved, and applied."
+      ],
+      "acceptanceCriteria": [
+        "Backend returns accurate ABSD/LTV outputs that match MAS guidelines for each buyer profile.",
+        "Yearly payload includes mortgage, maintenance, rental offsets, and valuation for integration with the UI tables.",
+        "Rental assumptions change the net cashflow numbers and generate corresponding income events.",
+        "Applying the scenario updates assets/liabilities/cashflow consistently with the shared schema.",
+        "Test coverage spans citizen/PR/foreigner profiles, multiple-property ownership, and landed reserve schedules."
+      ],
+      "storyPoints": 3,
+      "difficulty": "medium",
+      "tags": ["backend", "housing", "singapore"],
+      "id": "T18C-BE-CONDO-LANDED-ENGINE",
+      "status": "todo"
+    },
+    {
+      "title": "Property Timeline Visualization UI",
+      "description": "Implement the timeline scrubber, charts, and recommendation card UI using mock scenario data so user research can validate the multi-year storytelling.",
+      "technicalDetails": [
+        "Build a timeline scrubber or slider that highlights a selected year and syncs with detail panels.",
+        "Render stacked bar/line charts (cash vs CPF vs loan vs valuation) powered by mock datasets.",
+        "Add warning/recommendation cards with placeholder copy and icons triggered off mock flags.",
+        "Provide export/snapshot buttons that currently just download the mock JSON/CSV for usability testing.",
+        "Ensure components are reusable across property types and responsive down to tablet."
+      ],
+      "acceptanceCriteria": [
+        "Selecting a year updates the detail panel immediately using mocked values.",
+        "Charts display the four key metrics and animate/transition smoothly on selection changes.",
+        "Warning cards appear for mock risk scenarios (cash shortfall, CPF depletion) with explanatory copy.",
+        "Export produces a deterministic mock file so UX testing can verify format expectations.",
+        "No backend dependency exists; data is mocked yet structured to mirror the final API shape."
+      ],
+      "storyPoints": 3,
+      "difficulty": "medium",
+      "tags": ["frontend", "housing", "ux"],
+      "id": "T18D-FE-PROPERTY-VIS-UI",
+      "status": "todo"
+    },
+    {
+      "title": "Property Timeline Data & Guidance Engine",
+      "description": "Back the visualization with real scenario data, computed guidance, and comparison exports so the UI can drop mocks and surface actionable insights.",
+      "technicalDetails": [
+        "Aggregate cash/CPF/loan/valuation streams from each property scenario into yearly buckets consumable by the visualization components.",
+        "Compute derived metrics (peak cash usage, CPF trough, break-even year, payback period) and flag thresholds for warnings.",
+        "Implement recommendation logic (e.g., extend loan tenure, increase cash buffer) tied to the derived metrics.",
+        "Enable snapshot/export API that returns structured CSV/JSON for selected scenarios.",
+        "Ensure data endpoints are performant and cached, given the multi-year payload size."
+      ],
+      "acceptanceCriteria": [
+        "Visualization consumes live data with no code changes (API matches mock schema).",
+        "Warning/recommendation flags originate from backend logic and stay consistent across sessions.",
+        "Exports contain the exact data shown in the UI (selected scenario, years, metrics).",
+        "Performance benchmarks show data loads under product’s latency target (e.g., <300ms server processing).",
+        "Unit/integration tests cover metric calculations and snapshot formatting."
+      ],
+      "storyPoints": 3,
+      "difficulty": "medium",
+      "tags": ["backend", "housing", "planning"],
+      "id": "T18D-BE-PROPERTY-VIS-DATA",
+      "status": "todo"
+    }
+  ]
+}
