@@ -18,17 +18,16 @@ type PopulateResponse = {
 };
 
 export function DevDataControls() {
-  const { refreshData, setFinancialPlan } = useFinancialPlanningStore(
-    (state) => ({
-      refreshData: state.refreshData,
-      setFinancialPlan: state.setFinancialPlan,
-    })
+  const refreshData = useFinancialPlanningStore((state) => state.refreshData);
+  const setFinancialPlan = useFinancialPlanningStore(
+    (state) => state.setFinancialPlan
   );
-  const { fetch: fetchPlannerScenarios, hydrateScenarios } =
-    usePropertyPlannerStore((state) => ({
-      fetch: state.fetch,
-      hydrateScenarios: state.hydrateScenarios,
-    }));
+  const fetchPlannerScenarios = usePropertyPlannerStore(
+    (state) => state.fetch
+  );
+  const hydrateScenarios = usePropertyPlannerStore(
+    (state) => state.hydrateScenarios
+  );
   const [pending, setPending] = useState<ActionType | null>(null);
 
   const runAction = async (action: ActionType) => {
