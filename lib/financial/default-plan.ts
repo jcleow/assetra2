@@ -87,3 +87,31 @@ export function buildDefaultFinancialPlan(): FinancialPlanPayload {
     lastUpdated: timestamp,
   };
 }
+
+export function buildEmptyFinancialPlan(): FinancialPlanPayload {
+  const timestamp = new Date().toISOString();
+  return {
+    assets: [],
+    liabilities: [],
+    incomes: [],
+    expenses: [],
+    cashflow: {
+      summary: {
+        monthlyIncome: 0,
+        monthlyExpenses: 0,
+        netMonthly: 0,
+      },
+      breakdown: {},
+    },
+    summary: {
+      totalAssets: 0,
+      totalLiabilities: 0,
+      netWorth: 0,
+      monthlyIncome: 0,
+      monthlyExpenses: 0,
+      monthlySavings: 0,
+      savingsRate: 0,
+    },
+    lastUpdated: timestamp,
+  };
+}

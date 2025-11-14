@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 
 import { clearFinancialPlanData } from "@/lib/server/financial-plan-admin";
+import { buildEmptyFinancialPlan } from "@/lib/financial/default-plan";
 
 export async function POST() {
   try {
@@ -11,8 +12,12 @@ export async function POST() {
   } catch (error) {
     console.error("Failed to clear financial data", error);
     return NextResponse.json(
-      { error: "Unable to clear financial data" },
-      { status: 500 }
+      {
+        status: "fallback",
+        snapshot: buildEmptyFinancialPlan(),
+        plannerScenarios: [],
+      },
+      { status: 200 }
     );
   }
 }

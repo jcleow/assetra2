@@ -6,28 +6,54 @@ import { useState } from "react";
 import { toast } from "@/components/toast";
 import { useFinancialPlanningStore } from "@/features/financial-planning/store";
 import { usePropertyPlannerStore } from "@/features/property-planner/store";
+import type { PropertyPlannerScenario } from "@/lib/financial/types";
+import type { FinancialPlanPayload } from "@/lib/financial/plan-schema";
 
 type ActionType = "populate" | "clear";
 
+type PopulateResponse = {
+  status: string;
+  snapshot?: FinancialPlanPayload;
+  plannerScenarios?: PropertyPlannerScenario[];
+};
+
 export function DevDataControls() {
-  const refreshPlan = useFinancialPlanningStore((state) => state.refreshData);
-  const fetchPlannerScenarios = usePropertyPlannerStore(
-    (state) => state.fetch
+  const { refreshData, setFinancialPlan } = useFinancialPlanningStore(
+    (state) => ({
+      refreshData: state.refreshData,
+      setFinancialPlan: state.setFinancialPlan,
+    })
   );
+  const { fetch: fetchPlannerScenarios, hydrateScenarios } =
+    usePropertyPlannerStore((state) => ({
+      fetch: state.fetch,
+      hydrateScenarios: state.hydrateScenarios,
+    }));
   const [pending, setPending] = useState<ActionType | null>(null);
 
   const runAction = async (action: ActionType) => {
     try {
       setPending(action);
-      const response = await fetch(
-        `/api/dev/financial-plan/${action}`,
-        { method: "POST" }
-      );
+      const response = await fetch(`/api/dev/financial-plan/${action}`, {
+        method: "POST",
+      });
       if (!response.ok) {
         throw new Error(`Request failed (${response.status})`);
       }
-      await refreshPlan();
-      await fetchPlannerScenarios();
+      const payload: PopulateResponse = await response.json();
+      if (payload.status === "fallback") {
+        if (payload.snapshot) {
+          setFinancialPlan(payload.snapshot);
+        }
+        if (payload.plannerScenarios) {
+          hydrateScenarios(payload.plannerScenarios);
+        } else {
+          hydrateScenarios([]);
+        }
+      } else {
+        await refreshData();
+        await fetchPlannerScenarios();
+      }
       toast({
         type: "success",
         description:

@@ -24,6 +24,7 @@ interface PropertyPlannerState {
     scenario: PropertyPlannerScenario
   ) => Promise<void>;
   deleteScenario: (type: PropertyPlannerType) => Promise<void>;
+  hydrateScenarios: (scenarios: PropertyPlannerScenario[]) => void;
   setOverviewComplete: (type: PropertyPlannerType, complete: boolean) => void;
 }
 
@@ -138,6 +139,25 @@ export const usePropertyPlannerStore = create<PropertyPlannerState>(
         });
         throw error;
       }
+    },
+    hydrateScenarios: (scenarios) => {
+      const map: ScenarioMap = {};
+      for (const scenario of scenarios) {
+        const type = scenario.type as PropertyPlannerType;
+        map[type] = scenario;
+      }
+      set((state) => ({
+        scenarios: map,
+        hasFetched: true,
+        isLoading: false,
+        lastSavedAt: Object.fromEntries(
+          Object.entries(map).map(([type, scenario]) => [
+            type,
+            scenario?.updatedAt ?? new Date().toISOString(),
+          ])
+        ),
+        overviewComplete: state.overviewComplete,
+      }));
     },
     setOverviewComplete: (type, complete) =>
       set((state) => ({
