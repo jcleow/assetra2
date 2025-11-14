@@ -95,7 +95,46 @@
       "tags": ["property", "chat", "backend", "frontend"],
       "id": "T30C-FE-BE-PROPERTY-CHAT",
       "status": "todo"
+    },
+    {
+      "title": "Chat + Dashboard Responsive Layout",
+      "description": "Ensure the main chat + dashboard view gracefully reflows when horizontal space is limited so financial widgets remain accessible on smaller breakpoints.",
+      "technicalDetails": [
+        "Updated `app/(chat)/page.tsx` to keep the chat panel width constrained on large screens while allowing the workspace/data column to stretch or stack vertically on mobile.",
+        "Added `min-w-0`/`min-h-0` safeguards on the workspace cards so charts and grids shrink without overflowing or causing fixed-width scrollbars.",
+        "Removed the `lg:hidden` wrapper that previously hid the financial workspace/data sections on narrow viewports, enabling full CRUD access regardless of device size.",
+        "Financial data cards now include `min-w-0` guards and flex wrapping so headers, buttons, and currency amounts flow onto new lines instead of forcing a horizontal scrollbar."
+      ],
+      "acceptanceCriteria": [
+        "Reducing the browser width stacks the Financial Workspace and Financial Data panels beneath the chat instead of clipping them.",
+        "No horizontal scrollbar appears purely from layout containers at common breakpoints (sm/md/lg).",
+        "Charts and data cards stay readable by flexing their width while respecting rounded borders and padding.",
+        "Rows inside the Financial Data cards wrap their trailing buttons/amounts below the title on very small widths without overlapping."
+      ],
+      "storyPoints": 1,
+      "difficulty": "low",
+      "tags": ["frontend", "responsiveness"],
+      "id": "T45-FE-RESPONSIVE-LAYOUT",
+      "status": "done"
+    },
+    {
+      "title": "Floating Chat Launcher",
+      "description": "Expose the AI chat via a floating launcher on small screens while keeping the dedicated chat column on desktop so both experiences feel native.",
+      "technicalDetails": [
+        "Created `components/chat-floating-launcher.tsx` which renders a fixed bottom-right button and a compact modal that keeps the `Chat` component mounted while toggling visibility.",
+        "Reworked `app/(chat)/page.tsx` so the chat column remains visible on `lg` breakpoints while the floating launcher is only rendered on smaller widths.",
+        "The launcher uses transition styles, focus-visible rings, and dedicated close controls to keep the experience accessible."
+      ],
+      "acceptanceCriteria": [
+        "On desktop (lg and above), the chat column is permanently visible beside the dashboard widgets.",
+        "On tablet/mobile widths, chat is hidden until the user clicks the floating button at the bottom right.",
+        "Clicking the button opens a small modal/panel containing the existing chat interface and can be toggled closed via the same button or the inline close control."
+      ],
+      "storyPoints": 2,
+      "difficulty": "low",
+      "tags": ["frontend", "chat", "ux"],
+      "id": "T46-FE-CHAT-LAUNCHER",
+      "status": "done"
     }
   ]
 }
-
