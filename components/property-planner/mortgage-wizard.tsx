@@ -7,6 +7,7 @@ import {
   TrendingDown,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useWindowSize } from "usehooks-ts";
 import {
   formatCurrency,
   formatPercentage,
@@ -27,6 +28,8 @@ import {
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
+const MIN_CHART_HEIGHT_RATIO = 0.28;
+const MIN_CHART_HEIGHT_PX = 280;
 
 export function MortgageWizard() {
   const [isComplete, setIsComplete] = useState(false);
@@ -456,6 +459,14 @@ function MortgageOverview({
   loanTermYears,
   amortizationData,
 }: MortgageOverviewProps) {
+  const { height: viewportHeight } = useWindowSize();
+  const chartHeight = useMemo(() => {
+    const safeHeight = viewportHeight ?? 0;
+    if (safeHeight === 0) {
+      return MIN_CHART_HEIGHT_PX;
+    }
+    return Math.max(safeHeight * MIN_CHART_HEIGHT_RATIO, MIN_CHART_HEIGHT_PX);
+  }, [viewportHeight]);
   return (
     <section className="rounded-3xl border border-white/10 bg-gray-900 p-6 text-white shadow-xl">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -537,8 +548,8 @@ function MortgageOverview({
               loanAmount
             )} → $0`,
             hasData: amortizationData.balancePoints.length > 0,
-            render: () => (
-              <ResponsiveContainer height={260}>
+            render: (height: number) => (
+              <ResponsiveContainer width="100%" height={height}>
                 <AreaChart data={amortizationData.balancePoints}>
                   <defs>
                     <linearGradient
@@ -592,8 +603,8 @@ function MortgageOverview({
             title: "Interest vs Principal Payments",
             helper: "See how your payment composition changes each year.",
             hasData: amortizationData.composition.length > 0,
-            render: () => (
-              <ResponsiveContainer height={260}>
+            render: (height: number) => (
+              <ResponsiveContainer width="100%" height={height}>
                 <BarChart
                   data={amortizationData.composition}
                   barCategoryGap="20%"
@@ -640,11 +651,17 @@ function MortgageOverview({
           >
             <p className="text-sm font-semibold text-white">{section.title}</p>
             <p className="text-xs text-gray-400">{section.helper}</p>
-            <div className="mt-3 h-56 rounded-xl border border-white/10 bg-gray-950 p-3">
+            <div
+              className="mt-3 rounded-xl border border-white/10 bg-gray-950 p-3"
+              style={{ minHeight: chartHeight }}
+            >
               {section.hasData ? (
-                section.render()
+                section.render(chartHeight)
               ) : (
-                <div className="flex h-full items-center justify-center text-xs text-gray-500">
+                <div
+                  className="flex items-center justify-center text-xs text-gray-500"
+                  style={{ minHeight: chartHeight }}
+                >
                   Not enough payment history yet.
                 </div>
               )}
