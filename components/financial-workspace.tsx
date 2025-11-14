@@ -8,6 +8,7 @@ import {
 import { useFinancialEvents } from "@/hooks/use-financial-events";
 import { LifeEventTimelineChart } from "./life-event-timeline-chart";
 import { PropertyPlannerLauncher } from "./property-planner/property-planner-launcher";
+import { DevDataControls } from "./dev-data-controls";
 
 export function FinancialWorkspace() {
   const { data, isLoading, error } = useFinancialPlan();
@@ -140,6 +141,7 @@ export function FinancialWorkspace() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <DevDataControls />
           <PropertyPlannerLauncher />
         </div>
       </div>

@@ -94,7 +94,7 @@
       "difficulty": "medium",
       "tags": ["property", "chat", "backend", "frontend"],
       "id": "T30C-FE-BE-PROPERTY-CHAT",
-      "status": "todo"
+      "status": "done"
     },
     {
       "title": "Chat + Dashboard Responsive Layout",

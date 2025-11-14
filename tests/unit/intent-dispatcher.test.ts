@@ -33,11 +33,33 @@ const mockFinancialClient = vi.hoisted(() => ({
     update: vi.fn(),
     delete: vi.fn(),
   },
+  propertyPlanner: {
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    list: vi.fn(),
+    get: vi.fn(),
+  },
 }));
 
 vi.mock("@/features/financial-planning/store", () => ({
   useFinancialPlanningStore: {
     getState: () => mockStateRef.current,
+  },
+}));
+const mockPlannerStoreState: any = {
+  scenarios: {},
+  isLoading: false,
+  hasFetched: true,
+  fetch: vi.fn(),
+  saveScenario: vi.fn(),
+  deleteScenario: vi.fn(),
+  overviewComplete: {},
+  lastSavedAt: {},
+};
+vi.mock("@/features/property-planner/store", () => ({
+  usePropertyPlannerStore: {
+    getState: () => mockPlannerStoreState,
   },
 }));
 vi.mock("@/lib/financial", async () => {
@@ -53,6 +75,7 @@ import {
   dispatchIntentActions,
   IntentDispatchError,
 } from "@/features/financial-planning/intent-dispatcher";
+import { PROPERTY_PLANNER_MOCKS } from "@/components/property-planner/mock-data";
 
 const basePlan = {
   assets: [
@@ -134,6 +157,14 @@ beforeEach(() => {
   mockSetFinancialPlan.mockReset();
   mockRunProjection.mockReset().mockResolvedValue(undefined);
   mockRefreshData.mockReset().mockResolvedValue(undefined);
+  mockPlannerStoreState.scenarios = {};
+  mockPlannerStoreState.fetch.mockReset().mockResolvedValue(undefined);
+  mockPlannerStoreState.saveScenario.mockReset().mockResolvedValue(undefined);
+  mockPlannerStoreState.deleteScenario
+    .mockReset()
+    .mockResolvedValue(undefined);
+  mockPlannerStoreState.hasFetched = true;
+  mockPlannerStoreState.isLoading = false;
   const now = new Date().toISOString();
   mockFinancialClient.assets.create
     .mockReset()
@@ -488,5 +519,59 @@ describe("dispatchIntentActions", () => {
 
     expect(mockSetFinancialPlan).not.toHaveBeenCalled();
     expect(mockFinancialClient.assets.update).not.toHaveBeenCalled();
+  });
+
+  it("updates property planner scenarios without mutating financial plan", async () => {
+    mockPlannerStoreState.scenarios = {
+      hdb: JSON.parse(JSON.stringify(PROPERTY_PLANNER_MOCKS.hdb)),
+    };
+    const actions = [
+      {
+        id: "planner-1",
+        verb: "update" as const,
+        entity: "property-planner" as const,
+        target: "loan amount",
+        amount: 900_000,
+        currency: null,
+        raw: "Set HDB planner loan amount to 900k",
+        metadata: {
+          plannerScenarioType: "hdb",
+          plannerField: "loanAmount",
+        },
+      },
+    ];
+
+    await dispatchIntentActions({
+      intentId: "planner-update",
+      actions,
+    });
+
+    expect(mockPlannerStoreState.saveScenario).toHaveBeenCalledTimes(1);
+    expect(mockSetFinancialPlan).not.toHaveBeenCalled();
+  });
+
+  it("removes property planner scenarios when requested", async () => {
+    const actions = [
+      {
+        id: "planner-remove",
+        verb: "remove-item" as const,
+        entity: "property-planner" as const,
+        target: "remove condo planner",
+        amount: null,
+        currency: null,
+        raw: "clear condo planner",
+        metadata: {
+          plannerScenarioType: "condo",
+        },
+      },
+    ];
+
+    await dispatchIntentActions({
+      intentId: "planner-remove",
+      actions,
+    });
+
+    expect(mockPlannerStoreState.deleteScenario).toHaveBeenCalledWith("condo");
+    expect(mockSetFinancialPlan).not.toHaveBeenCalled();
   });
 });

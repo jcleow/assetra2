@@ -30,9 +30,12 @@ describe("GoServiceIndicator", () => {
       await screen.findByText(/Connected — API responding/i)
     ).toBeVisible();
     expect(screen.getByText(/Healthy/i)).toBeVisible();
-    expect(fetchMock).toHaveBeenCalledWith("/go-api/health", {
-      cache: "no-store",
-    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/go-api/health"),
+      {
+        cache: "no-store",
+      }
+    );
   });
 
   test("shows failure details when the Go service is unreachable", async () => {

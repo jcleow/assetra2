@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { devtools, persist } from "zustand/middleware";
-import type { FinancialPlanPayload } from "@/app/api/financial-plan/route";
+import type { FinancialPlanPayload } from "@/lib/financial/plan-schema";
 import type { NetWorthPoint } from "@/lib/financial";
 import { requestRunModel } from "@/lib/financial/run-model-client";
 

@@ -1,13 +1,25 @@
 "use client";
 
-import type { FinancialPlanPayload } from "@/app/api/financial-plan/route";
+import type { FinancialPlanPayload } from "@/lib/financial/plan-schema";
+import { buildMortgageScenario } from "@/components/property-planner/calculations";
+import {
+  PROPERTY_PLANNER_MOCKS,
+  type PropertyPlannerType,
+} from "@/components/property-planner/mock-data";
 import { toast } from "@/components/toast";
-import { useFinancialPlanningStore } from "@/features/financial-planning/store";
+import {
+  useFinancialPlanningStore,
+} from "@/features/financial-planning/store";
+import { usePropertyPlannerStore } from "@/features/property-planner/store";
 import {
   computeMonthlyCashFlow,
   type Frequency,
   financialClient,
 } from "@/lib/financial";
+import type {
+  MortgageInputs,
+  PropertyPlannerScenario,
+} from "@/lib/financial/types";
 import type { IntentAction } from "@/lib/intent/parser";
 import { generateUUID } from "@/lib/utils";
 
@@ -59,18 +71,26 @@ export async function dispatchIntentActions({
     },
     breakdown: plan.cashflow?.breakdown ?? {},
   };
+  let planMutated = false;
 
   for (const action of actions) {
     logIntentAction(intentId, chatId, action);
+     if (isPropertyPlannerIntent(action)) {
+       await handlePropertyPlannerAction(action);
+       continue;
+     }
     await persistAction(state.financialPlan, action);
     applyAction(plan, action);
+    planMutated = true;
   }
 
-  recalcSummary(plan);
-  plan.lastUpdated = new Date().toISOString();
+  if (planMutated) {
+    recalcSummary(plan);
+    plan.lastUpdated = new Date().toISOString();
 
-  state.setFinancialPlan(plan);
-  await state.runProjection();
+    state.setFinancialPlan(plan);
+    await state.runProjection();
+  }
 
   await Promise.all(
     actions.map((action, index) =>
@@ -78,10 +98,12 @@ export async function dispatchIntentActions({
     )
   );
 
-  try {
-    await state.refreshData();
-  } catch (error) {
-    console.warn("Failed to refresh financial data", error);
+  if (planMutated) {
+    try {
+      await state.refreshData();
+    } catch (error) {
+      console.warn("Failed to refresh financial data", error);
+    }
   }
 }
 
@@ -666,4 +688,277 @@ function logIntentAction(
   } catch {
     // ignore logging failures
   }
+}
+
+const PROPERTY_PLANNER_FIELD_NAMES = [
+  "headline",
+  "subheadline",
+  "loanAmount",
+  "loanTermYears",
+  "loanStartMonth",
+  "fixedYears",
+  "fixedRate",
+  "floatingRate",
+  "borrowerType",
+  "householdIncome",
+  "otherDebt",
+] as const;
+type PlannerField = (typeof PROPERTY_PLANNER_FIELD_NAMES)[number];
+const PLANNER_INPUT_FIELDS = new Set<PlannerField>([
+  "loanAmount",
+  "loanTermYears",
+  "loanStartMonth",
+  "fixedYears",
+  "fixedRate",
+  "floatingRate",
+  "borrowerType",
+  "householdIncome",
+  "otherDebt",
+]);
+const PROPERTY_TYPE_ALIASES: Record<string, PropertyPlannerType> = {
+  hdb: "hdb",
+  bto: "hdb",
+  public: "hdb",
+  condo: "condo",
+  condominium: "condo",
+  private: "condo",
+  landed: "landed",
+  terrace: "landed",
+  "semi-detached": "landed",
+};
+const PROPERTY_TYPE_LABELS: Record<PropertyPlannerType, string> = {
+  hdb: "HDB",
+  condo: "Condo",
+  landed: "Landed",
+};
+
+type PlannerActionDetails = {
+  scenarioType: PropertyPlannerType;
+  field?: PlannerField;
+  stringValue?: string | null;
+};
+
+function isPropertyPlannerIntent(action: IntentAction) {
+  return action.entity === "property-planner";
+}
+
+async function handlePropertyPlannerAction(action: IntentAction) {
+  const details = extractPlannerActionDetails(action);
+  if (!details) {
+    throw new IntentDispatchError(
+      `Missing planner metadata for "${action.raw ?? action.verb}".`
+    );
+  }
+  const store = usePropertyPlannerStore.getState();
+  if (!store.hasFetched && !store.isLoading) {
+    try {
+      await store.fetch();
+    } catch (error) {
+      console.warn("Failed to preload property planner scenarios", error);
+    }
+  }
+  if (action.verb === "remove-item" && !details.field) {
+    if (store.deleteScenario) {
+      await store.deleteScenario(details.scenarioType);
+    }
+    toast({
+      type: "success",
+      description: `${PROPERTY_TYPE_LABELS[details.scenarioType]} planner scenario removed.`,
+    });
+    return;
+  }
+  const existingScenario = store.scenarios[details.scenarioType];
+  const scenario = clonePlannerScenario(
+    existingScenario,
+    details.scenarioType
+  );
+  let mutated = applyPlannerMutation(scenario, details, action);
+  if (!existingScenario && action.verb === "add-item") {
+    mutated = true;
+    scenario.updatedAt = new Date().toISOString();
+    scenario.lastRefreshed = scenario.updatedAt;
+  }
+  if (!mutated) {
+    toast({
+      type: "info",
+      description: `${PROPERTY_TYPE_LABELS[details.scenarioType]} planner already up to date.`,
+    });
+    return;
+  }
+  await store.saveScenario(details.scenarioType, scenario);
+  toast({
+    type: "success",
+    description: `${PROPERTY_TYPE_LABELS[details.scenarioType]} planner updated.`,
+  });
+}
+
+function clonePlannerScenario(
+  scenario: PropertyPlannerScenario | undefined,
+  type: PropertyPlannerType
+) {
+  const base = scenario ?? PROPERTY_PLANNER_MOCKS[type];
+  return typeof structuredClone === "function"
+    ? structuredClone(base)
+    : (JSON.parse(JSON.stringify(base)) as PropertyPlannerScenario);
+}
+
+function extractPlannerActionDetails(
+  action: IntentAction
+): PlannerActionDetails | null {
+  if (action.entity !== "property-planner") {
+    return null;
+  }
+  const combinedText = `${action.target ?? ""} ${action.raw ?? ""}`;
+  return {
+    scenarioType: resolvePlannerType(
+      action.metadata?.plannerScenarioType,
+      combinedText
+    ),
+    field: normalizePlannerField(action.metadata?.plannerField),
+    stringValue: action.metadata?.plannerStringValue?.trim() ?? null,
+  };
+}
+
+function resolvePlannerType(
+  value: string | null | undefined,
+  fallbackText?: string
+): PropertyPlannerType {
+  const normalized = value?.trim().toLowerCase();
+  if (normalized && PROPERTY_TYPE_ALIASES[normalized]) {
+    return PROPERTY_TYPE_ALIASES[normalized];
+  }
+  if (fallbackText) {
+    const lowered = fallbackText.toLowerCase();
+    for (const [keyword, type] of Object.entries(PROPERTY_TYPE_ALIASES)) {
+      if (lowered.includes(keyword)) {
+        return type;
+      }
+    }
+  }
+  return "hdb";
+}
+
+function normalizePlannerField(field?: string | null): PlannerField | undefined {
+  if (!field) return undefined;
+  const normalized = field.replace(/[\s_-]/g, "").toLowerCase();
+  return PROPERTY_PLANNER_FIELD_NAMES.find(
+    (candidate) =>
+      candidate.replace(/[\s_-]/g, "").toLowerCase() === normalized
+  );
+}
+
+function applyPlannerMutation(
+  scenario: PropertyPlannerScenario,
+  details: PlannerActionDetails,
+  action: IntentAction
+) {
+  if (!details.field) {
+    return false;
+  }
+  if (PLANNER_INPUT_FIELDS.has(details.field)) {
+    const nextInputs: MortgageInputs = { ...scenario.inputs };
+    switch (details.field) {
+      case "loanAmount":
+        nextInputs.loanAmount = ensureAmount(action);
+        break;
+      case "loanTermYears":
+        nextInputs.loanTermYears = Math.max(
+          1,
+          Math.round(ensureAmount(action))
+        );
+        break;
+      case "loanStartMonth": {
+        const normalized = normalizeLoanStartMonth(details.stringValue);
+        if (!normalized) {
+          throw new IntentDispatchError(
+            "Please provide a valid loan start month (YYYY-MM)."
+          );
+        }
+        nextInputs.loanStartMonth = normalized;
+        break;
+      }
+      case "fixedYears":
+        nextInputs.fixedYears = Math.max(
+          0,
+          Math.round(ensureAmount(action))
+        );
+        break;
+      case "fixedRate":
+        nextInputs.fixedRate = ensureAmount(action);
+        break;
+      case "floatingRate":
+        nextInputs.floatingRate = ensureAmount(action);
+        break;
+      case "borrowerType": {
+        const borrower = normalizeBorrowerType(details.stringValue);
+        if (!borrower) {
+          throw new IntentDispatchError(
+            "Borrower type must be 'single' or 'couple'."
+          );
+        }
+        nextInputs.borrowerType = borrower;
+        break;
+      }
+      case "householdIncome":
+        nextInputs.householdIncome = ensureAmount(action);
+        break;
+      case "otherDebt":
+        nextInputs.otherDebt = ensureAmount(action);
+        break;
+      default:
+        break;
+    }
+    scenario.inputs = nextInputs;
+    const { amortization, snapshot } = buildMortgageScenario(nextInputs);
+    scenario.amortization = amortization;
+    scenario.snapshot = snapshot;
+    scenario.updatedAt = new Date().toISOString();
+    scenario.lastRefreshed = new Date().toISOString();
+    return true;
+  }
+
+  const value =
+    details.stringValue?.trim() || action.target?.trim() || action.raw?.trim();
+  if (!value) {
+    throw new IntentDispatchError(
+      `No value provided for planner field "${details.field}".`
+    );
+  }
+  if (details.field === "headline") {
+    scenario.headline = value;
+  } else if (details.field === "subheadline") {
+    scenario.subheadline = value;
+  }
+  scenario.updatedAt = new Date().toISOString();
+  scenario.lastRefreshed = new Date().toISOString();
+  return true;
+}
+
+function normalizeLoanStartMonth(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (/^\d{4}-\d{2}$/.test(trimmed)) {
+    return trimmed;
+  }
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
+function normalizeBorrowerType(value?: string | null) {
+  if (!value) return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized.includes("couple") || normalized.includes("married")) {
+    return "couple";
+  }
+  if (normalized.includes("single") || normalized.includes("individual")) {
+    return "single";
+  }
+  return null;
 }

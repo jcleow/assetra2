@@ -24,7 +24,7 @@
  */
 
 // Type exports - TypeScript interfaces
-export type { FinancialPlanPayload } from "@/app/api/financial-plan/route";
+export type { FinancialPlanPayload } from "@/lib/financial/plan-schema";
 export {
   FinancialPlanProvider,
   useFinancialPlanContext,

@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { FinancialPlanPayload } from "@/app/api/financial-plan/route";
+import type { FinancialPlanPayload } from "@/lib/financial/plan-schema";
 import {
   useFinancialPlan,
   useFinancialPlanningStore,
