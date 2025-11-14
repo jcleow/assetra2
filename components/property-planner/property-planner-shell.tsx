@@ -1,14 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { Loader2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   PROPERTY_PLANNER_MOCKS,
   PROPERTY_TYPES,
   PropertyPlannerType,
 } from "./mock-data";
 import { MortgageWizard } from "./mortgage-wizard";
+
+const DEFAULT_PROPERTY_LOCATIONS: Record<PropertyPlannerType, string> = {
+  hdb: PROPERTY_PLANNER_MOCKS.hdb.headline,
+  condo: PROPERTY_PLANNER_MOCKS.condo.headline,
+  landed: PROPERTY_PLANNER_MOCKS.landed.headline,
+};
 
 interface PropertyPlannerShellProps {
   activeType: PropertyPlannerType;
@@ -20,8 +28,31 @@ export function PropertyPlannerShell({
   onTypeChange,
 }: PropertyPlannerShellProps) {
   const scenario = PROPERTY_PLANNER_MOCKS[activeType];
+  const [locations, setLocations] = useState<
+    Record<PropertyPlannerType, string>
+  >(DEFAULT_PROPERTY_LOCATIONS);
+  const activeLocation = locations[activeType] ?? scenario.headline;
 
   const navItems = PROPERTY_TYPES;
+  const handleLocationChange = (value: string) => {
+    setLocations((prev) => ({
+      ...prev,
+      [activeType]: value,
+    }));
+  };
+
+  const handleLocationBlur = () => {
+    setLocations((prev) => {
+      const current = prev[activeType] ?? "";
+      if (current.trim()) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [activeType]: scenario.headline,
+      };
+    });
+  };
 
   return (
     <div className="flex h-full w-full min-h-0 flex-col overflow-hidden rounded-3xl border border-white/10 bg-gray-950 text-white shadow-2xl">
@@ -35,9 +66,23 @@ export function PropertyPlannerShell({
               <DialogPrimitive.Description className="text-sm text-gray-400">
                 Model how your housing loan impacts cash, CPF, and MSR in three guided steps.
               </DialogPrimitive.Description>
-              <p className="text-xs uppercase tracking-[0.18em] text-gray-500">
-                Currently modeling: {scenario.headline}
-              </p>
+              <div className="flex flex-wrap items-center gap-3 text-xs text-gray-400">
+                <span className="uppercase tracking-[0.18em] text-gray-500">
+                  Currently modeling:
+                </span>
+                <Input
+                  aria-label="Describe the home you are modeling"
+                  autoComplete="off"
+                  className="h-8 min-w-[220px] max-w-[280px] rounded-full border-white/20 bg-transparent px-3 text-[11px] font-semibold tracking-normal text-white placeholder:text-gray-500 focus:border-blue-400 focus-visible:ring-0"
+                  onBlur={handleLocationBlur}
+                  onChange={(event) =>
+                    handleLocationChange(event.target.value ?? "")
+                  }
+                  placeholder="e.g. 4-room BTO in Tampines"
+                  spellCheck={false}
+                  value={activeLocation}
+                />
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Button
