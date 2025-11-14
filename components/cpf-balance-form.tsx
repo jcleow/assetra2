@@ -9,15 +9,15 @@ import { Label } from "@/components/ui/label";
 import { financialClient } from "@/lib/financial/client";
 import type { AssetCreatePayload } from "@/lib/financial/types";
 
-interface CPFBalanceFormProps {
+type CPFBalanceFormProps = {
   onClose: () => void;
-}
+};
 
-interface CPFBalances {
+type CPFBalances = {
   ordinaryAccount: string;
   specialAccount: string;
   medisaveAccount: string;
-}
+};
 
 export function CPFBalanceForm({ onClose }: CPFBalanceFormProps) {
   const queryClient = useQueryClient();
@@ -31,7 +31,7 @@ export function CPFBalanceForm({ onClose }: CPFBalanceFormProps) {
   const [errors, setErrors] = useState<Partial<CPFBalances>>({});
 
   const createCPFAssetsMutation = useMutation({
-    mutationFn: async (cpfBalances: CPFBalances) => {
+    mutationFn: (cpfBalances: CPFBalances) => {
       const cpfAssets: AssetCreatePayload[] = [
         {
           name: "CPF Ordinary Account",

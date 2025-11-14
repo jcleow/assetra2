@@ -116,10 +116,10 @@ const MOCK_DATA: FinancialPlanPayload = {
   lastUpdated: new Date().toISOString(),
 };
 
-interface CacheEntry {
+type CacheEntry = {
   data: FinancialPlanPayload;
   timestamp: number;
-}
+};
 
 const cache = new Map<string, CacheEntry>();
 const CACHE_TTL = 30 * 1000; // 30 seconds for development
@@ -255,7 +255,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
+export function POST(request: NextRequest) {
   try {
     const cacheKey = getCacheKey(request);
     cache.delete(cacheKey);
