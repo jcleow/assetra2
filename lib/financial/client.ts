@@ -19,6 +19,10 @@ import {
   type LiabilityCreatePayload,
   type LiabilityUpdatePayload,
   liabilitySchema,
+  type PropertyPlannerScenario,
+  type PropertyPlannerScenarioCreatePayload,
+  type PropertyPlannerScenarioUpdatePayload,
+  propertyPlannerScenarioSchema,
 } from "./types";
 
 export type FetchLike = (
@@ -45,7 +49,9 @@ export interface ResourceClient<
 }
 
 const DEFAULT_BASE_URL =
-  process.env.NEXT_PUBLIC_GO_PROXY_PREFIX?.trim() || "/go-api";
+  process.env.NEXT_PUBLIC_GO_PROXY_PREFIX?.trim() ||
+  process.env.NEXT_PUBLIC_GO_SERVICE_BASE_URL?.trim() ||
+  "/go-api";
 
 export class FinancialClientError extends Error {
   status: number;
@@ -93,6 +99,11 @@ export class FinancialClient {
     ExpenseCreatePayload,
     ExpenseUpdatePayload
   >("cashflow/expenses", expenseSchema);
+  propertyPlanner = this.createResourceClient<
+    PropertyPlannerScenario,
+    PropertyPlannerScenarioCreatePayload,
+    PropertyPlannerScenarioUpdatePayload
+  >("property-planner/scenarios", propertyPlannerScenarioSchema);
 
   cashflowSummary(signal?: AbortSignal) {
     return this.request<CashFlowSnapshot>("/cashflow", cashFlowSnapshotSchema, {
@@ -163,9 +174,15 @@ export class FinancialClient {
     }
 
     const origin =
-      (typeof process !== "undefined" && process.env.NEXT_PUBLIC_SITE_URL) ||
-      "http://localhost";
-    return new URL(combined, origin).toString();
+      (typeof process !== "undefined" &&
+        (process.env.NEXT_PUBLIC_SITE_URL ||
+          process.env.NEXTAUTH_URL ||
+          process.env.VERCEL_URL)) ||
+      "http://localhost:3000";
+    return new URL(
+      combined,
+      origin.startsWith("http") ? origin : `https://${origin}`
+    ).toString();
   }
 
   private async request<T>(

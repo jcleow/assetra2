@@ -1,56 +1,55 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { Loader2, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   PROPERTY_PLANNER_MOCKS,
-  PROPERTY_TYPES,
   PropertyPlannerType,
 } from "./mock-data";
 import { MortgageWizard } from "./mortgage-wizard";
-
-const DEFAULT_PROPERTY_LOCATIONS: Record<PropertyPlannerType, string> = {
-  hdb: PROPERTY_PLANNER_MOCKS.hdb.headline,
-  condo: PROPERTY_PLANNER_MOCKS.condo.headline,
-  landed: PROPERTY_PLANNER_MOCKS.landed.headline,
-};
+import { usePropertyPlannerStore } from "@/features/property-planner/store";
 
 interface PropertyPlannerShellProps {
   activeType: PropertyPlannerType;
-  onTypeChange: (type: PropertyPlannerType) => void;
 }
 
 export function PropertyPlannerShell({
   activeType,
-  onTypeChange,
 }: PropertyPlannerShellProps) {
-  const scenario = PROPERTY_PLANNER_MOCKS[activeType];
-  const [locations, setLocations] = useState<
-    Record<PropertyPlannerType, string>
-  >(DEFAULT_PROPERTY_LOCATIONS);
-  const activeLocation = locations[activeType] ?? scenario.headline;
+  const storedScenario = usePropertyPlannerStore(
+    (state) => state.scenarios[activeType]
+  );
+  const saveScenario = usePropertyPlannerStore((state) => state.saveScenario);
+  const hasFetched = usePropertyPlannerStore((state) => state.hasFetched);
+  const scenario = storedScenario ?? PROPERTY_PLANNER_MOCKS[activeType];
+  const defaultHeadline = PROPERTY_PLANNER_MOCKS[activeType].headline;
+  const [locationDraft, setLocationDraft] = useState(scenario.headline);
 
-  const navItems = PROPERTY_TYPES;
+  useEffect(() => {
+    setLocationDraft(scenario.headline);
+  }, [scenario.headline]);
+
   const handleLocationChange = (value: string) => {
-    setLocations((prev) => ({
-      ...prev,
-      [activeType]: value,
-    }));
+    setLocationDraft(value);
   };
 
   const handleLocationBlur = () => {
-    setLocations((prev) => {
-      const current = prev[activeType] ?? "";
-      if (current.trim()) {
-        return prev;
-      }
-      return {
-        ...prev,
-        [activeType]: scenario.headline,
-      };
+    const nextHeadline = locationDraft.trim() || defaultHeadline;
+    setLocationDraft(nextHeadline);
+    if (nextHeadline === scenario.headline) {
+      return;
+    }
+    if (!hasFetched) {
+      return;
+    }
+    void saveScenario({
+      ...scenario,
+      type: activeType,
+      headline: nextHeadline,
+      updatedAt: new Date().toISOString(),
     });
   };
 
@@ -80,7 +79,7 @@ export function PropertyPlannerShell({
                   }
                   placeholder="e.g. 4-room BTO in Tampines"
                   spellCheck={false}
-                  value={activeLocation}
+                  value={locationDraft}
                 />
               </div>
             </div>
@@ -109,7 +108,7 @@ export function PropertyPlannerShell({
         </header>
 
         <main className="flex-1 overflow-y-auto px-4 py-6 sm:px-8 min-h-0">
-          <MortgageWizard />
+          <MortgageWizard activeType={activeType} />
         </main>
       </div>
     </div>

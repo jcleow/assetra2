@@ -6,13 +6,19 @@ import {
   PiggyBank,
   TrendingDown,
 } from "lucide-react";
-import { useMemo, useState } from "react";
-import { useWindowSize } from "usehooks-ts";
+import { useEffect, useMemo, useState } from "react";
+import { useDebounceCallback, useWindowSize } from "usehooks-ts";
 import {
   formatCurrency,
   formatPercentage,
   useFinancialPlanningStore,
 } from "@/features/financial-planning";
+import { usePropertyPlannerStore } from "@/features/property-planner/store";
+import {
+  PROPERTY_PLANNER_MOCKS,
+  PropertyPlannerType,
+} from "./mock-data";
+import { buildMortgageScenario } from "./calculations";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -25,94 +31,143 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import type {
+  MortgageAmortization,
+  MortgageInputs,
+  PropertyPlannerScenario,
+} from "@/lib/financial/types";
 
-const clamp = (value: number, min: number, max: number) =>
-  Math.max(min, Math.min(max, value));
 const MIN_CHART_HEIGHT_RATIO = 0.28;
 const MIN_CHART_HEIGHT_PX = 280;
 
-export function MortgageWizard() {
+const cloneInputs = (inputs: MortgageInputs): MortgageInputs => ({
+  ...inputs,
+});
+
+const inputsEqual = (a: MortgageInputs, b: MortgageInputs) =>
+  a.loanAmount === b.loanAmount &&
+  a.loanTermYears === b.loanTermYears &&
+  a.borrowerType === b.borrowerType &&
+  a.loanStartMonth === b.loanStartMonth &&
+  a.fixedYears === b.fixedYears &&
+  a.fixedRate === b.fixedRate &&
+  a.floatingRate === b.floatingRate &&
+  a.householdIncome === b.householdIncome &&
+  a.otherDebt === b.otherDebt;
+
+interface MortgageWizardProps {
+  activeType: PropertyPlannerType;
+}
+
+export function MortgageWizard({ activeType }: MortgageWizardProps) {
   const [isComplete, setIsComplete] = useState(false);
   const storedMonthlyIncome = useFinancialPlanningStore(
     (state) => state.financialPlan?.summary.monthlyIncome ?? null
   );
-
-  const [loanAmount, setLoanAmount] = useState(750_000);
-  const [loanTermYears, setLoanTermYears] = useState(25);
-  const [borrowerType, setBorrowerType] = useState<"single" | "couple">(
-    "single"
+  const scenarioFromStore = usePropertyPlannerStore(
+    (state) => state.scenarios[activeType]
   );
+  const saveScenario = usePropertyPlannerStore((state) => state.saveScenario);
+  const hasFetched = usePropertyPlannerStore((state) => state.hasFetched);
+  const scenario = scenarioFromStore ?? PROPERTY_PLANNER_MOCKS[activeType];
   const [propertyCategory, setPropertyCategory] = useState<"hdb" | "private">(
-    "hdb"
+    activeType === "hdb" ? "hdb" : "private"
   );
-  const [loanStartMonth, setLoanStartMonth] = useState("2025-11");
-
-  const [fixedYears, setFixedYears] = useState(5);
-  const [fixedRate, setFixedRate] = useState(2.6);
-  const [floatingRate, setFloatingRate] = useState(4.1);
-
-  const [householdIncome, setHouseholdIncome] = useState(10_500);
-  const [otherDebt, setOtherDebt] = useState(0);
-
-  const totalMonths = loanTermYears * 12;
-  const monthlyRate = (fixedRate / 100) / 12;
-
-  const monthlyPayment = useMemo(() => {
-    if (monthlyRate === 0) {
-      return loanAmount / totalMonths;
-    }
-    const numerator = loanAmount * monthlyRate;
-    const denominator = 1 - Math.pow(1 + monthlyRate, -totalMonths);
-    return numerator / denominator;
-  }, [loanAmount, monthlyRate, totalMonths]);
-
-  const totalInterest = monthlyPayment * totalMonths - loanAmount;
-  const msrRatio = householdIncome
-    ? clamp(monthlyPayment / householdIncome, 0, 1.5)
-    : 0;
-
-  const loanStartYear = useMemo(() => {
-    const [yearPart] = loanStartMonth.split("-");
-    const parsed = Number(yearPart);
-    return Number.isFinite(parsed) ? parsed : new Date().getFullYear();
-  }, [loanStartMonth]);
-
-  const amortizationData = useMemo(
-    () =>
-      buildAmortizationData({
-        loanAmount,
-        loanTermYears,
-        monthlyPayment,
-        monthlyRate,
-        totalMonths,
-        loanStartYear,
-      }),
-    [
-      loanAmount,
-      loanTermYears,
-      monthlyPayment,
-      monthlyRate,
-      totalMonths,
-      loanStartYear,
-    ]
+  const [inputs, setInputs] = useState<MortgageInputs>(
+    cloneInputs(scenario.inputs)
+  );
+  const isOverviewComplete = usePropertyPlannerStore(
+    (state) => state.isOverviewComplete
+  );
+  const setOverviewComplete = usePropertyPlannerStore(
+    (state) => state.setOverviewComplete
   );
 
-  const loanEndDate = useMemo(() => {
-    if (!loanStartMonth) {
-      return "—";
+  useEffect(() => {
+    setIsComplete(isOverviewComplete);
+  }, [isOverviewComplete]);
+
+  useEffect(() => {
+    const nextInputs = cloneInputs(scenario.inputs);
+    setInputs(nextInputs);
+  }, [scenario.inputs]);
+
+  useEffect(() => {
+    setPropertyCategory(activeType === "hdb" ? "hdb" : "private");
+  }, [activeType]);
+
+  const { height: viewportHeight } = useWindowSize();
+  const chartHeight = useMemo(() => {
+    const safeHeight = viewportHeight ?? 0;
+    if (safeHeight === 0) {
+      return MIN_CHART_HEIGHT_PX;
     }
-    const [year, month] = loanStartMonth.split("-").map(Number);
-    if (!year || !month) return "—";
-    const end = new Date(year, month - 1 + loanTermYears * 12, 1);
-    return end.toLocaleString("en-SG", { month: "short", year: "numeric" });
-  }, [loanStartMonth, loanTermYears]);
+    return Math.max(safeHeight * MIN_CHART_HEIGHT_RATIO, MIN_CHART_HEIGHT_PX);
+  }, [viewportHeight]);
+
+  const calculation = useMemo(
+    () => buildMortgageScenario(inputs),
+    [inputs]
+  );
+  const amortizationData = calculation.amortization;
+  const snapshot = calculation.snapshot;
+  const { monthlyPayment, totalInterest, loanEndDate, msrRatio } = snapshot;
+
+  const updateInputs = (changes: Partial<MortgageInputs>) =>
+    setInputs((prev) => ({ ...prev, ...changes }));
+
+  const {
+    loanAmount,
+    loanTermYears,
+    borrowerType,
+    loanStartMonth,
+    fixedYears,
+    fixedRate,
+    floatingRate,
+    householdIncome,
+    otherDebt,
+  } = inputs;
+
+  const debouncedPersistScenario = useDebounceCallback(
+    (nextScenario: PropertyPlannerScenario) => {
+      saveScenario(nextScenario).catch(() => {});
+    },
+    800
+  );
+
+  useEffect(() => {
+    if (!hasFetched) return;
+    if (inputsEqual(inputs, scenario.inputs)) {
+      return;
+    }
+    const payload: PropertyPlannerScenario = {
+      ...scenario,
+      type: activeType,
+      inputs,
+      amortization: amortizationData,
+      snapshot,
+      updatedAt: new Date().toISOString(),
+      lastRefreshed: new Date().toISOString(),
+    };
+    debouncedPersistScenario(payload);
+  }, [
+    activeType,
+    amortizationData,
+    debouncedPersistScenario,
+    hasFetched,
+    inputs,
+    scenario,
+    snapshot,
+  ]);
 
   const handleSubmit = () => {
     setIsComplete(true);
+    setOverviewComplete(true);
   };
 
   const handleEdit = () => {
     setIsComplete(false);
+    setOverviewComplete(false);
   };
 
   return (
@@ -143,23 +198,33 @@ export function MortgageWizard() {
               loanAmount={loanAmount}
               loanStartMonth={loanStartMonth}
               loanTermYears={loanTermYears}
-              onBorrowerChange={setBorrowerType}
+              onBorrowerChange={(value) => updateInputs({ borrowerType: value })}
               onPropertyCategoryChange={setPropertyCategory}
-              onFixedRateChange={setFixedRate}
-              onFixedYearsChange={setFixedYears}
-              onFloatingRateChange={setFloatingRate}
-              onHouseholdIncomeChange={setHouseholdIncome}
-              onLoanAmountChange={setLoanAmount}
-              onLoanStartMonthChange={setLoanStartMonth}
-              onLoanTermChange={setLoanTermYears}
-              onOtherDebtChange={setOtherDebt}
+              onFixedRateChange={(value) => updateInputs({ fixedRate: value })}
+              onFixedYearsChange={(value) => updateInputs({ fixedYears: value })}
+              onFloatingRateChange={(value) =>
+                updateInputs({ floatingRate: value })
+              }
+              onHouseholdIncomeChange={(value) =>
+                updateInputs({ householdIncome: value })
+              }
+              onLoanAmountChange={(value) =>
+                updateInputs({ loanAmount: value })
+              }
+              onLoanStartMonthChange={(value) =>
+                updateInputs({ loanStartMonth: value })
+              }
+              onLoanTermChange={(value) =>
+                updateInputs({ loanTermYears: value })
+              }
+              onOtherDebtChange={(value) => updateInputs({ otherDebt: value })}
               otherDebt={otherDebt}
               monthlyPayment={monthlyPayment}
               msrRatio={msrRatio}
               storedIncome={storedMonthlyIncome}
               onUseStoredIncome={() => {
                 if (storedMonthlyIncome) {
-                  setHouseholdIncome(storedMonthlyIncome);
+                  updateInputs({ householdIncome: storedMonthlyIncome });
                 }
               }}
             />
@@ -446,7 +511,7 @@ interface MortgageOverviewProps {
   onEdit: () => void;
   loanAmount: number;
   loanTermYears: number;
-  amortizationData: AmortizationData;
+  amortizationData: MortgageAmortization;
 }
 
 function MortgageOverview({
@@ -941,111 +1006,4 @@ function IncomeSection({
       </div>
     </div>
   );
-}
-
-interface AmortizationPoint {
-  label: string;
-  balance: number;
-  year: number;
-  yearIndex: number;
-}
-
-interface CompositionPoint {
-  label: string;
-  interest: number;
-  principal: number;
-  year: number;
-  yearIndex: number;
-}
-
-interface AmortizationData {
-  balancePoints: AmortizationPoint[];
-  composition: CompositionPoint[];
-}
-
-interface BuildAmortizationArgs {
-  loanAmount: number;
-  monthlyPayment: number;
-  monthlyRate: number;
-  loanTermYears: number;
-  totalMonths: number;
-  loanStartYear: number;
-}
-
-function buildAmortizationData({
-  loanAmount,
-  monthlyPayment,
-  monthlyRate,
-  loanTermYears,
-  totalMonths,
-  loanStartYear,
-}: BuildAmortizationArgs): AmortizationData {
-  if (!Number.isFinite(monthlyPayment) || monthlyPayment <= 0) {
-    return { balancePoints: [], composition: [] };
-  }
-
-  const balancePoints: AmortizationPoint[] = [];
-  const composition: CompositionPoint[] = [];
-  let remaining = loanAmount;
-  let interestAcc = 0;
-  let principalAcc = 0;
-
-  for (let month = 1; month <= totalMonths; month++) {
-    const interest = monthlyRate > 0 ? remaining * monthlyRate : 0;
-    let principal = monthlyPayment - interest;
-    if (principal < 0) {
-      principal = 0;
-    }
-    if (principal > remaining) {
-      principal = remaining;
-    }
-    remaining = Math.max(remaining - principal, 0);
-    interestAcc += interest;
-    principalAcc += principal;
-
-    const atYearBoundary = month % 12 === 0 || month === totalMonths;
-    if (atYearBoundary) {
-      const yearIndex = Math.ceil(month / 12);
-      balancePoints.push({
-        label: `Year ${yearIndex}`,
-        balance: Math.round(remaining),
-        year: loanStartYear + yearIndex - 1,
-        yearIndex,
-      });
-      composition.push({
-        label: `Year ${yearIndex}`,
-        interest: Math.round(interestAcc),
-        principal: Math.round(principalAcc),
-        year: loanStartYear + yearIndex - 1,
-        yearIndex,
-      });
-      interestAcc = 0;
-      principalAcc = 0;
-    }
-
-    if (remaining <= 0) {
-      break;
-    }
-  }
-
-  if (balancePoints.length === 0) {
-    balancePoints.push({
-      label: "Year 1",
-      balance: Math.round(remaining),
-      year: loanStartYear,
-      yearIndex: 1,
-    });
-  }
-
-  if (composition.length === 0) {
-    composition.push({
-      label: "Year 1",
-      interest: Math.round(loanAmount * monthlyRate * 12),
-      principal: Math.round(monthlyPayment * 12),
-      year: loanStartYear,
-      yearIndex: 1,
-    });
-  }
-
-  return { balancePoints, composition };
 }

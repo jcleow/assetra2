@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -14,21 +15,23 @@ import (
 
 // Repository implements the finance Repository interface backed by Postgres.
 type Repository struct {
-	db           *sql.DB
-	assetStore   *assetStore
-	liabStore    *liabilityStore
-	incomeStore  *incomeStore
-	expenseStore *expenseStore
+	db            *sql.DB
+	assetStore    *assetStore
+	liabStore     *liabilityStore
+	incomeStore   *incomeStore
+	expenseStore  *expenseStore
+	propertyStore *propertyScenarioStore
 }
 
 // New creates a repository backed by the provided database connection.
 func New(db *sql.DB) *Repository {
 	return &Repository{
-		db:           db,
-		assetStore:   &assetStore{db: db},
-		liabStore:    &liabilityStore{db: db},
-		incomeStore:  &incomeStore{db: db},
-		expenseStore: &expenseStore{db: db},
+		db:            db,
+		assetStore:    &assetStore{db: db},
+		liabStore:     &liabilityStore{db: db},
+		incomeStore:   &incomeStore{db: db},
+		expenseStore:  &expenseStore{db: db},
+		propertyStore: &propertyScenarioStore{db: db},
 	}
 }
 
@@ -38,6 +41,9 @@ func (r *Repository) Liabilities() repository.LiabilityStore {
 }
 func (r *Repository) Incomes() repository.IncomeStore   { return r.incomeStore }
 func (r *Repository) Expenses() repository.ExpenseStore { return r.expenseStore }
+func (r *Repository) PropertyPlanner() repository.PropertyPlannerStore {
+	return r.propertyStore
+}
 
 type assetStore struct {
 	db *sql.DB
@@ -408,6 +414,161 @@ func (s *expenseStore) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
+type propertyScenarioStore struct {
+	db *sql.DB
+}
+
+func (s *propertyScenarioStore) List(ctx context.Context) ([]finance.PropertyPlannerScenario, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT id, property_type, headline, subheadline, last_refreshed,
+		       loan_inputs, amortization, snapshot, summary, timeline, milestones, insights, updated_at
+		FROM property_planner_scenarios
+		ORDER BY updated_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var items []finance.PropertyPlannerScenario
+	for rows.Next() {
+		item, err := scanPropertyScenario(rows)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	if items == nil {
+		items = []finance.PropertyPlannerScenario{}
+	}
+	return items, rows.Err()
+}
+
+func (s *propertyScenarioStore) Get(ctx context.Context, id string) (finance.PropertyPlannerScenario, error) {
+	row := s.db.QueryRowContext(ctx, `
+		SELECT id, property_type, headline, subheadline, last_refreshed,
+		       loan_inputs, amortization, snapshot, summary, timeline, milestones, insights, updated_at
+		FROM property_planner_scenarios
+		WHERE id = $1`, id)
+	item, err := scanPropertyScenario(row)
+	if errors.Is(err, sql.ErrNoRows) {
+		return finance.PropertyPlannerScenario{}, repository.ErrNotFound
+	}
+	return item, err
+}
+
+func (s *propertyScenarioStore) GetByType(ctx context.Context, scenarioType string) (finance.PropertyPlannerScenario, error) {
+	row := s.db.QueryRowContext(ctx, `
+		SELECT id, property_type, headline, subheadline, last_refreshed,
+		       loan_inputs, amortization, snapshot, summary, timeline, milestones, insights, updated_at
+		FROM property_planner_scenarios
+		WHERE property_type = $1`, scenarioType)
+	item, err := scanPropertyScenario(row)
+	if errors.Is(err, sql.ErrNoRows) {
+		return finance.PropertyPlannerScenario{}, repository.ErrNotFound
+	}
+	return item, err
+}
+
+func (s *propertyScenarioStore) Create(ctx context.Context, scenario finance.PropertyPlannerScenario) (finance.PropertyPlannerScenario, error) {
+	if scenario.Type == "" || scenario.Headline == "" {
+		return finance.PropertyPlannerScenario{}, repository.ErrInvalidInput
+	}
+	scenario.ID = ensureID(scenario.ID)
+	scenario.UpdatedAt = time.Now().UTC()
+	payload, err := buildScenarioPayload(scenario)
+	if err != nil {
+		return finance.PropertyPlannerScenario{}, err
+	}
+
+	row := s.db.QueryRowContext(ctx, `
+		INSERT INTO property_planner_scenarios (
+			id, property_type, headline, subheadline, last_refreshed,
+			loan_inputs, amortization, snapshot, summary, timeline, milestones, insights, updated_at
+		)
+		VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+		RETURNING id, property_type, headline, subheadline, last_refreshed,
+		          loan_inputs, amortization, snapshot, summary, timeline, milestones, insights, updated_at`,
+		payload.ID,
+		payload.Type,
+		payload.Headline,
+		payload.Subheadline,
+		payload.LastRefreshed,
+		payload.LoanInputsJSON,
+		payload.AmortizationJSON,
+		payload.SnapshotJSON,
+		payload.SummaryJSON,
+		payload.TimelineJSON,
+		payload.MilestonesJSON,
+		payload.InsightsJSON,
+		scenario.UpdatedAt,
+	)
+	created, err := scanPropertyScenario(row)
+	if err != nil {
+		return finance.PropertyPlannerScenario{}, err
+	}
+	return created, nil
+}
+
+func (s *propertyScenarioStore) Update(ctx context.Context, scenario finance.PropertyPlannerScenario) (finance.PropertyPlannerScenario, error) {
+	if scenario.ID == "" {
+		return finance.PropertyPlannerScenario{}, repository.ErrInvalidInput
+	}
+	scenario.UpdatedAt = time.Now().UTC()
+	payload, err := buildScenarioPayload(scenario)
+	if err != nil {
+		return finance.PropertyPlannerScenario{}, err
+	}
+
+	row := s.db.QueryRowContext(ctx, `
+		UPDATE property_planner_scenarios
+		SET property_type=$2,
+		    headline=$3,
+		    subheadline=$4,
+		    last_refreshed=$5,
+		    loan_inputs=$6,
+		    amortization=$7,
+		    snapshot=$8,
+		    summary=$9,
+		    timeline=$10,
+		    milestones=$11,
+		    insights=$12,
+		    updated_at=$13
+		WHERE id=$1
+		RETURNING id, property_type, headline, subheadline, last_refreshed,
+		          loan_inputs, amortization, snapshot, summary, timeline, milestones, insights, updated_at`,
+		payload.ID,
+		payload.Type,
+		payload.Headline,
+		payload.Subheadline,
+		payload.LastRefreshed,
+		payload.LoanInputsJSON,
+		payload.AmortizationJSON,
+		payload.SnapshotJSON,
+		payload.SummaryJSON,
+		payload.TimelineJSON,
+		payload.MilestonesJSON,
+		payload.InsightsJSON,
+		scenario.UpdatedAt,
+	)
+	updated, err := scanPropertyScenario(row)
+	if errors.Is(err, sql.ErrNoRows) {
+		return finance.PropertyPlannerScenario{}, repository.ErrNotFound
+	}
+	return updated, err
+}
+
+func (s *propertyScenarioStore) Delete(ctx context.Context, id string) error {
+	result, err := s.db.ExecContext(ctx, `DELETE FROM property_planner_scenarios WHERE id=$1`, id)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil || rows == 0 {
+		return repository.ErrNotFound
+	}
+	return nil
+}
+
 func scanAsset(row scanner) (finance.Asset, error) {
 	var asset finance.Asset
 	var notes sql.NullString
@@ -486,8 +647,123 @@ func scanExpense(row scanner) (finance.Expense, error) {
 	return item, nil
 }
 
+func scanPropertyScenario(row scanner) (finance.PropertyPlannerScenario, error) {
+	var item finance.PropertyPlannerScenario
+	var loanInputsData, amortizationData, snapshotData, summaryData, timelineData, milestonesData, insightsData []byte
+	err := row.Scan(
+		&item.ID,
+		&item.Type,
+		&item.Headline,
+		&item.Subheadline,
+		&item.LastRefreshed,
+		&loanInputsData,
+		&amortizationData,
+		&snapshotData,
+		&summaryData,
+		&timelineData,
+		&milestonesData,
+		&insightsData,
+		&item.UpdatedAt,
+	)
+	if err != nil {
+		return finance.PropertyPlannerScenario{}, err
+	}
+
+	if err := json.Unmarshal(loanInputsData, &item.Inputs); err != nil {
+		return finance.PropertyPlannerScenario{}, err
+	}
+	if err := json.Unmarshal(amortizationData, &item.Amortization); err != nil {
+		return finance.PropertyPlannerScenario{}, err
+	}
+	if err := json.Unmarshal(snapshotData, &item.Snapshot); err != nil {
+		return finance.PropertyPlannerScenario{}, err
+	}
+	if err := json.Unmarshal(summaryData, &item.Summary); err != nil {
+		return finance.PropertyPlannerScenario{}, err
+	}
+	if err := json.Unmarshal(timelineData, &item.Timeline); err != nil {
+		return finance.PropertyPlannerScenario{}, err
+	}
+	if err := json.Unmarshal(milestonesData, &item.Milestones); err != nil {
+		return finance.PropertyPlannerScenario{}, err
+	}
+	if err := json.Unmarshal(insightsData, &item.Insights); err != nil {
+		return finance.PropertyPlannerScenario{}, err
+	}
+	return item, nil
+}
+
 type scanner interface {
 	Scan(dest ...any) error
+}
+
+type propertyScenarioDBPayload struct {
+	ID               string
+	Type             string
+	Headline         string
+	Subheadline      string
+	LastRefreshed    string
+	LoanInputsJSON   []byte
+	AmortizationJSON []byte
+	SnapshotJSON     []byte
+	SummaryJSON      []byte
+	TimelineJSON     []byte
+	MilestonesJSON   []byte
+	InsightsJSON     []byte
+}
+
+func buildScenarioPayload(s finance.PropertyPlannerScenario) (propertyScenarioDBPayload, error) {
+	payload := propertyScenarioDBPayload{
+		ID:            s.ID,
+		Type:          s.Type,
+		Headline:      s.Headline,
+		Subheadline:   s.Subheadline,
+		LastRefreshed: s.LastRefreshed,
+	}
+
+	if payload.Subheadline == "" {
+		payload.Subheadline = ""
+	}
+	if payload.LastRefreshed == "" {
+		payload.LastRefreshed = ""
+	}
+	if s.Summary == nil {
+		s.Summary = []finance.PropertyPlannerSummary{}
+	}
+	if s.Timeline == nil {
+		s.Timeline = []finance.PropertyPlannerTimeline{}
+	}
+	if s.Milestones == nil {
+		s.Milestones = []finance.PropertyPlannerMilestone{}
+	}
+	if s.Insights == nil {
+		s.Insights = []finance.PropertyPlannerInsight{}
+	}
+
+	var err error
+	if payload.LoanInputsJSON, err = json.Marshal(s.Inputs); err != nil {
+		return propertyScenarioDBPayload{}, err
+	}
+	if payload.AmortizationJSON, err = json.Marshal(s.Amortization); err != nil {
+		return propertyScenarioDBPayload{}, err
+	}
+	if payload.SnapshotJSON, err = json.Marshal(s.Snapshot); err != nil {
+		return propertyScenarioDBPayload{}, err
+	}
+	if payload.SummaryJSON, err = json.Marshal(s.Summary); err != nil {
+		return propertyScenarioDBPayload{}, err
+	}
+	if payload.TimelineJSON, err = json.Marshal(s.Timeline); err != nil {
+		return propertyScenarioDBPayload{}, err
+	}
+	if payload.MilestonesJSON, err = json.Marshal(s.Milestones); err != nil {
+		return propertyScenarioDBPayload{}, err
+	}
+	if payload.InsightsJSON, err = json.Marshal(s.Insights); err != nil {
+		return propertyScenarioDBPayload{}, err
+	}
+
+	return payload, nil
 }
 
 func ensureID(id string) string {

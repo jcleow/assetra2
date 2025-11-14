@@ -2,17 +2,23 @@
 
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { Building2, Sparkles, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   PropertyPlannerType,
   PROPERTY_TYPES,
 } from "./mock-data";
 import { PropertyPlannerShell } from "./property-planner-shell";
+import { usePropertyPlannerStore } from "@/features/property-planner/store";
 
 export function PropertyPlannerLauncher() {
   const [open, setOpen] = useState(false);
   const [activeType, setActiveType] = useState<PropertyPlannerType>("hdb");
+  const fetchScenarios = usePropertyPlannerStore((state) => state.fetch);
+
+  useEffect(() => {
+    void fetchScenarios();
+  }, [fetchScenarios]);
 
   const activeLabel =
     PROPERTY_TYPES.find((type) => type.id === activeType)?.label ?? "HDB";
@@ -36,10 +42,7 @@ export function PropertyPlannerLauncher() {
         <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/75 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 focus:outline-none">
           <div className="relative h-full w-full max-h-[96vh] max-w-[1280px]">
-            <PropertyPlannerShell
-              activeType={activeType}
-              onTypeChange={setActiveType}
-            />
+            <PropertyPlannerShell activeType={activeType} />
             <DialogPrimitive.Close
               className="absolute right-6 top-6 inline-flex items-center justify-center rounded-full border border-white/10 bg-black/40 p-2 text-gray-300 transition hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               type="button"

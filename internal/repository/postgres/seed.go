@@ -37,6 +37,9 @@ func (r *Repository) SeedDefaults(ctx context.Context, seed finance.SeedData, lo
 	if err := insertExpenses(ctx, tx, seed.Expenses); err != nil {
 		return err
 	}
+	if err := insertPropertyScenarios(ctx, tx, seed.PropertyScenarios); err != nil {
+		return err
+	}
 
 	if err := tx.Commit(); err != nil {
 		return err
@@ -54,6 +57,7 @@ func (r *Repository) hasExistingData(ctx context.Context) (bool, error) {
 		"finance_liabilities",
 		"finance_incomes",
 		"finance_expenses",
+		"property_planner_scenarios",
 	}
 	for _, tbl := range tables {
 		var count int
@@ -128,6 +132,43 @@ func insertExpenses(ctx context.Context, tx *sql.Tx, items []finance.Expense) er
 			INSERT INTO finance_expenses (id, payee, amount, frequency, category, notes, updated_at)
 			VALUES ($1, $2, $3, $4, $5, NULLIF($6, ''), $7)
 		`, expense.ID, expense.Payee, expense.Amount, expense.Frequency, expense.Category, expense.Notes, expense.UpdatedAt); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func insertPropertyScenarios(ctx context.Context, tx *sql.Tx, items []finance.PropertyPlannerScenario) error {
+	for _, scenario := range items {
+		scenario.ID = ensureID(scenario.ID)
+		if scenario.UpdatedAt.IsZero() {
+			scenario.UpdatedAt = time.Now().UTC()
+		}
+		payload, err := buildScenarioPayload(scenario)
+		if err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx, `
+			INSERT INTO property_planner_scenarios (
+				id, property_type, headline, subheadline, last_refreshed,
+				loan_inputs, amortization, snapshot, summary, timeline, milestones, insights, updated_at
+			)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+		`,
+			payload.ID,
+			payload.Type,
+			payload.Headline,
+			payload.Subheadline,
+			payload.LastRefreshed,
+			payload.LoanInputsJSON,
+			payload.AmortizationJSON,
+			payload.SnapshotJSON,
+			payload.SummaryJSON,
+			payload.TimelineJSON,
+			payload.MilestonesJSON,
+			payload.InsightsJSON,
+			scenario.UpdatedAt,
+		); err != nil {
 			return err
 		}
 	}
