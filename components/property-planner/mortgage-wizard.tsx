@@ -16,6 +16,7 @@ import {
   useFinancialPlanningStore,
 } from "@/features/financial-planning";
 import { usePropertyPlannerStore } from "@/features/property-planner/store";
+import { usePropertyPlannerModalStore } from "@/features/property-planner/modal-store";
 import {
   PROPERTY_PLANNER_MOCKS,
   PropertyPlannerType,
@@ -39,6 +40,7 @@ import type {
   PropertyPlannerScenario,
 } from "@/lib/financial/types";
 import { toast } from "@/components/toast";
+import { usePropertyPlannerModalStore } from "@/features/property-planner/modal-store";
 
 const MIN_CHART_HEIGHT_RATIO = 0.28;
 const MIN_CHART_HEIGHT_PX = 280;
@@ -89,6 +91,7 @@ export function MortgageWizard({ activeType }: MortgageWizardProps) {
   );
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [isApplyingPlan, setIsApplyingPlan] = useState(false);
+  const closePlannerModal = usePropertyPlannerModalStore((state) => state.close);
 
   useEffect(() => {
     setIsComplete(isOverviewComplete);
@@ -187,6 +190,7 @@ export function MortgageWizard({ activeType }: MortgageWizardProps) {
         type: "success",
         description: "Planner data applied to your financial plan.",
       });
+      closePlannerModal();
     } catch (error) {
       console.error(error);
       toast({
