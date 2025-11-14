@@ -7,6 +7,7 @@ import type {
   IntentResult,
 } from "./types";
 import type { PropertyPlannerScenario } from "@/lib/financial/types";
+import { PROPERTY_PLANNER_MOCKS } from "@/components/property-planner/mock-data";
 
 const PROPERTY_PLANNER_KEYWORDS = [
   "property planner",
@@ -37,12 +38,24 @@ interface FinancialPlanData {
 }
 
 function resolveBaseUrl() {
-  return process.env.NEXTAUTH_URL || "http://localhost:3000";
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+  const fallback =
+    process.env.NEXTAUTH_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : null);
+  return fallback;
 }
 
 async function fetchFinancialContext(): Promise<string> {
   try {
     const baseUrl = resolveBaseUrl();
+    if (!baseUrl) {
+      return "";
+    }
     const response = await fetch(`${baseUrl}/api/financial-plan?mock=true`);
 
     if (!response.ok) {
@@ -62,15 +75,20 @@ async function fetchFinancialContext(): Promise<string> {
 async function fetchPropertyPlannerContext(): Promise<string> {
   try {
     const baseUrl = resolveBaseUrl();
-    const response = await fetch(`${baseUrl}/api/property-planner`);
-    if (!response.ok) {
-      return "";
+    let scenarios: PropertyPlannerScenario[] | null = null;
+    if (baseUrl) {
+      const response = await fetch(`${baseUrl}/api/property-planner`);
+      if (response.ok) {
+        const data = (await response.json()) as PropertyPlannerScenario[];
+        if (Array.isArray(data) && data.length > 0) {
+          scenarios = data;
+        }
+      }
     }
-    const data = (await response.json()) as PropertyPlannerScenario[];
-    if (!Array.isArray(data) || data.length === 0) {
-      return "";
+    if (!scenarios) {
+      scenarios = Object.values(PROPERTY_PLANNER_MOCKS);
     }
-    return formatPropertyPlannerContext(data);
+    return formatPropertyPlannerContext(scenarios);
   } catch (error) {
     console.warn("Error fetching property planner context:", error);
     return "";
