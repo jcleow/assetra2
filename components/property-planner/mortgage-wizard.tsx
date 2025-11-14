@@ -158,15 +158,8 @@ export function MortgageWizard({ activeType }: MortgageWizardProps) {
   };
 
   const handleApplyPlan = async () => {
-    if (hasUnsavedChanges) {
-      toast({
-        type: "error",
-        description: "Save your draft before applying it to the plan.",
-      });
-      return;
-    }
     let latestScenario = scenario;
-    if (!scenario.id) {
+    if (hasUnsavedChanges || !scenario.id) {
       const saved = await handleSaveDraft();
       if (!saved) {
         return;
@@ -873,7 +866,7 @@ function MortgageOverview({
         </button>
         <button
           className="rounded-full bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-400 disabled:opacity-50"
-          disabled={!canApply || isApplying}
+          disabled={isApplying}
           onClick={onApplyPlan}
           type="button"
         >
