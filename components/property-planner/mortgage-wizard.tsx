@@ -7,6 +7,7 @@ import {
   TrendingDown,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useWindowSize } from "usehooks-ts";
 import {
   formatCurrency,
   formatPercentage,
@@ -27,6 +28,8 @@ import {
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value));
+const MIN_CHART_HEIGHT_RATIO = 0.28;
+const MIN_CHART_HEIGHT_PX = 280;
 
 export function MortgageWizard() {
   const [isComplete, setIsComplete] = useState(false);
@@ -456,6 +459,33 @@ function MortgageOverview({
   loanTermYears,
   amortizationData,
 }: MortgageOverviewProps) {
+  const { height: viewportHeight } = useWindowSize();
+  const chartHeight = useMemo(() => {
+    const safeHeight = viewportHeight ?? 0;
+    if (safeHeight === 0) {
+      return MIN_CHART_HEIGHT_PX;
+    }
+    return Math.max(safeHeight * MIN_CHART_HEIGHT_RATIO, MIN_CHART_HEIGHT_PX);
+  }, [viewportHeight]);
+  const balanceYearTicks = amortizationData.balancePoints.map(
+    (point) => point.yearIndex
+  );
+  const compositionYearTicks = amortizationData.composition.map(
+    (point) => point.yearIndex
+  );
+  const firstBalanceTick = balanceYearTicks[0] ?? 1;
+  const lastBalanceTick = balanceYearTicks[balanceYearTicks.length - 1] ?? 1;
+  const firstCompositionTick = compositionYearTicks[0] ?? 1;
+  const lastCompositionTick =
+    compositionYearTicks[compositionYearTicks.length - 1] ?? 1;
+  const balanceDomain: [number, number] = [
+    Math.max(0, firstBalanceTick - 0.5),
+    lastBalanceTick + 0.5,
+  ];
+  const compositionDomain: [number, number] = [
+    Math.max(0, firstCompositionTick - 0.5),
+    lastCompositionTick + 0.5,
+  ];
   return (
     <section className="rounded-3xl border border-white/10 bg-gray-900 p-6 text-white shadow-xl">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -537,9 +567,12 @@ function MortgageOverview({
               loanAmount
             )} → $0`,
             hasData: amortizationData.balancePoints.length > 0,
-            render: () => (
-              <ResponsiveContainer height={260}>
-                <AreaChart data={amortizationData.balancePoints}>
+            render: (height: number) => (
+              <ResponsiveContainer width="100%" height={height}>
+                <AreaChart
+                  data={amortizationData.balancePoints}
+                  margin={{ bottom: 32, left: 0, right: 0 }}
+                >
                   <defs>
                     <linearGradient
                       id="loanBalanceGradient"
@@ -558,9 +591,21 @@ function MortgageOverview({
                   </defs>
                   <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
                   <XAxis
-                    dataKey="label"
+                    dataKey="yearIndex"
+                    type="number"
+                    domain={balanceDomain}
+                    ticks={balanceYearTicks}
+                    allowDecimals={false}
                     stroke="#9CA3AF"
                     fontSize={12}
+                    tickMargin={10}
+                    tickFormatter={(value) => `${value}`}
+                    label={{
+                      value: "Year",
+                      position: "bottom",
+                      offset: 0,
+                      fill: "#9CA3AF",
+                    }}
                   />
                   <YAxis
                     stroke="#9CA3AF"
@@ -574,6 +619,7 @@ function MortgageOverview({
                       backgroundColor: "#111827",
                       border: "1px solid rgba(255,255,255,0.1)",
                     }}
+                    labelFormatter={(value) => `Year ${value}`}
                     formatter={(value: number) => formatCurrency(value as number)}
                   />
                   <Area
@@ -592,22 +638,31 @@ function MortgageOverview({
             title: "Interest vs Principal Payments",
             helper: "See how your payment composition changes each year.",
             hasData: amortizationData.composition.length > 0,
-            render: () => (
-              <ResponsiveContainer height={260}>
+            render: (height: number) => (
+              <ResponsiveContainer width="100%" height={height}>
                 <BarChart
                   data={amortizationData.composition}
                   barCategoryGap="20%"
                   barGap={4}
+                  margin={{ bottom: 36, left: 0, right: 0 }}
                 >
                   <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
                   <XAxis
-                    dataKey="label"
+                    dataKey="yearIndex"
+                    type="number"
+                    domain={compositionDomain}
+                    ticks={compositionYearTicks}
+                    allowDecimals={false}
                     stroke="#9CA3AF"
                     fontSize={11}
-                    interval={0}
-                    angle={-45}
-                    textAnchor="end"
-                    height={70}
+                    tickMargin={14}
+                    tickFormatter={(value) => `${value}`}
+                    label={{
+                      value: "Year",
+                      position: "bottom",
+                      offset: 0,
+                      fill: "#9CA3AF",
+                    }}
                   />
                   <YAxis
                     stroke="#9CA3AF"
@@ -621,14 +676,25 @@ function MortgageOverview({
                       backgroundColor: "#111827",
                       border: "1px solid rgba(255,255,255,0.1)",
                     }}
+                    labelFormatter={(value) => `Year ${value}`}
                     formatter={(value: number, name) => [
                       formatCurrency(value as number),
                       name === "interest" ? "Interest" : "Principal",
                     ]}
                   />
-                  <Legend />
-                  <Bar dataKey="interest" stackId="payments" fill="#F97316" />
-                  <Bar dataKey="principal" stackId="payments" fill="#34D399" />
+                  <Legend wrapperStyle={{ paddingTop: 12 }} />
+                  <Bar
+                    dataKey="interest"
+                    stackId="payments"
+                    fill="rgba(248, 113, 113, 0.8)"
+                    stroke="#F87171"
+                  />
+                  <Bar
+                    dataKey="principal"
+                    stackId="payments"
+                    fill="rgba(59, 130, 246, 0.7)"
+                    stroke="#3B82F6"
+                  />
                 </BarChart>
               </ResponsiveContainer>
             ),
@@ -640,11 +706,17 @@ function MortgageOverview({
           >
             <p className="text-sm font-semibold text-white">{section.title}</p>
             <p className="text-xs text-gray-400">{section.helper}</p>
-            <div className="mt-3 h-56 rounded-xl border border-white/10 bg-gray-950 p-3">
+            <div
+              className="mt-3 rounded-xl border border-white/10 bg-gray-950 p-3"
+              style={{ minHeight: chartHeight }}
+            >
               {section.hasData ? (
-                section.render()
+                section.render(chartHeight)
               ) : (
-                <div className="flex h-full items-center justify-center text-xs text-gray-500">
+                <div
+                  className="flex items-center justify-center text-xs text-gray-500"
+                  style={{ minHeight: chartHeight }}
+                >
                   Not enough payment history yet.
                 </div>
               )}
@@ -875,6 +947,7 @@ interface AmortizationPoint {
   label: string;
   balance: number;
   year: number;
+  yearIndex: number;
 }
 
 interface CompositionPoint {
@@ -882,6 +955,7 @@ interface CompositionPoint {
   interest: number;
   principal: number;
   year: number;
+  yearIndex: number;
 }
 
 interface AmortizationData {
@@ -936,12 +1010,14 @@ function buildAmortizationData({
         label: `Year ${yearIndex}`,
         balance: Math.round(remaining),
         year: loanStartYear + yearIndex - 1,
+        yearIndex,
       });
       composition.push({
         label: `Year ${yearIndex}`,
         interest: Math.round(interestAcc),
         principal: Math.round(principalAcc),
         year: loanStartYear + yearIndex - 1,
+        yearIndex,
       });
       interestAcc = 0;
       principalAcc = 0;
@@ -957,6 +1033,7 @@ function buildAmortizationData({
       label: "Year 1",
       balance: Math.round(remaining),
       year: loanStartYear,
+      yearIndex: 1,
     });
   }
 
@@ -966,6 +1043,7 @@ function buildAmortizationData({
       interest: Math.round(loanAmount * monthlyRate * 12),
       principal: Math.round(monthlyPayment * 12),
       year: loanStartYear,
+      yearIndex: 1,
     });
   }
 
